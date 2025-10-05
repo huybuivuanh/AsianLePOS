@@ -10,7 +10,7 @@ export default function TabsLayout() {
   const router = useRouter();
   useEffect(() => {
     if (!user) {
-      router.push("/(login)/login"); // redirect to login if not authenticated
+      router.push("/login"); // redirect to login if not authenticated
     }
   }, [user, router]);
 
@@ -19,7 +19,8 @@ export default function TabsLayout() {
       <View>
         <Text>Loading</Text>
       </View>
-    ); // loading state
+    );
+
   return (
     <Tabs
       screenOptions={{
@@ -33,27 +34,45 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Orders",
+          title: "Take Out",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="fast-food-outline" color={color} size={size} />
           ),
         }}
       />
       <Tabs.Screen
-        name="OrderHistory"
+        name="dinein"
         options={{
-          title: "History",
+          title: "Dine In",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="restaurant-outline" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="liveorders"
+        options={{
+          title: "Live Orders",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="list-outline" color={color} size={size} />
           ),
         }}
       />
       <Tabs.Screen
-        name="Take Order"
+        name="orderhistory"
         options={{
-          title: "TakeOrder",
+          title: "History",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" color={color} size={size} />
+            <Ionicons name="receipt-outline" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-circle-outline" color={color} size={size} />
           ),
         }}
       />
