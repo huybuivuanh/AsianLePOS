@@ -1,4 +1,5 @@
 import { FlatList, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // Example dummy data
 const orders = [
@@ -9,7 +10,7 @@ const orders = [
 
 export default function OrderHistory() {
   return (
-    <View className="flex-1 bg-gray-100 p-5">
+    <SafeAreaView className="flex-1 bg-gray-100 p-5">
       <Text className="text-xl font-bold mb-4">Order History</Text>
       <FlatList
         data={orders}
@@ -20,6 +21,6 @@ export default function OrderHistory() {
           </View>
         )}
       />
-    </View>
+    </SafeAreaView>
   );
 }

@@ -1,5 +1,6 @@
 // app/layout.tsx (Expo)
 import { Stack } from "expo-router";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
 import { AuthProvider } from "../providers/AuthProvider";
 
@@ -9,8 +10,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthProvider>
-      <Stack screenOptions={{ headerShown: false }}>{children}</Stack>;
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <Stack screenOptions={{ headerShown: false }}>{children}</Stack>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
