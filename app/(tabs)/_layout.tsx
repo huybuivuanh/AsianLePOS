@@ -1,33 +1,60 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+// app/(tabs)/layout.tsx
+import { Ionicons } from "@expo/vector-icons";
+import { Tabs, useRouter } from "expo-router";
+import { useEffect } from "react";
+import { Text, View } from "react-native";
+import { useAuth } from "../../providers/AuthProvider";
 
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+export default function TabsLayout() {
+  const { user } = useAuth();
+  const router = useRouter();
+  useEffect(() => {
+    if (!user) {
+      router.push("/(login)/login"); // redirect to login if not authenticated
+    }
+  }, [user, router]);
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
+  if (!user)
+    return (
+      <View>
+        <Text>Loading</Text>
+      </View>
+    ); // loading state
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
+        tabBarActiveTintColor: "#1D4ED8", // blue
+        tabBarInactiveTintColor: "#6B7280", // gray
+        tabBarStyle: { backgroundColor: "#F3F4F6", height: 65 },
+        tabBarLabelStyle: { fontSize: 12, marginBottom: 5 },
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: "Orders",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="fast-food-outline" color={color} size={size} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="OrderHistory"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: "History",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="list-outline" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="Take Order"
+        options={{
+          title: "TakeOrder",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-outline" color={color} size={size} />
+          ),
         }}
       />
     </Tabs>
