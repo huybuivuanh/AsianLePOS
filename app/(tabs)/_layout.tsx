@@ -1,5 +1,5 @@
 // app/(tabs)/layout.tsx
-import { useMenuStore } from "@/stores/useMenuStore";
+import { loadCachedMenu, useMenuStore } from "@/stores/useMenuStore";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
 import { useEffect } from "react";
@@ -11,23 +11,21 @@ export default function TabsLayout() {
   const router = useRouter();
   const { subscribeToMenu, loading: menuLoading } = useMenuStore();
 
-  // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/login");
     }
   }, [user, authLoading, router]);
 
-  // Subscribe to menu only when user is logged in
   useEffect(() => {
-    if (!user) return; // Guard: don't subscribe before login
+    if (!user) return;
+    loadCachedMenu();
     const unsubscribe = subscribeToMenu();
     return () => {
-      unsubscribe?.(); // Cleanup listener on unmount
+      unsubscribe?.();
     };
   }, [user, subscribeToMenu]);
 
-  // Show loading while auth or menu is loading
   if (authLoading || !user || menuLoading) {
     return (
       <View className="flex-1 justify-center items-center bg-gray-100">
