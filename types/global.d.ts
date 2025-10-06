@@ -27,7 +27,7 @@ declare global {
     createdAt: Date;
   };
 
-  type ItemOptionGroup = {
+  type OptionGroup = {
     id?: string;
     name: string;
     minSelection: number;

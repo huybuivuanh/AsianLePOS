@@ -1,4 +1,5 @@
 // app/(tabs)/layout.tsx
+import { useMenuStore } from "@/stores/useMenuStore";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
 import { useEffect } from "react";
@@ -6,33 +7,47 @@ import { Text, View } from "react-native";
 import { useAuth } from "../../providers/AuthProvider";
 
 export default function TabsLayout() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  useEffect(() => {
-    if (!user) {
-      router.push("/login"); // redirect to login if not authenticated
-    }
-  }, [user, router]);
+  const { subscribeToMenu, loading: menuLoading } = useMenuStore();
 
-  if (!user)
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+    }
+  }, [user, authLoading, router]);
+
+  // Subscribe to menu only when user is logged in
+  useEffect(() => {
+    if (!user) return; // Guard: don't subscribe before login
+    const unsubscribe = subscribeToMenu();
+    return () => {
+      unsubscribe?.(); // Cleanup listener on unmount
+    };
+  }, [user, subscribeToMenu]);
+
+  // Show loading while auth or menu is loading
+  if (authLoading || !user || menuLoading) {
     return (
-      <View>
-        <Text>Loading</Text>
+      <View className="flex-1 justify-center items-center bg-gray-100">
+        <Text className="text-lg font-medium">Loading...</Text>
       </View>
     );
+  }
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: "#1D4ED8", // blue
-        tabBarInactiveTintColor: "#6B7280", // gray
+        tabBarActiveTintColor: "#1D4ED8",
+        tabBarInactiveTintColor: "#6B7280",
         tabBarStyle: { backgroundColor: "#F3F4F6", height: 65 },
         tabBarLabelStyle: { fontSize: 12, marginBottom: 5 },
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="(takeout)/index"
         options={{
           title: "Take Out",
           tabBarIcon: ({ color, size }) => (

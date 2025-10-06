@@ -7,14 +7,16 @@ import {
   useEffect,
   useState,
 } from "react";
-import { Text, View } from "react-native";
 import { auth } from "../lib/firebaseConfig";
 
-type AuthContextType = { user: User | null };
-
-const AuthContext = createContext<AuthContextType>({ user: null });
+type AuthContextType = { user: User | null; loading: boolean };
 
 export const useAuth = () => useContext(AuthContext);
+
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+});
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -28,14 +30,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return unsubscribe;
   }, []);
 
-  if (loading)
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text>Loading...</Text>
-      </View>
-    );
-
   return (
-    <AuthContext.Provider value={{ user }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, loading }}>
+      {children}
+    </AuthContext.Provider>
   );
 };
