@@ -9,7 +9,7 @@ import { useAuth } from "../../providers/AuthProvider";
 export default function TabsLayout() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const { subscribeToMenu, loading: menuLoading } = useMenuStore();
+  const { subscribeToMenuVersion, loading: menuLoading } = useMenuStore();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -20,11 +20,11 @@ export default function TabsLayout() {
   useEffect(() => {
     if (!user) return;
     loadCachedMenu();
-    const unsubscribe = subscribeToMenu();
+    const unsubscribe = subscribeToMenuVersion();
     return () => {
       unsubscribe?.();
     };
-  }, [user, subscribeToMenu]);
+  }, [user, subscribeToMenuVersion]);
 
   if (authLoading || !user || menuLoading) {
     return (

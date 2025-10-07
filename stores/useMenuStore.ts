@@ -1,5 +1,6 @@
+// app/stores/useMenuStore.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, doc, getDocs, onSnapshot } from "firebase/firestore";
 import { create } from "zustand";
 import { db } from "../lib/firebaseConfig";
 
@@ -9,83 +10,94 @@ type MenuState = {
   optionGroups: OptionGroup[];
   options: ItemOption[];
   loading: boolean;
-  subscribeToMenu: () => () => void;
+  subscribeToMenuVersion: () => () => void;
 };
 
 const STORAGE_KEY = "@menu_cache";
+const VERSION_KEY = "@menu_version";
 
-// Deep equality check for arrays of objects
-const isEqual = (a: any[], b: any[]) => {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) {
-    if (JSON.stringify(a[i]) !== JSON.stringify(b[i])) return false;
-  }
-  return true;
-};
+// Keys corresponding only to menu arrays
+type MenuArrayKeys = "categories" | "menuItems" | "optionGroups" | "options";
 
-export const useMenuStore = create<MenuState>((set, get) => ({
+export const useMenuStore = create<MenuState>((set) => ({
   categories: [],
   menuItems: [],
   optionGroups: [],
   options: [],
   loading: true,
 
-  subscribeToMenu: () => {
-    const unsubscribers: (() => void)[] = [];
+  subscribeToMenuVersion: () => {
+    const versionDocRef = doc(db, "menuVersion", "versionDoc");
 
-    const updateStoreAndCache = async (key: keyof MenuState, data: any[]) => {
-      const current = get()[key];
-      if (Array.isArray(current) && !isEqual(current, data)) {
-        set({ [key]: data });
-        // Read existing AsyncStorage
-        const currentStoreRaw = await AsyncStorage.getItem(STORAGE_KEY);
-        const currentStore = currentStoreRaw ? JSON.parse(currentStoreRaw) : {};
-        currentStore[key] = data;
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(currentStore));
+    const unsubscribe = onSnapshot(versionDocRef, async (snapshot) => {
+      const remoteVersion = snapshot.data()?.version ?? 0;
+      const localVersionStr = await AsyncStorage.getItem(VERSION_KEY);
+      const localVersion = localVersionStr ? parseInt(localVersionStr) : 0;
+
+      if (remoteVersion > localVersion) {
+        try {
+          // Fetch all menu collections fresh
+          const newMenu = await fetchMenuCollections();
+
+          // Update AsyncStorage cache
+          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newMenu));
+          await AsyncStorage.setItem(VERSION_KEY, String(remoteVersion));
+
+          // Update Zustand store
+          set({ ...newMenu, loading: false });
+        } catch (error) {
+          console.error("❌ Failed to fetch menu from Firestore:", error);
+        }
+      } else {
+        // Load cached menu if exists
+        const cached = await AsyncStorage.getItem(STORAGE_KEY);
+        if (cached) {
+          set({ ...JSON.parse(cached), loading: false });
+        } else {
+          set({ loading: false });
+        }
       }
-    };
-
-    const collections: [keyof MenuState, string][] = [
-      ["categories", "categories"],
-      ["menuItems", "menuItems"],
-      ["optionGroups", "optionGroups"],
-      ["options", "options"],
-    ];
-
-    collections.forEach(([stateKey, collectionName]) => {
-      unsubscribers.push(
-        onSnapshot(collection(db, collectionName), (snapshot) => {
-          let data = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-          // Sort categories by order
-          if (stateKey === "categories") {
-            (data as (FoodCategory & { order?: number })[]).sort(
-              (a, b) => (a.order ?? 0) - (b.order ?? 0)
-            );
-            set({ loading: false });
-          }
-          updateStoreAndCache(stateKey, data);
-        })
-      );
     });
 
-    return () => unsubscribers.forEach((unsub) => unsub());
+    return unsubscribe;
   },
 }));
 
-// Load cached data immediately on app start
+// Fetch all menu-related collections once
+const fetchMenuCollections = async () => {
+  const collections: [MenuArrayKeys, string][] = [
+    ["categories", "categories"],
+    ["menuItems", "menuItems"],
+    ["optionGroups", "optionGroups"],
+    ["options", "options"],
+  ];
+
+  const result: Partial<Pick<MenuState, MenuArrayKeys>> = {};
+
+  for (const [key, name] of collections) {
+    const snap = await getDocs(collection(db, name));
+    const data = snap.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    if (key === "categories") {
+      (data as (FoodCategory & { order?: number })[]).sort(
+        (a, b) => (a.order ?? 0) - (b.order ?? 0)
+      );
+    }
+
+    result[key] = data as any; // safe, since we know key corresponds to an array
+  }
+
+  return result as Pick<MenuState, MenuArrayKeys>;
+};
+
+// Load cached menu on app startup
 export const loadCachedMenu = async () => {
   const cache = await AsyncStorage.getItem(STORAGE_KEY);
   if (cache) {
     const data = JSON.parse(cache);
-    useMenuStore.setState({
-      categories: data.categories || [],
-      menuItems: data.menuItems || [],
-      optionGroups: data.optionGroups || [],
-      options: data.options || [],
-      loading: false,
-    });
+    useMenuStore.setState({ ...data, loading: false });
   }
 };
