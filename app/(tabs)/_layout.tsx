@@ -40,7 +40,7 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: "#1D4ED8",
         tabBarInactiveTintColor: "#6B7280",
-        tabBarStyle: { backgroundColor: "#F3F4F6", height: 65 },
+        tabBarStyle: { backgroundColor: "#F3F4F6", height: 80 },
         tabBarLabelStyle: { fontSize: 12, marginBottom: 5 },
       }}
     >

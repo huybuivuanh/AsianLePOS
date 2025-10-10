@@ -32,7 +32,7 @@ export const useMenuStore = create<MenuState>((set) => ({
     const unsubscribe = onSnapshot(versionDocRef, async (snapshot) => {
       const remoteVersion = snapshot.data()?.version ?? 0;
       const localVersionStr = await AsyncStorage.getItem(VERSION_KEY);
-      const localVersion = localVersionStr ? parseInt(localVersionStr) : 0;
+      const localVersion = localVersionStr ? parseInt(localVersionStr) : -1;
 
       if (remoteVersion > localVersion) {
         try {
