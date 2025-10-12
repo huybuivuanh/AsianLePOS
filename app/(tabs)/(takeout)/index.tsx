@@ -1,3 +1,4 @@
+import OrderSheet from "@/components/takeout/OrderSheet";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useMemo, useState } from "react";
 import { Text, TextInput } from "react-native";
@@ -8,8 +9,8 @@ import SearchResults from "../../../components/takeout/SearchResults";
 export default function TakeOut() {
   const { categories, menuItems, loading } = useMenuStore();
   const [query, setQuery] = useState("");
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
-  // --- Compute visible items (only those referenced by categories) ---
   const visibleItems = useMemo(() => {
     const allowedIds = new Set<number | string>();
     categories.forEach((cat) =>
@@ -18,7 +19,6 @@ export default function TakeOut() {
     return menuItems.filter((item) => allowedIds.has(item.id!));
   }, [categories, menuItems]);
 
-  // --- Precompute items per category for default view ---
   const categoryItemsMap = useMemo(() => {
     const map = new Map<string, typeof visibleItems>();
     categories.forEach((cat) => {
@@ -30,7 +30,6 @@ export default function TakeOut() {
     return map;
   }, [categories, visibleItems]);
 
-  // --- Early returns ---
   if (loading) {
     return (
       <SafeAreaView className="flex-1 justify-center items-center bg-gray-100">
@@ -59,13 +58,27 @@ export default function TakeOut() {
 
       {/* Conditional rendering */}
       {query.trim() ? (
-        <SearchResults items={visibleItems} query={query} />
+        <SearchResults
+          items={visibleItems}
+          query={query}
+          onSelectItem={setSelectedItem}
+        />
       ) : (
         <CategoryList
           categories={categories}
           categoryItemsMap={categoryItemsMap}
+          onSelectItem={setSelectedItem} // <-- pass callback
         />
       )}
+
+      {/* Single top-level sheet */}
+      <OrderSheet
+        item={selectedItem}
+        onSubmit={(itemId, quantity, instructions) => {
+          console.log({ itemId, quantity, instructions });
+        }}
+        onClose={() => setSelectedItem(null)}
+      />
     </SafeAreaView>
   );
 }

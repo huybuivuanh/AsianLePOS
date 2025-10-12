@@ -1,11 +1,12 @@
-import { FlatList, Text, View } from "react-native";
+import { FlatList, Text, TouchableOpacity, View } from "react-native";
 
 type Props = {
   category: FoodCategory;
   items: MenuItem[];
+  onSelectItem: (item: MenuItem) => void;
 };
 
-export default function CategoryItem({ category, items }: Props) {
+export default function CategoryItem({ category, items, onSelectItem }: Props) {
   return (
     <View className="mb-8">
       <Text className="text-2xl font-semibold text-gray-900 mb-3">
@@ -18,12 +19,15 @@ export default function CategoryItem({ category, items }: Props) {
           keyExtractor={(item) => item.id!}
           scrollEnabled={false}
           renderItem={({ item }) => (
-            <View className="mb-2 p-3 bg-gray-100 rounded-xl">
+            <TouchableOpacity
+              className="mb-2 p-3 bg-gray-100 rounded-xl"
+              onPress={() => onSelectItem(item)}
+            >
               <Text className="text-lg font-medium text-gray-800">
                 {item.name}
               </Text>
               <Text className="text-gray-600">${item.price.toFixed(2)}</Text>
-            </View>
+            </TouchableOpacity>
           )}
         />
       ) : (

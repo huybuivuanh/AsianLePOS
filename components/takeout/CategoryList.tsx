@@ -4,9 +4,14 @@ import CategoryItem from "./CategoryItem";
 type Props = {
   categories: FoodCategory[];
   categoryItemsMap: Map<string, MenuItem[]>;
+  onSelectItem: (item: MenuItem) => void;
 };
 
-export default function CategoryList({ categories, categoryItemsMap }: Props) {
+export default function CategoryList({
+  categories,
+  categoryItemsMap,
+  onSelectItem,
+}: Props) {
   return (
     <FlatList
       data={categories}
@@ -14,7 +19,13 @@ export default function CategoryList({ categories, categoryItemsMap }: Props) {
       contentContainerStyle={{ paddingBottom: 100 }}
       renderItem={({ item: category }) => {
         const items = categoryItemsMap.get(category.id!) ?? [];
-        return <CategoryItem category={category} items={items} />;
+        return (
+          <CategoryItem
+            category={category}
+            items={items}
+            onSelectItem={onSelectItem}
+          />
+        );
       }}
     />
   );
