@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function ReviewOrderScreen() {
+export default function ReviewOrder() {
   const router = useRouter();
   const {
     order,
@@ -55,7 +55,7 @@ export default function ReviewOrderScreen() {
         }}
       />
 
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
+      <ScrollView className="p-16">
         {order.orderItems.length === 0 ? (
           <Text className="text-gray-500 text-center mt-10">
             Your order is empty.
