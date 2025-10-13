@@ -1,15 +1,19 @@
-import OrderSheet from "@/components/takeout/OrderSheet";
 import { useMenuStore } from "@/stores/useMenuStore";
-import { useMemo, useState } from "react";
-import { Text, TextInput } from "react-native";
+import { useModalStore } from "@/stores/useModalStore";
+import { useOrderStore } from "@/stores/useOrderStore";
+import { useRouter } from "expo-router";
+import React, { useMemo, useState } from "react";
+import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import CategoryList from "../../../components/takeout/CategoryList";
-import SearchResults from "../../../components/takeout/SearchResults";
+import CategoryList from "../../components/takeout/CategoryList";
+import SearchResults from "../../components/takeout/SearchResults";
 
 export default function TakeOut() {
+  const router = useRouter();
   const { categories, menuItems, loading } = useMenuStore();
+  const { openModal } = useModalStore();
   const [query, setQuery] = useState("");
-  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const { addItem } = useOrderStore();
 
   const visibleItems = useMemo(() => {
     const allowedIds = new Set<number | string>();
@@ -30,25 +34,20 @@ export default function TakeOut() {
     return map;
   }, [categories, visibleItems]);
 
-  if (loading) {
-    return (
-      <SafeAreaView className="flex-1 justify-center items-center bg-gray-100">
-        <Text className="text-lg font-medium">Loading menu...</Text>
-      </SafeAreaView>
-    );
-  }
+  if (loading) return <Text>Loading...</Text>;
+  if (!categories.length) return <Text>No categories found</Text>;
 
-  if (!categories.length) {
-    return (
-      <SafeAreaView className="flex-1 justify-center items-center bg-gray-100">
-        <Text className="text-lg font-medium">No categories found</Text>
-      </SafeAreaView>
-    );
-  }
+  const handleSelectItem = (item: MenuItem) => {
+    openModal("itemSheet", {
+      item,
+      onSubmit: (orderItem: OrderItem) => {
+        addItem(orderItem);
+      },
+    });
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-white p-4">
-      {/* Search bar */}
       <TextInput
         placeholder="Search for an item..."
         value={query}
@@ -56,29 +55,28 @@ export default function TakeOut() {
         className="border border-gray-300 rounded-lg p-3 mb-4"
       />
 
-      {/* Conditional rendering */}
       {query.trim() ? (
         <SearchResults
           items={visibleItems}
           query={query}
-          onSelectItem={setSelectedItem}
+          onSelectItem={handleSelectItem}
         />
       ) : (
         <CategoryList
           categories={categories}
           categoryItemsMap={categoryItemsMap}
-          onSelectItem={setSelectedItem} // <-- pass callback
+          onSelectItem={handleSelectItem}
         />
       )}
 
-      {/* Single top-level sheet */}
-      <OrderSheet
-        item={selectedItem}
-        onSubmit={(itemId, quantity, instructions) => {
-          console.log({ itemId, quantity, instructions });
-        }}
-        onClose={() => setSelectedItem(null)}
-      />
+      <View className="absolute bottom-4 left-0 right-0 px-4">
+        <TouchableOpacity
+          className="bg-gray-800 py-3 rounded-lg items-center"
+          onPress={() => router.push("/takeout/revieworder")}
+        >
+          <Text className="text-white font-bold text-lg">View Order</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }

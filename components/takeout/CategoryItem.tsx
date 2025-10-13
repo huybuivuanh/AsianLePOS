@@ -3,7 +3,7 @@ import { FlatList, Text, TouchableOpacity, View } from "react-native";
 type Props = {
   category: FoodCategory;
   items: MenuItem[];
-  onSelectItem: (item: MenuItem) => void;
+  onSelectItem: (item: MenuItem) => void; // pass only ID
 };
 
 export default function CategoryItem({ category, items, onSelectItem }: Props) {
@@ -21,7 +21,7 @@ export default function CategoryItem({ category, items, onSelectItem }: Props) {
           renderItem={({ item }) => (
             <TouchableOpacity
               className="mb-2 p-3 bg-gray-100 rounded-xl"
-              onPress={() => onSelectItem(item)}
+              onPress={() => onSelectItem(item)} // pass ID
             >
               <Text className="text-lg font-medium text-gray-800">
                 {item.name}

@@ -23,7 +23,7 @@ declare global {
     price: number;
     optionGroupIds?: string[];
     categoryIds?: string[];
-    kitchenType: string;
+    kitchenType: KitchenType;
     createdAt: Date;
   };
 
@@ -43,5 +43,28 @@ declare global {
     price: number;
     groupIds?: string[];
     createdAt: Date;
+  };
+
+  type OrderItem = {
+    id?: string;
+    item: MenuItem;
+    price: number;
+    quantity: number;
+    options?: ItemOtpion[];
+    instructions?: string;
+  };
+
+  type Order = {
+    id?: string;
+    name?: string;
+    phoneNumber?: string;
+    staff: User;
+    orderType: OrderType;
+    table?: string;
+    orderItems: OrderItem[];
+    total: number;
+    status: OrderStatus;
+    printed: boolean;
+    created?: string;
   };
 }

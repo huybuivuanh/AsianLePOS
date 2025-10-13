@@ -4,7 +4,7 @@ import CategoryItem from "./CategoryItem";
 type Props = {
   categories: FoodCategory[];
   categoryItemsMap: Map<string, MenuItem[]>;
-  onSelectItem: (item: MenuItem) => void;
+  onSelectItem: (item: MenuItem) => void; // pass only ID
 };
 
 export default function CategoryList({

@@ -1,4 +1,5 @@
 // app/(tabs)/layout.tsx
+import ModalProvider from "@/providers/ModalProvider";
 import { loadCachedMenu, useMenuStore } from "@/stores/useMenuStore";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
@@ -35,60 +36,67 @@ export default function TabsLayout() {
   }
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: "#1D4ED8",
-        tabBarInactiveTintColor: "#6B7280",
-        tabBarStyle: { backgroundColor: "#F3F4F6", height: 80 },
-        tabBarLabelStyle: { fontSize: 12, marginBottom: 5 },
-      }}
-    >
-      <Tabs.Screen
-        name="(takeout)/index"
-        options={{
-          title: "Take Out",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="fast-food-outline" color={color} size={size} />
-          ),
+    <>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: "#1D4ED8",
+          tabBarInactiveTintColor: "#6B7280",
+          tabBarStyle: { backgroundColor: "#F3F4F6", height: 80 },
+          tabBarLabelStyle: { fontSize: 12, marginBottom: 5 },
         }}
-      />
-      <Tabs.Screen
-        name="dinein"
-        options={{
-          title: "Dine In",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="restaurant-outline" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="liveorders"
-        options={{
-          title: "Live Orders",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list-outline" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="orderhistory"
-        options={{
-          title: "History",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="receipt-outline" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Profile",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-circle-outline" color={color} size={size} />
-          ),
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: "Take Out",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="fast-food-outline" color={color} size={size} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="dinein"
+          options={{
+            title: "Dine In",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="restaurant-outline" color={color} size={size} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="liveorders"
+          options={{
+            title: "Live Orders",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="list-outline" color={color} size={size} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="orderhistory"
+          options={{
+            title: "History",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="receipt-outline" color={color} size={size} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: "Profile",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons
+                name="person-circle-outline"
+                color={color}
+                size={size}
+              />
+            ),
+          }}
+        />
+      </Tabs>
+      <ModalProvider />
+    </>
   );
 }
