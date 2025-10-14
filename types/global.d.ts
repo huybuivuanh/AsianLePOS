@@ -2,11 +2,9 @@ export {};
 
 declare global {
   type User = {
-    id?: string;
+    id: string;
     name: string;
-    email: string;
-    role: string;
-    createdAt: Date;
+    email?: string;
   };
 
   type FoodCategory = {
@@ -70,8 +68,8 @@ declare global {
     phoneNumber?: string;
     staff: User;
     readyTime?: number;
-    preOrder: boolean;
-    preOrderTime?: Date;
+    isPreorder: boolean;
+    preorderTime?: Date;
     orderType: OrderType;
     table?: string;
     orderItems: OrderItem[];

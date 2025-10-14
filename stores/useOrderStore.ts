@@ -1,120 +1,164 @@
 import { db } from "@/lib/firebaseConfig";
 import { OrderStatus, OrderType } from "@/types/enum";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection } from "firebase/firestore";
 import { create } from "zustand";
 
+// --- Zustand state ---
 type OrderState = {
-  order: Order;
+  orderItems: OrderItem[];
+  customerName: string;
+  customerPhone: string;
+  readyTime: number;
+  isPreorder: boolean;
+  preorderDate: Date;
+  orderType: OrderType;
+  table?: string;
+
+  // actions
+  setCustomerName: (name: string) => void;
+  setCustomerPhone: (phone: string) => void;
+  setReadyTime: (minutes: number) => void;
+  setIsPreorder: (v: boolean) => void;
+  setPreorderDate: (date: Date) => void;
+  setOrderType: (type: OrderType) => void;
+  setTable: (table: string) => void;
+
   addItem: (item: OrderItem) => void;
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   clearOrder: () => void;
+
   getTotalItems: () => number;
   getOrderTotal: () => number;
-  submitOrder: (orderData?: Partial<Order>) => Promise<string>;
-  setOrder: (order: Partial<Order>) => void;
+
+  submitOrder: (staff: User) => Promise<string>;
 };
 
-const emptyOrder: Order = {
-  staff: {
-    id: "",
-    name: "",
-    email: "",
-    role: "",
-    createdAt: new Date(),
-  },
-  orderType: OrderType.TakeOut,
+// --- initial state ---
+const emptyOrderState: Omit<OrderState, "submitOrder"> = {
   orderItems: [],
-  total: 0,
-  status: OrderStatus.Pending,
-  printed: false,
-  created: new Date().toISOString(),
+  customerName: "",
+  customerPhone: "",
+  readyTime: 20,
+  isPreorder: false,
+  preorderDate: new Date(),
+  orderType: OrderType.TakeOut,
+  table: undefined,
+
+  setCustomerName: () => {},
+  setCustomerPhone: () => {},
+  setReadyTime: () => {},
+  setIsPreorder: () => {},
+  setPreorderDate: () => {},
+  setOrderType: () => {},
+  setTable: () => {},
+
+  addItem: () => {},
+  removeItem: () => {},
+  updateQuantity: () => {},
+  clearOrder: () => {},
+
+  getTotalItems: () => 0,
+  getOrderTotal: () => 0,
 };
 
+// --- Zustand store ---
 export const useOrderStore = create<OrderState>((set, get) => ({
-  order: emptyOrder,
+  ...emptyOrderState,
+
+  setCustomerName: (name) => set({ customerName: name }),
+  setCustomerPhone: (phone) => set({ customerPhone: phone }),
+  setReadyTime: (readyTime) => set({ readyTime }),
+  setIsPreorder: (isPreorder) => set({ isPreorder }),
+  setPreorderDate: (preorderDate) => set({ preorderDate }),
+  setOrderType: (orderType) => set({ orderType }),
+  setTable: (table) => set({ table }),
 
   addItem: (item) => {
-    const currentOrder = get().order;
-    const updatedOrder = {
-      ...currentOrder,
-      orderItems: [...currentOrder.orderItems, { ...item }],
-    };
-
-    set({ order: updatedOrder });
+    const currentItems = get().orderItems;
+    set({ orderItems: [...currentItems, { ...item }] });
   },
 
   removeItem: (itemId) => {
-    const currentOrder = get().order;
-    set({
-      order: {
-        ...currentOrder,
-        orderItems: currentOrder.orderItems.filter((i) => i.id !== itemId),
-      },
-    });
+    const currentItems = get().orderItems;
+    set({ orderItems: currentItems.filter((i) => i.id !== itemId) });
   },
 
   updateQuantity: (itemId, quantity) => {
-    const currentOrder = get().order;
     if (quantity <= 0) {
       get().removeItem(itemId);
       return;
     }
-
+    const currentItems = get().orderItems;
     set({
-      order: {
-        ...currentOrder,
-        orderItems: currentOrder.orderItems.map((i) =>
-          i.id === itemId ? { ...i, quantity } : i
-        ),
-      },
+      orderItems: currentItems.map((i) =>
+        i.id === itemId ? { ...i, quantity } : i
+      ),
     });
   },
 
   clearOrder: () => {
-    set({ order: { ...emptyOrder } });
+    set({
+      orderItems: [],
+      customerName: "",
+      customerPhone: "",
+      readyTime: 20,
+      isPreorder: false,
+      preorderDate: new Date(),
+      orderType: OrderType.TakeOut,
+      table: undefined,
+    });
   },
 
   getTotalItems: () => {
-    return get().order.orderItems.reduce((acc, item) => acc + item.quantity, 0);
+    return get().orderItems.reduce((acc, item) => acc + item.quantity, 0);
   },
 
   getOrderTotal: () => {
-    return get().order.orderItems.reduce(
+    return get().orderItems.reduce(
       (acc, item) => acc + item.price * item.quantity,
       0
     );
   },
 
-  submitOrder: async (orderData) => {
-    const currentOrder = get().order;
-    const orderItems = currentOrder.orderItems;
-    if (orderItems.length === 0) throw new Error("Cannot submit empty order.");
+  submitOrder: async (staff: User) => {
+    const state = get();
 
-    const total = get().getOrderTotal();
+    if (state.orderItems.length === 0)
+      throw new Error("Cannot submit empty order.");
+    if (!state.customerName && !state.customerPhone)
+      throw new Error("Missing customer info.");
 
-    const orderToSubmit: Omit<Order, "id"> = {
-      ...currentOrder,
-      ...orderData,
-      orderItems,
+    const total = state.orderItems.reduce(
+      (acc, i) => acc + i.price * i.quantity,
+      0
+    );
+
+    const orderToSubmit: Partial<Order> = {
+      staff,
+      orderType: state.orderType,
+      orderItems: state.orderItems,
       total,
-      printed: false,
       status: OrderStatus.Pending,
-      created: new Date().toISOString(),
+      printed: false,
+      createdAt: new Date(),
+      isPreorder: state.isPreorder,
     };
 
-    const docRef = await addDoc(collection(db, "orders"), {
-      ...orderToSubmit,
-      createdAt: serverTimestamp(),
-    });
+    if (state.customerName) orderToSubmit.name = state.customerName;
+    if (state.customerPhone) orderToSubmit.phoneNumber = state.customerPhone;
+    if (state.table) orderToSubmit.table = state.table;
+    if (state.isPreorder) {
+      orderToSubmit.preorderTime = state.preorderDate;
+    } else {
+      orderToSubmit.readyTime = state.readyTime;
+    }
+
+    const docRef = await addDoc(collection(db, "takeOutOrders"), orderToSubmit);
 
     get().clearOrder();
-
     return docRef.id;
   },
-
-  setOrder: (partialOrder) => {
-    const currentOrder = get().order;
-    set({ order: { ...currentOrder, ...partialOrder } });
-  },
 }));
+
+export {};

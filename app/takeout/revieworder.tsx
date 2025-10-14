@@ -1,53 +1,62 @@
+import OrderFooter from "@/components/takeout/reviewOrder/OrderFooter";
+import OrderItemCard from "@/components/takeout/reviewOrder/OrderItemCard";
+import { useAuth } from "@/providers/AuthProvider";
+import { useOrderStore } from "@/stores/useOrderStore";
 import { Stack, useRouter } from "expo-router";
 import React, { useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Text } from "react-native";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Text,
+  TouchableOpacity,
+} from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useOrderStore } from "@/stores/useOrderStore";
-
-// Components
-import OrderFooter from "@/components/takeout/reviewOrder/OrderFooter";
-import OrderItemCard from "@/components/takeout/reviewOrder/OrderItemCard";
-
 export default function ReviewOrder() {
   const router = useRouter();
-  const { order, updateQuantity, getTotalItems, getOrderTotal, submitOrder } =
-    useOrderStore();
+  const {
+    orderItems,
+    submitOrder,
+    customerName,
+    setCustomerName,
+    customerPhone,
+    setCustomerPhone,
+    readyTime,
+    setReadyTime,
+    isPreorder,
+    setIsPreorder,
+    preorderDate,
+    setPreorderDate,
+    orderType,
+    setOrderType,
+    table,
+    setTable,
+    getTotalItems,
+    getOrderTotal,
+    updateQuantity,
+  } = useOrderStore();
 
   // Local state
   const [submitting, setSubmitting] = useState(false);
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [readyTime, setReadyTime] = useState(15);
-  const [isPreorder, setIsPreorder] = useState(false);
-  const [preorderDate, setPreorderDate] = useState(new Date());
+  const [footerVisible, setFooterVisible] = useState(false);
+  const { user } = useAuth();
 
   // Handle order submission
   const handleSubmit = async () => {
-    if (order.orderItems.length === 0) {
-      Alert.alert("Empty Order", "Please add some items before submitting.");
+    if (!user) {
+      Alert.alert("Error", "You must be logged in to submit an order.");
       return;
     }
-
-    if (!customerName && !customerPhone) {
-      Alert.alert("Missing Info", "Please enter a name or phone number.");
-      return;
-    }
-
     try {
+      const staff: User = {
+        id: user.uid,
+        name: user.displayName || "Unknown",
+        email: user.email || undefined,
+      };
       setSubmitting(true);
-
-      const id = await submitOrder({
-        staff: order.staff,
-        orderType: order.orderType,
-        name: customerName,
-        phoneNumber: customerPhone,
-        readyTime: isPreorder ? 0 : readyTime,
-        // preOrder: isPreorder ? preorderDate : true,
-      });
-
-      Alert.alert("Success", `Order submitted successfully (ID: ${id})`);
+      await submitOrder(staff);
       router.back();
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to submit order.");
@@ -57,9 +66,7 @@ export default function ReviewOrder() {
   };
 
   const isSubmitDisabled =
-    submitting ||
-    order.orderItems.length === 0 ||
-    (!customerName && !customerPhone);
+    submitting || orderItems.length === 0 || (!customerName && !customerPhone);
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -74,20 +81,20 @@ export default function ReviewOrder() {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"} // iOS padding, Android height
-        keyboardVerticalOffset={90} // adjust if you have a header
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={90}
       >
         {/* Scrollable content */}
         <KeyboardAwareScrollView
-          className="flex-1 p-4"
+          className="flex-1 px-4"
           keyboardShouldPersistTaps="handled"
         >
-          {order.orderItems.length === 0 ? (
+          {orderItems.length === 0 ? (
             <Text className="text-gray-500 text-center mt-10">
               Your order is empty.
             </Text>
           ) : (
-            order.orderItems.map((item, index) => (
+            orderItems.map((item, index) => (
               <OrderItemCard
                 key={`${item.id}-${index}`}
                 item={item}
@@ -97,24 +104,41 @@ export default function ReviewOrder() {
           )}
         </KeyboardAwareScrollView>
 
+        {orderItems.length > 0 && (
+          <TouchableOpacity
+            onPress={() => setFooterVisible(!footerVisible)}
+            className="bg-orange-300 py-4 px-4 rounded-lg mx-4 mb-2 items-center"
+          >
+            <Text className="text-gray-800 font-medium">
+              {footerVisible ? "Hide Submit Section" : "Show Submit Section"}
+            </Text>
+          </TouchableOpacity>
+        )}
+
         {/* Footer (customer info, time selectors, submit) */}
-        <OrderFooter
-          onSubmit={handleSubmit}
-          submitting={submitting}
-          disabled={isSubmitDisabled}
-          totalItems={getTotalItems()}
-          totalPrice={getOrderTotal()}
-          customerName={customerName}
-          customerPhone={customerPhone}
-          setCustomerName={setCustomerName}
-          setCustomerPhone={setCustomerPhone}
-          readyTime={readyTime}
-          setReadyTime={setReadyTime}
-          isPreorder={isPreorder}
-          setIsPreorder={setIsPreorder}
-          preorderDate={preorderDate}
-          setPreorderDate={setPreorderDate}
-        />
+        {footerVisible && (
+          <OrderFooter
+            onSubmit={handleSubmit}
+            submitting={submitting}
+            disabled={isSubmitDisabled}
+            totalItems={getTotalItems()}
+            totalPrice={getOrderTotal()}
+            customerName={customerName}
+            customerPhone={customerPhone}
+            setCustomerName={setCustomerName}
+            setCustomerPhone={setCustomerPhone}
+            readyTime={readyTime}
+            setReadyTime={setReadyTime}
+            isPreorder={isPreorder}
+            setIsPreorder={setIsPreorder}
+            preorderDate={preorderDate}
+            setPreorderDate={setPreorderDate}
+            orderType={orderType}
+            setOrderType={setOrderType}
+            table={table}
+            setTable={setTable}
+          />
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

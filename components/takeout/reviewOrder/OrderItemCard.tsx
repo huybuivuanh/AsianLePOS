@@ -1,21 +1,6 @@
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
-interface Option {
-  id: string;
-  name: string;
-  price: number;
-}
-
-interface OrderItem {
-  id?: string;
-  quantity: number;
-  price: number;
-  item: { name: string };
-  options?: Option[];
-  instructions?: string;
-}
-
 interface Props {
   item: OrderItem;
   onChangeQuantity: (id: string, newQuantity: number) => void;

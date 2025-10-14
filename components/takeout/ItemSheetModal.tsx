@@ -59,12 +59,16 @@ export default function ItemSheetModal({ item, onSubmit, onClose }: Props) {
     });
   };
 
-  // Handle submission
   const handleSubmit = () => {
+    if (!item || !options || !optionGroups) return;
+
     // Validate minSelection
-    for (const group of item.optionGroupIds
-      ?.map((id) => optionGroups.find((g) => g.id === id))
-      .filter(Boolean) as OptionGroup[]) {
+    const groups =
+      (item.optionGroupIds
+        ?.map((id) => optionGroups.find((g) => g.id === id))
+        .filter(Boolean) as OptionGroup[]) || [];
+
+    for (const group of groups) {
       const selectedCount = selectedOptions[group.id!]?.length || 0;
       if (selectedCount < group.minSelection) {
         Alert.alert(
@@ -75,7 +79,7 @@ export default function ItemSheetModal({ item, onSubmit, onClose }: Props) {
       }
     }
 
-    // Flatten selected options into actual ItemOption objects
+    // Flatten selected options
     const optionsToSubmit: ItemOption[] = [];
     Object.entries(selectedOptions).forEach(([groupId, optionIds]) => {
       optionIds.forEach((optId) => {
@@ -84,20 +88,20 @@ export default function ItemSheetModal({ item, onSubmit, onClose }: Props) {
       });
     });
 
-    const optionPrice = optionsToSubmit.reduce(
-      (acc, option) => acc + (option.price || 0),
-      0
-    );
+    const orderItemPrice =
+      optionsToSubmit.reduce((acc, option) => acc + (option.price || 0), 0) +
+      (item.price || 0);
 
-    const orderItemPrice = item.price + optionPrice;
-
-    onSubmit({
+    const cleanItem: OrderItem = {
       item: item,
       price: orderItemPrice,
-      quantity,
-      instructions,
-      options: optionsToSubmit,
-    });
+      quantity: quantity,
+      ...(instructions !== "" && { instructions }),
+      ...(optionsToSubmit.length > 0 && { options: optionsToSubmit }),
+    };
+
+    onSubmit(cleanItem);
+
     bottomSheetRef.current?.dismiss();
     onClose();
   };

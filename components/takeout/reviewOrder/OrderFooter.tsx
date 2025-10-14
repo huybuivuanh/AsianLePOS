@@ -1,3 +1,4 @@
+import { OrderType } from "@/types/enum";
 import React from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import CustomerInfoForm from "./CustomerInfoForm";
@@ -21,6 +22,11 @@ interface Props {
   setIsPreorder: (v: boolean) => void;
   preorderDate: Date;
   setPreorderDate: (d: Date) => void;
+
+  orderType: OrderType;
+  setOrderType: (v: OrderType) => void;
+  table?: string;
+  setTable: (v: string) => void;
 }
 
 export default function OrderFooter({
@@ -39,6 +45,10 @@ export default function OrderFooter({
   setIsPreorder,
   preorderDate,
   setPreorderDate,
+  orderType,
+  setOrderType,
+  table,
+  setTable,
 }: Props) {
   return (
     <View className="p-4 bg-white border-t border-gray-200">
@@ -62,7 +72,7 @@ export default function OrderFooter({
         onPress={onSubmit}
         disabled={disabled}
         className={`py-3 rounded-lg items-center ${
-          disabled ? "bg-gray-500" : "bg-gray-800"
+          disabled ? "bg-gray-300" : "bg-gray-800"
         }`}
       >
         {submitting ? (
