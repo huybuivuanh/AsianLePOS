@@ -54,17 +54,30 @@ declare global {
     instructions?: string;
   };
 
+  type ItemChange = {
+    description: string;
+    price: number;
+  };
+
+  type AddExtra = {
+    description: string;
+    price: number;
+  };
+
   type Order = {
     id?: string;
     name?: string;
     phoneNumber?: string;
     staff: User;
+    readyTime?: number;
+    preOrder: boolean;
+    preOrderTime?: Date;
     orderType: OrderType;
     table?: string;
     orderItems: OrderItem[];
     total: number;
     status: OrderStatus;
     printed: boolean;
-    created?: string;
+    createdAt: Date;
   };
 }

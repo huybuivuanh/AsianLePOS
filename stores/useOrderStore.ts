@@ -8,7 +8,7 @@ type OrderState = {
   addItem: (item: OrderItem) => void;
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
-  clearCart: () => void;
+  clearOrder: () => void;
   getTotalItems: () => number;
   getOrderTotal: () => number;
   submitOrder: (orderData?: Partial<Order>) => Promise<string>;
@@ -36,35 +36,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
   addItem: (item) => {
     const currentOrder = get().order;
-    const existingItem = currentOrder.orderItems.find((i) => i.id === item.id);
+    const updatedOrder = {
+      ...currentOrder,
+      orderItems: [...currentOrder.orderItems, { ...item }],
+    };
 
-    if (existingItem) {
-      // merge quantities and instructions
-      const updatedItems = currentOrder.orderItems.map((i) =>
-        i.id === item.id
-          ? {
-              ...i,
-              quantity: i.quantity + item.quantity,
-              instructions: item.instructions || i.instructions,
-            }
-          : i
-      );
-
-      set({ order: { ...currentOrder, orderItems: updatedItems } });
-    } else {
-      const optionTotal =
-        item.options?.reduce((sum, opt) => sum + opt.price, 0) ?? 0;
-      const totalPrice = item.item.price + optionTotal;
-
-      const updatedOrder = {
-        ...currentOrder,
-        orderItems: [
-          ...currentOrder.orderItems,
-          { ...item, price: totalPrice },
-        ],
-      };
-      set({ order: updatedOrder });
-    }
+    set({ order: updatedOrder });
   },
 
   removeItem: (itemId) => {
@@ -94,7 +71,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     });
   },
 
-  clearCart: () => {
+  clearOrder: () => {
     set({ order: { ...emptyOrder } });
   },
 
@@ -131,7 +108,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       createdAt: serverTimestamp(),
     });
 
-    get().clearCart();
+    get().clearOrder();
 
     return docRef.id;
   },

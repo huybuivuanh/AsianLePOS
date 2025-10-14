@@ -89,7 +89,7 @@ export default function ItemSheetModal({ item, onSubmit, onClose }: Props) {
       0
     );
 
-    const orderItemPrice = (item.price + optionPrice) * quantity;
+    const orderItemPrice = item.price + optionPrice;
 
     onSubmit({
       item: item,

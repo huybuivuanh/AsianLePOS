@@ -1,40 +1,52 @@
-import { useOrderStore } from "@/stores/useOrderStore";
 import { Stack, useRouter } from "expo-router";
 import React, { useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, Text } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import { useOrderStore } from "@/stores/useOrderStore";
+
+// Components
+import OrderFooter from "@/components/takeout/reviewOrder/OrderFooter";
+import OrderItemCard from "@/components/takeout/reviewOrder/OrderItemCard";
 
 export default function ReviewOrder() {
   const router = useRouter();
-  const {
-    order,
-    updateQuantity,
-    removeItem,
-    getTotalItems,
-    getOrderTotal,
-    submitOrder,
-  } = useOrderStore();
-  const [submitting, setSubmitting] = useState(false);
+  const { order, updateQuantity, getTotalItems, getOrderTotal, submitOrder } =
+    useOrderStore();
 
+  // Local state
+  const [submitting, setSubmitting] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [readyTime, setReadyTime] = useState(15);
+  const [isPreorder, setIsPreorder] = useState(false);
+  const [preorderDate, setPreorderDate] = useState(new Date());
+
+  // Handle order submission
   const handleSubmit = async () => {
     if (order.orderItems.length === 0) {
       Alert.alert("Empty Order", "Please add some items before submitting.");
       return;
     }
 
+    if (!customerName && !customerPhone) {
+      Alert.alert("Missing Info", "Please enter a name or phone number.");
+      return;
+    }
+
     try {
       setSubmitting(true);
+
       const id = await submitOrder({
         staff: order.staff,
         orderType: order.orderType,
+        name: customerName,
+        phoneNumber: customerPhone,
+        readyTime: isPreorder ? 0 : readyTime,
+        // preOrder: isPreorder ? preorderDate : true,
       });
+
       Alert.alert("Success", `Order submitted successfully (ID: ${id})`);
       router.back();
     } catch (error: any) {
@@ -44,9 +56,14 @@ export default function ReviewOrder() {
     }
   };
 
+  const isSubmitDisabled =
+    submitting ||
+    order.orderItems.length === 0 ||
+    (!customerName && !customerPhone);
+
   return (
     <SafeAreaView className="flex-1 bg-white">
-      {/* Custom header */}
+      {/* Header */}
       <Stack.Screen
         options={{
           title: "Review Order",
@@ -55,87 +72,50 @@ export default function ReviewOrder() {
         }}
       />
 
-      <ScrollView className="p-16">
-        {order.orderItems.length === 0 ? (
-          <Text className="text-gray-500 text-center mt-10">
-            Your order is empty.
-          </Text>
-        ) : (
-          order.orderItems.map((orderItem) => (
-            <View
-              key={orderItem.id}
-              className="flex-row justify-between items-center mb-4"
-            >
-              <View className="flex-1">
-                <Text className="text-lg font-semibold">
-                  {orderItem.item.name}
-                </Text>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"} // iOS padding, Android height
+        keyboardVerticalOffset={90} // adjust if you have a header
+      >
+        {/* Scrollable content */}
+        <KeyboardAwareScrollView
+          className="flex-1 p-4"
+          keyboardShouldPersistTaps="handled"
+        >
+          {order.orderItems.length === 0 ? (
+            <Text className="text-gray-500 text-center mt-10">
+              Your order is empty.
+            </Text>
+          ) : (
+            order.orderItems.map((item, index) => (
+              <OrderItemCard
+                key={`${item.id}-${index}`}
+                item={item}
+                onChangeQuantity={updateQuantity}
+              />
+            ))
+          )}
+        </KeyboardAwareScrollView>
 
-                {orderItem.instructions ? (
-                  <Text className="text-sm text-gray-500">
-                    {orderItem.instructions}
-                  </Text>
-                ) : null}
-
-                <Text className="text-sm text-gray-700">
-                  ${orderItem.price.toFixed(2)} × {orderItem.quantity} ={" "}
-                  <Text className="font-semibold">
-                    ${(orderItem.price * orderItem.quantity).toFixed(2)}
-                  </Text>
-                </Text>
-              </View>
-
-              <View className="flex-row items-center space-x-2">
-                <TouchableOpacity
-                  onPress={() =>
-                    updateQuantity(orderItem.id!, orderItem.quantity - 1)
-                  }
-                  className="px-2 py-1 bg-gray-200 rounded"
-                >
-                  <Text>-</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() =>
-                    updateQuantity(orderItem.id!, orderItem.quantity + 1)
-                  }
-                  className="px-2 py-1 bg-gray-200 rounded"
-                >
-                  <Text>+</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => removeItem(orderItem.id!)}
-                  className="px-2 py-1 bg-red-500 rounded"
-                >
-                  <Text className="text-white">Remove</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))
-        )}
-      </ScrollView>
-
-      {/* Footer */}
-      {order.orderItems.length > 0 && (
-        <View className="p-4 border-t border-gray-200">
-          <TouchableOpacity
-            onPress={handleSubmit}
-            disabled={submitting}
-            className={`py-3 rounded-lg items-center ${
-              submitting ? "bg-gray-500" : "bg-gray-800"
-            }`}
-          >
-            {submitting ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text className="text-white font-bold text-base">
-                Submit {getTotalItems()} Items - ${getOrderTotal().toFixed(2)}
-              </Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      )}
+        {/* Footer (customer info, time selectors, submit) */}
+        <OrderFooter
+          onSubmit={handleSubmit}
+          submitting={submitting}
+          disabled={isSubmitDisabled}
+          totalItems={getTotalItems()}
+          totalPrice={getOrderTotal()}
+          customerName={customerName}
+          customerPhone={customerPhone}
+          setCustomerName={setCustomerName}
+          setCustomerPhone={setCustomerPhone}
+          readyTime={readyTime}
+          setReadyTime={setReadyTime}
+          isPreorder={isPreorder}
+          setIsPreorder={setIsPreorder}
+          preorderDate={preorderDate}
+          setPreorderDate={setPreorderDate}
+        />
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
