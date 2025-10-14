@@ -31,6 +31,7 @@ type OrderState = {
   getTotalItems: () => number;
   getOrderTotal: () => number;
 
+  setOrder: (order: Order) => void;
   submitOrder: (staff: User) => Promise<string>;
 };
 
@@ -52,14 +53,13 @@ const emptyOrderState: Omit<OrderState, "submitOrder"> = {
   setPreorderDate: () => {},
   setOrderType: () => {},
   setTable: () => {},
-
   addItem: () => {},
   removeItem: () => {},
   updateQuantity: () => {},
   clearOrder: () => {},
-
   getTotalItems: () => 0,
   getOrderTotal: () => 0,
+  setOrder: () => {},
 };
 
 // --- Zustand store ---
@@ -119,6 +119,21 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       (acc, item) => acc + item.price * item.quantity,
       0
     );
+  },
+
+  setOrder: (order) => {
+    if (!order) return;
+    set((state) => ({
+      ...state,
+      orderItems: order.orderItems ?? state.orderItems,
+      customerName: order.name ?? state.customerName,
+      customerPhone: order.phoneNumber ?? state.customerPhone,
+      readyTime: order.readyTime ?? state.readyTime,
+      isPreorder: order.isPreorder ?? state.isPreorder,
+      preorderDate: order.preorderTime ?? state.preorderDate,
+      orderType: order.orderType ?? state.orderType,
+      table: order.table ?? state.table,
+    }));
   },
 
   submitOrder: async (staff: User) => {

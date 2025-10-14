@@ -1,5 +1,6 @@
 // app/(tabs)/layout.tsx
 import ModalProvider from "@/providers/ModalProvider";
+import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { loadCachedMenu, useMenuStore } from "@/stores/useMenuStore";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
@@ -11,6 +12,7 @@ export default function TabsLayout() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const { subscribeToMenuVersion, loading: menuLoading } = useMenuStore();
+  const { subscribeToLiveOrders } = useLiveOrdersStore();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -22,10 +24,13 @@ export default function TabsLayout() {
     if (!user) return;
     loadCachedMenu();
     const unsubscribe = subscribeToMenuVersion();
+    const unsubscribeToLiveOrders = subscribeToLiveOrders();
+
     return () => {
       unsubscribe?.();
+      unsubscribeToLiveOrders?.();
     };
-  }, [user, subscribeToMenuVersion]);
+  }, [user, subscribeToMenuVersion, subscribeToLiveOrders]);
 
   if (authLoading || !user || menuLoading) {
     return (
