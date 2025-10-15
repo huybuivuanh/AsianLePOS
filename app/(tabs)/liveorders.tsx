@@ -17,7 +17,7 @@ export default function LiveOrders() {
   const { takeOutOrders, loading } = useLiveOrdersStore();
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const router = useRouter();
-  const { setOrder } = useOrderStore();
+  const { setOrder, setEditingOrder } = useOrderStore();
 
   const toggleExpand = (id: string) => {
     setExpandedOrderId((prev) => (prev === id ? null : id));
@@ -42,6 +42,7 @@ export default function LiveOrders() {
   };
 
   function handleEditOrder(order: Order) {
+    setEditingOrder(true);
     setOrder(order);
     router.push("/liveorders/editorder");
   }
@@ -115,7 +116,7 @@ export default function LiveOrders() {
                 key={`${orderItem.id} ${index}`}
                 className="flex-row justify-between items-center mb-1"
               >
-                <View className="flex-row justify-between items-start mb-4 p-4 rounded-lg">
+                <View className="flex-row justify-between items-start p-1 rounded-lg">
                   <View className="flex-1">
                     <Text className="text-m font-semibold">
                       {orderItem.quantity} x {orderItem.item.name} - $

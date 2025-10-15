@@ -1,13 +1,21 @@
 import { db } from "@/lib/firebaseConfig";
 import { OrderStatus, OrderType } from "@/types/enum";
-import { addDoc, collection, Timestamp } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  doc,
+  Timestamp,
+  updateDoc,
+} from "firebase/firestore";
 import { create } from "zustand";
 
 // Types
 type OrderState = {
   order: Partial<Order>;
+  editingOrder: boolean;
 
   // actions
+  setEditingOrder: (editing: boolean) => void;
   updateOrder: (fields: Partial<Order>) => void;
   addItem: (item: OrderItem) => void;
   removeItem: (itemId: string) => void;
@@ -17,6 +25,7 @@ type OrderState = {
   getOrderTotal: () => number;
   setOrder: (order: Order) => void;
   submitOrder: (staff: User) => Promise<string>;
+  updateOrderOnFirestore: (staff: User) => Promise<void>;
 };
 
 // Default "empty" order
@@ -31,6 +40,9 @@ const defaultOrder: Partial<Order> = {
 
 export const useOrderStore = create<OrderState>((set, get) => ({
   order: { ...defaultOrder },
+  editingOrder: false,
+
+  setEditingOrder: (editing) => set({ editingOrder: editing }),
 
   updateOrder: (fields) =>
     set((state) => ({
@@ -114,5 +126,25 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
     get().clearOrder();
     return docRef.id;
+  },
+
+  updateOrderOnFirestore: async (staff: User) => {
+    const { order } = get();
+
+    if (!order.id) throw new Error("Cannot update order without ID.");
+
+    const orderRef = doc(db, "takeOutOrders", order.id);
+
+    // Include staff info in the update
+    const updateData: Partial<Order> = {
+      ...order,
+      staff,
+      total: (order.orderItems ?? []).reduce(
+        (acc, i) => acc + i.price * i.quantity,
+        0
+      ),
+    };
+
+    await updateDoc(orderRef, updateData);
   },
 }));

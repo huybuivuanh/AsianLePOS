@@ -1,4 +1,5 @@
 import { useMenuStore } from "@/stores/useMenuStore";
+import { generateFirestoreId } from "@/utils/utils";
 import {
   BottomSheetModal,
   BottomSheetScrollView,
@@ -93,6 +94,7 @@ export default function ItemSheetModal({ item, onSubmit, onClose }: Props) {
       (item.price || 0);
 
     const cleanItem: OrderItem = {
+      id: generateFirestoreId(),
       item: item,
       price: orderItemPrice,
       quantity: quantity,

@@ -18,7 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function EditOrder() {
   const router = useRouter();
-  const { order, updateQuantity, submitOrder, clearOrder } = useOrderStore();
+  const { order, updateOrderOnFirestore, clearOrder } = useOrderStore();
 
   const { user } = useAuth();
 
@@ -40,7 +40,7 @@ export default function EditOrder() {
         email: user.email || undefined,
       };
       setSubmitting(true);
-      await submitOrder(staff);
+      await updateOrderOnFirestore(staff);
       router.back();
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to submit order.");
@@ -95,11 +95,7 @@ export default function EditOrder() {
             </Text>
           ) : (
             order.orderItems.map((item, index) => (
-              <OrderItemCard
-                key={`${item.id}-${index}`}
-                item={item}
-                onChangeQuantity={updateQuantity}
-              />
+              <OrderItemCard key={`${item.id}-${index}`} item={item} />
             ))
           )}
         </KeyboardAwareScrollView>

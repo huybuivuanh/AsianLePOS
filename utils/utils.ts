@@ -1,5 +1,8 @@
 import dayjs from "dayjs";
-import { Timestamp } from "firebase/firestore";
+import { collection, doc, Timestamp } from "firebase/firestore";
+import { db } from "../lib/firebaseConfig";
+
+// Generate a unique ID
 
 export const formatDate = (timestamp: Timestamp) => {
   if (!timestamp) return "";
@@ -9,4 +12,8 @@ export const formatDate = (timestamp: Timestamp) => {
     : new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1_000_000);
 
   return dayjs(date).format("DD MMM YYYY, hh:mm A");
+};
+
+export const generateFirestoreId = () => {
+  return doc(collection(db, "dummy")).id;
 };

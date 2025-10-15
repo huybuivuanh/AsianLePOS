@@ -1,12 +1,14 @@
+import { useOrderStore } from "@/stores/useOrderStore";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
 interface Props {
   item: OrderItem;
-  onChangeQuantity: (id: string, newQuantity: number) => void;
 }
 
-export default function OrderItemCard({ item, onChangeQuantity }: Props) {
+export default function OrderItemCard({ item }: Props) {
+  const { updateQuantity } = useOrderStore();
+
   return (
     <View className="flex-row justify-between items-start mb-4 bg-gray-100 p-4 rounded-lg">
       <View className="flex-1">
@@ -40,7 +42,7 @@ export default function OrderItemCard({ item, onChangeQuantity }: Props) {
         <TouchableOpacity
           className="w-10 h-10 rounded-full bg-gray-200 justify-center items-center mr-4"
           onPress={() =>
-            item.id && onChangeQuantity(item.id, Math.max(item.quantity - 1, 1))
+            item.id && updateQuantity(item.id, Math.max(item.quantity - 1, 1))
           }
         >
           <Text className="text-2xl font-bold">−</Text>
@@ -50,9 +52,7 @@ export default function OrderItemCard({ item, onChangeQuantity }: Props) {
 
         <TouchableOpacity
           className="w-10 h-10 rounded-full bg-gray-200 justify-center items-center ml-4"
-          onPress={() =>
-            item.id && onChangeQuantity(item.id, item.quantity + 1)
-          }
+          onPress={() => item.id && updateQuantity(item.id, item.quantity + 1)}
         >
           <Text className="text-2xl font-bold">＋</Text>
         </TouchableOpacity>

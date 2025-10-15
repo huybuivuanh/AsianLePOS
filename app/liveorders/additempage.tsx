@@ -4,7 +4,7 @@ import { useModalStore } from "@/stores/useModalStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { Text, TextInput } from "react-native";
+import { Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CategoryList from "../../components/takeout/CategoryList";
 import SearchResults from "../../components/takeout/SearchResults";
@@ -48,28 +48,30 @@ export default function AddItemPage() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white p-4">
+    <SafeAreaView className="flex-1 bg-white">
       <Header title="Add Item" onBack={() => router.back()} />
-      <TextInput
-        placeholder="Search for an item..."
-        value={query}
-        onChangeText={setQuery}
-        className="border border-gray-300 rounded-lg p-3 mb-4"
-      />
+      <View className="flex-1 bg-white p-4 pt-6">
+        <TextInput
+          placeholder="Search for an item..."
+          value={query}
+          onChangeText={setQuery}
+          className="border border-gray-300 rounded-lg p-3 mb-4"
+        />
 
-      {query.trim() ? (
-        <SearchResults
-          items={visibleItems}
-          query={query}
-          onSelectItem={handleSelectItem}
-        />
-      ) : (
-        <CategoryList
-          categories={categories}
-          categoryItemsMap={categoryItemsMap}
-          onSelectItem={handleSelectItem}
-        />
-      )}
+        {query.trim() ? (
+          <SearchResults
+            items={visibleItems}
+            query={query}
+            onSelectItem={handleSelectItem}
+          />
+        ) : (
+          <CategoryList
+            categories={categories}
+            categoryItemsMap={categoryItemsMap}
+            onSelectItem={handleSelectItem}
+          />
+        )}
+      </View>
     </SafeAreaView>
   );
 }

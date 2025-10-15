@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default function OrderFooter({ onSubmit, submitting, disabled }: Props) {
-  const { getTotalItems, getOrderTotal } = useOrderStore();
+  const { editingOrder, getTotalItems, getOrderTotal } = useOrderStore();
 
   const totalItems = getTotalItems();
   const totalPrice = getOrderTotal();
@@ -33,7 +33,9 @@ export default function OrderFooter({ onSubmit, submitting, disabled }: Props) {
           <ActivityIndicator color="white" />
         ) : (
           <Text className="text-white font-bold text-base">
-            Submit {totalItems} Items - ${totalPrice.toFixed(2)}
+            {editingOrder
+              ? "Submit Update"
+              : ` Submit ${totalItems} Item(s) - $${totalPrice.toFixed(2)}`}
           </Text>
         )}
       </TouchableOpacity>

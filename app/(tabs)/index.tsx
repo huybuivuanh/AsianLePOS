@@ -14,7 +14,7 @@ export default function TakeOut() {
   const { openModal } = useModalStore();
   const [query, setQuery] = useState("");
   const { addItem } = useOrderStore();
-  const { getTotalItems } = useOrderStore();
+  const { getTotalItems, setEditingOrder } = useOrderStore();
 
   const visibleItems = useMemo(() => {
     const allowedIds = new Set<number | string>();
@@ -73,7 +73,10 @@ export default function TakeOut() {
       <View className="absolute bottom-4 left-0 right-0 px-4">
         <TouchableOpacity
           className="bg-gray-800 py-3 rounded-lg items-center"
-          onPress={() => router.push("/takeout/revieworder")}
+          onPress={() => {
+            setEditingOrder(false);
+            router.push("/takeout/revieworder");
+          }}
         >
           <Text className="text-white font-bold text-lg">
             View Order {`(${getTotalItems()})`}
