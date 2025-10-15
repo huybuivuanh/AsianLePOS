@@ -12,7 +12,7 @@ declare global {
     name: string;
     itemIds?: string[];
     order: number;
-    createdAt: Date;
+    createdAt: TimeStamp;
   };
 
   type MenuItem = {
@@ -22,7 +22,7 @@ declare global {
     optionGroupIds?: string[];
     categoryIds?: string[];
     kitchenType: KitchenType;
-    createdAt: Date;
+    createdAt: TimeStamp;
   };
 
   type OptionGroup = {
@@ -32,7 +32,7 @@ declare global {
     maxSelection: number;
     optionIds?: string[];
     itemIds?: string[];
-    createdAt: Date;
+    createdAt: TimeStamp;
   };
 
   type ItemOption = {
@@ -40,7 +40,7 @@ declare global {
     name: string;
     price: number;
     groupIds?: string[];
-    createdAt: Date;
+    createdAt: TimeStamp;
   };
 
   type OrderItem = {
@@ -69,13 +69,13 @@ declare global {
     staff: User;
     readyTime?: number;
     isPreorder: boolean;
-    preorderTime?: Date;
+    preorderTime?: TimeStamp;
     orderType: OrderType;
     table?: string;
     orderItems: OrderItem[];
     total: number;
     status: OrderStatus;
     printed: boolean;
-    createdAt: Date;
+    createdAt: TimeStamp;
   };
 }

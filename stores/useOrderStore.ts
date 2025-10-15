@@ -1,6 +1,6 @@
 import { db } from "@/lib/firebaseConfig";
 import { OrderStatus, OrderType } from "@/types/enum";
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc, collection, Timestamp } from "firebase/firestore";
 import { create } from "zustand";
 
 // --- Zustand state ---
@@ -156,7 +156,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       total,
       status: OrderStatus.Pending,
       printed: false,
-      createdAt: new Date(),
+      createdAt: new Timestamp(Date.now() / 1000, 0),
       isPreorder: state.isPreorder,
     };
 
@@ -175,5 +175,3 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     return docRef.id;
   },
 }));
-
-export {};

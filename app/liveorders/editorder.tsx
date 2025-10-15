@@ -16,7 +16,7 @@ import {
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function ReviewOrder() {
+export default function EditOrder() {
   const router = useRouter();
   const {
     orderItems,
@@ -38,13 +38,13 @@ export default function ReviewOrder() {
     getTotalItems,
     getOrderTotal,
     updateQuantity,
-    clearOrder,
   } = useOrderStore();
 
   // Local state
   const [submitting, setSubmitting] = useState(false);
   const [footerVisible, setFooterVisible] = useState(false);
   const { user } = useAuth();
+  const { clearOrder } = useOrderStore();
 
   // Handle order submission
   const handleSubmit = async () => {
@@ -68,20 +68,37 @@ export default function ReviewOrder() {
     }
   };
 
+  const handleAddItem = () => {
+    router.push("/liveorders/additempage");
+  };
+
   const isSubmitDisabled =
     submitting || orderItems.length === 0 || (!customerName && !customerPhone);
 
   return (
     <SafeAreaView className="flex-1 bg-white">
       {/* Header */}
-      <View className="pb-4">
-        <Header title="Review Order" onBack={() => router.back()} />
-      </View>
+      <Header
+        title="Edit Order"
+        onBack={() => {
+          clearOrder();
+          router.back();
+        }}
+      />
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={90}
       >
+        <View className="flex-row justify-center items-center p-4">
+          <TouchableOpacity
+            className="bg-orange-400 px-4 py-3 rounded-full w-80 mb-4 items-center "
+            onPress={() => handleAddItem()}
+          >
+            <Text className="text-white font-semibold">Add Item</Text>
+          </TouchableOpacity>
+        </View>
         {/* Scrollable content */}
         <KeyboardAwareScrollView
           className="flex-1 px-4"
@@ -103,25 +120,14 @@ export default function ReviewOrder() {
         </KeyboardAwareScrollView>
 
         {orderItems.length > 0 && (
-          <View className="flex-row justify-between items-center">
-            <TouchableOpacity
-              onPress={() => {
-                clearOrder();
-              }}
-              className="bg-orange-300 py-4 px-4 rounded-lg mx-4 mb-2 items-center"
-            >
-              <Text className="text-gray-800 font-medium">Clear Order</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setFooterVisible(!footerVisible)}
-              className="bg-orange-300 py-4 px-4 rounded-lg mx-4 mb-2 items-center"
-            >
-              <Text className="text-gray-800 font-medium">
-                {footerVisible ? "Hide Submit Section" : "Show Submit Section"}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={() => setFooterVisible(!footerVisible)}
+            className="bg-orange-300 py-4 px-4 rounded-lg mx-4 mb-2 items-center"
+          >
+            <Text className="text-gray-800 font-medium">
+              {footerVisible ? "Hide Submit Section" : "Show Submit Section"}
+            </Text>
+          </TouchableOpacity>
         )}
 
         {/* Footer (customer info, time selectors, submit) */}

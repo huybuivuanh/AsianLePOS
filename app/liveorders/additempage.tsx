@@ -1,20 +1,20 @@
+import Header from "@/components/ui/Header";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useModalStore } from "@/stores/useModalStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Text, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CategoryList from "../../components/takeout/CategoryList";
 import SearchResults from "../../components/takeout/SearchResults";
 
-export default function TakeOut() {
+export default function AddItemPage() {
   const router = useRouter();
   const { categories, menuItems, loading } = useMenuStore();
   const { openModal } = useModalStore();
   const [query, setQuery] = useState("");
   const { addItem } = useOrderStore();
-  const { getTotalItems } = useOrderStore();
 
   const visibleItems = useMemo(() => {
     const allowedIds = new Set<number | string>();
@@ -49,6 +49,7 @@ export default function TakeOut() {
 
   return (
     <SafeAreaView className="flex-1 bg-white p-4">
+      <Header title="Add Item" onBack={() => router.back()} />
       <TextInput
         placeholder="Search for an item..."
         value={query}
@@ -69,17 +70,6 @@ export default function TakeOut() {
           onSelectItem={handleSelectItem}
         />
       )}
-
-      <View className="absolute bottom-4 left-0 right-0 px-4">
-        <TouchableOpacity
-          className="bg-gray-800 py-3 rounded-lg items-center"
-          onPress={() => router.push("/takeout/revieworder")}
-        >
-          <Text className="text-white font-bold text-lg">
-            View Order {`(${getTotalItems()})`}
-          </Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 }

@@ -110,7 +110,7 @@ export default function ItemSheetModal({ item, onSubmit, onClose }: Props) {
     <BottomSheetModal
       ref={bottomSheetRef}
       index={0}
-      snapPoints={["90%"]}
+      snapPoints={["95%"]}
       enablePanDownToClose
       onDismiss={onClose}
     >

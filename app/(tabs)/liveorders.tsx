@@ -1,5 +1,8 @@
 import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
+import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderStatus } from "@/types/enum";
+import { formatDate } from "@/utils/utils";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -13,7 +16,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function LiveOrders() {
   const { takeOutOrders, loading } = useLiveOrdersStore();
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
-  console.log(takeOutOrders[0].createdAt);
+  const router = useRouter();
+  const { setOrder } = useOrderStore();
 
   const toggleExpand = (id: string) => {
     setExpandedOrderId((prev) => (prev === id ? null : id));
@@ -37,6 +41,11 @@ export default function LiveOrders() {
     );
   };
 
+  function handleEditOrder(order: Order) {
+    setOrder(order);
+    router.push("/liveorders/editorder");
+  }
+
   const renderOrder = ({ item }: { item: Order }) => {
     const expanded = expandedOrderId === item.id;
 
@@ -54,7 +63,21 @@ export default function LiveOrders() {
               Phone #: {item.phoneNumber || ""}
             </Text>
             <Text className="font-semibold text-gray-800 text-base">
-              Time: {item.createdAt.toDateString()}
+              Time: {formatDate(item.createdAt)}
+            </Text>
+          </View>
+
+          <View
+            className={`px-3 py-1 rounded-full ${
+              item.printed ? "bg-green-100" : "bg-yellow-100"
+            }`}
+          >
+            <Text
+              className={`text-xs font-semibold ${
+                item.printed ? "text-green-700" : "text-yellow-700"
+              }`}
+            >
+              {item.printed ? "Printed" : "Not Printed"}
             </Text>
           </View>
 
@@ -131,46 +154,35 @@ export default function LiveOrders() {
             </Text>
 
             {/* Buttons */}
+
+            <View className="flex-row justify-between mt-3">
+              <TouchableOpacity
+                className="bg-blue-500 px-5 py-3 rounded-full"
+                onPress={() => handlePrint(item, true)}
+              >
+                <Text className="text-white font-semibold">Print</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="bg-orange-500 px-5 py-3 rounded-full"
+                onPress={() => handleEditOrder(item)}
+              >
+                <Text className="text-white font-semibold">Edit</Text>
+              </TouchableOpacity>
+            </View>
+
             <View className="flex-row justify-between mt-4">
               <TouchableOpacity
-                className="bg-green-500 px-4 py-2 rounded-full"
+                className="bg-green-500 px-5 py-3 rounded-full"
                 onPress={() => handleComplete(item)}
               >
                 <Text className="text-white font-semibold">Done</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                className="bg-orange-500 px-4 py-2 rounded-full"
-                onPress={() => console.log("✏️ Edit order:", item.id)}
-              >
-                <Text className="text-white font-semibold">Edit</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                className="bg-red-500 px-4 py-2 rounded-full"
+                className="bg-red-500 px-5 py-3 rounded-full"
                 onPress={() => handleCancel(item)}
               >
                 <Text className="text-white font-semibold">Cancel</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View className="flex-row justify-between mt-3">
-              <TouchableOpacity
-                className="bg-blue-500 px-3 py-2 rounded-full"
-                onPress={() => handlePrint(item, true)}
-              >
-                <Text className="text-white font-semibold text-sm">
-                  Print w/ Number
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                className="bg-blue-500 px-3 py-2 rounded-full"
-                onPress={() => handlePrint(item, false)}
-              >
-                <Text className="text-white font-semibold text-sm">
-                  Print w/o Number
-                </Text>
               </TouchableOpacity>
             </View>
           </View>
