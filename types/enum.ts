@@ -2,6 +2,7 @@ export enum KitchenType {
   A = "A",
   B = "B",
   C = "c",
+  Z = "Z",
 }
 
 export enum OrderStatus {
@@ -28,4 +29,9 @@ export enum OrderType {
   DineIn = "DineIn",
   TakeOut = "TakeOut",
   Delivery = "Delivery",
+}
+
+export enum TableStatus {
+  Open = "Open",
+  Occupied = "Occupied",
 }

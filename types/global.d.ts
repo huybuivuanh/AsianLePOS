@@ -82,4 +82,11 @@ declare global {
     addedToPrintQueue: boolean;
     createdAt: TimeStamp;
   };
+
+  type Table = {
+    tableNumber: string;
+    status: TableStatus;
+    guests: number;
+    currentOrder?: Order;
+  };
 }
