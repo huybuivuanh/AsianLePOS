@@ -1,10 +1,10 @@
 import { db } from "@/lib/firebaseConfig";
 import { OrderStatus, OrderType } from "@/types/enum";
+import { generateFirestoreId } from "@/utils/utils";
 import {
-  addDoc,
-  collection,
   deleteDoc,
   doc,
+  setDoc,
   Timestamp,
   updateDoc,
 } from "firebase/firestore";
@@ -25,10 +25,10 @@ type OrderState = {
   getTotalItems: () => number;
   getOrderTotal: () => number;
   setOrder: (order: Order) => void;
-  submitOrder: (staff: User) => Promise<string>;
+  submitOrder: (staff: User) => Promise<void>;
   updateOrderOnFirestore: (staff: User) => Promise<void>;
-  deleteOrderOnFirestore: (id: string) => Promise<void>;
   cancelOrder: (orderId: string) => Promise<void>;
+  completeOrder: (orderId: string) => Promise<void>;
 };
 
 // Default "empty" order
@@ -125,10 +125,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       createdAt: Timestamp.fromDate(new Date()),
     };
 
-    const docRef = await addDoc(collection(db, "takeOutOrders"), orderToSubmit);
+    const orderId = generateFirestoreId();
+
+    await setDoc(doc(db, "takeOutOrders", orderId), orderToSubmit);
+    await setDoc(doc(db, "orderHistory", orderId), orderToSubmit);
 
     get().clearOrder();
-    return docRef.id;
   },
 
   updateOrderOnFirestore: async (staff: User) => {
@@ -154,17 +156,32 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   cancelOrder: async (orderId: string) => {
     if (!orderId) throw new Error("Order ID is required to cancel.");
 
-    const orderRef = doc(db, "takeOutOrders", orderId);
+    const takeOutOrderRef = doc(db, "takeOutOrders", orderId);
 
-    await updateDoc(orderRef, {
+    await updateDoc(takeOutOrderRef, {
+      status: OrderStatus.Canceled,
+    });
+    await deleteDoc(takeOutOrderRef);
+
+    const orderHistoryRef = doc(db, "orderHistory", orderId);
+    await updateDoc(orderHistoryRef, {
       status: OrderStatus.Canceled,
     });
   },
 
-  deleteOrderOnFirestore: async (id: string) => {
-    if (id) throw new Error("Cannot delete order without ID.");
+  completeOrder: async (orderId: string) => {
+    if (!orderId) throw new Error("Order ID is required to complete.");
 
-    const orderRef = doc(db, "takeOutOrders", id);
-    await deleteDoc(orderRef);
+    const takeOutOrderRef = doc(db, "takeOutOrders", orderId);
+
+    await updateDoc(takeOutOrderRef, {
+      status: OrderStatus.Completed,
+    });
+    await deleteDoc(takeOutOrderRef);
+
+    const orderHistoryRef = doc(db, "orderHistory", orderId);
+    await updateDoc(orderHistoryRef, {
+      status: OrderStatus.Completed,
+    });
   },
 }));

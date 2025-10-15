@@ -17,19 +17,27 @@ export default function LiveOrders() {
   const { takeOutOrders, loading } = useLiveOrdersStore();
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const router = useRouter();
-  const { setOrder, setEditingOrder, cancelOrder } = useOrderStore();
+  const { setOrder, setEditingOrder, cancelOrder, completeOrder } =
+    useOrderStore();
 
   const toggleExpand = (id: string) => {
     setExpandedOrderId((prev) => (prev === id ? null : id));
   };
 
-  const handleComplete = (order: Order) => {
-    // TODO: integrate with updateOrder Firestore call
-    console.log("✅ Complete order:", order.id);
+  const handleComplete = async (order: Order) => {
+    try {
+      await completeOrder(order.id!);
+    } catch (error) {
+      console.error("❌ Error completing order:", error);
+    }
   };
 
-  const handleCancel = (order: Order) => {
-    cancelOrder(order.id!);
+  const handleCancel = async (order: Order) => {
+    try {
+      await cancelOrder(order.id!);
+    } catch (error) {
+      console.error("❌ Error canceling order:", error);
+    }
   };
 
   const handlePrint = (order: Order, withNumber: boolean) => {
