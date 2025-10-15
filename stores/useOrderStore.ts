@@ -3,6 +3,7 @@ import { OrderStatus, OrderType } from "@/types/enum";
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   Timestamp,
   updateDoc,
@@ -26,6 +27,8 @@ type OrderState = {
   setOrder: (order: Order) => void;
   submitOrder: (staff: User) => Promise<string>;
   updateOrderOnFirestore: (staff: User) => Promise<void>;
+  deleteOrderOnFirestore: (id: string) => Promise<void>;
+  cancelOrder: (orderId: string) => Promise<void>;
 };
 
 // Default "empty" order
@@ -146,5 +149,22 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     };
 
     await updateDoc(orderRef, updateData);
+  },
+
+  cancelOrder: async (orderId: string) => {
+    if (!orderId) throw new Error("Order ID is required to cancel.");
+
+    const orderRef = doc(db, "takeOutOrders", orderId);
+
+    await updateDoc(orderRef, {
+      status: OrderStatus.Canceled,
+    });
+  },
+
+  deleteOrderOnFirestore: async (id: string) => {
+    if (id) throw new Error("Cannot delete order without ID.");
+
+    const orderRef = doc(db, "takeOutOrders", id);
+    await deleteDoc(orderRef);
   },
 }));

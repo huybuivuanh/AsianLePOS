@@ -17,7 +17,7 @@ export default function LiveOrders() {
   const { takeOutOrders, loading } = useLiveOrdersStore();
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const router = useRouter();
-  const { setOrder, setEditingOrder } = useOrderStore();
+  const { setOrder, setEditingOrder, cancelOrder } = useOrderStore();
 
   const toggleExpand = (id: string) => {
     setExpandedOrderId((prev) => (prev === id ? null : id));
@@ -29,8 +29,7 @@ export default function LiveOrders() {
   };
 
   const handleCancel = (order: Order) => {
-    // TODO: integrate with updateOrder Firestore call
-    console.log("❌ Cancel order:", order.id);
+    cancelOrder(order.id!);
   };
 
   const handlePrint = (order: Order, withNumber: boolean) => {
@@ -90,7 +89,7 @@ export default function LiveOrders() {
                   ? "bg-blue-100"
                   : item.status === OrderStatus.Completed
                     ? "bg-green-100"
-                    : "bg-gray-200"
+                    : "bg-red-200"
             }`}
           >
             <Text
@@ -101,7 +100,7 @@ export default function LiveOrders() {
                     ? "text-blue-700"
                     : item.status === OrderStatus.Completed
                       ? "text-green-700"
-                      : "text-gray-700"
+                      : "text-red-700"
               }`}
             >
               {item.status}
