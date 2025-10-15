@@ -49,11 +49,14 @@ declare global {
     price: number;
     quantity: number;
     options?: ItemOtpion[];
+    changes?: ItemChange[];
+    extras?: AddExtra[];
     instructions?: string;
   };
 
   type ItemChange = {
-    description: string;
+    from: string;
+    to: string;
     price: number;
   };
 
@@ -76,6 +79,7 @@ declare global {
     total: number;
     status: OrderStatus;
     printed: boolean;
+    addedToPrintQueue: boolean;
     createdAt: TimeStamp;
   };
 }

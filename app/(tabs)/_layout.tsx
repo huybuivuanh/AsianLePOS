@@ -2,6 +2,7 @@
 import ModalProvider from "@/providers/ModalProvider";
 import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { loadCachedMenu, useMenuStore } from "@/stores/useMenuStore";
+import { useOrderHistoryStore } from "@/stores/useOrderHistoryStore";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
 import { useEffect } from "react";
@@ -13,6 +14,7 @@ export default function TabsLayout() {
   const router = useRouter();
   const { subscribeToMenuVersion, loading: menuLoading } = useMenuStore();
   const { subscribeToLiveOrders } = useLiveOrdersStore();
+  const { subscribeToOrderHistory } = useOrderHistoryStore();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -25,12 +27,19 @@ export default function TabsLayout() {
     loadCachedMenu();
     const unsubscribe = subscribeToMenuVersion();
     const unsubscribeToLiveOrders = subscribeToLiveOrders();
+    const unsubscribeToOrderHistory = subscribeToOrderHistory();
 
     return () => {
       unsubscribe?.();
       unsubscribeToLiveOrders?.();
+      unsubscribeToOrderHistory?.();
     };
-  }, [user, subscribeToMenuVersion, subscribeToLiveOrders]);
+  }, [
+    user,
+    subscribeToMenuVersion,
+    subscribeToLiveOrders,
+    subscribeToOrderHistory,
+  ]);
 
   if (authLoading || !user || menuLoading) {
     return (
