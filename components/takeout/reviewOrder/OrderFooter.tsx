@@ -1,4 +1,4 @@
-import { OrderType } from "@/types/enum";
+import { useOrderStore } from "@/stores/useOrderStore";
 import React from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import CustomerInfoForm from "./CustomerInfoForm";
@@ -8,65 +8,19 @@ interface Props {
   onSubmit: () => void;
   submitting: boolean;
   disabled: boolean;
-  totalItems: number;
-  totalPrice: number;
-
-  customerName: string;
-  customerPhone: string;
-  setCustomerName: (v: string) => void;
-  setCustomerPhone: (v: string) => void;
-
-  readyTime: number;
-  setReadyTime: (v: number) => void;
-  isPreorder: boolean;
-  setIsPreorder: (v: boolean) => void;
-  preorderDate: Date;
-  setPreorderDate: (d: Date) => void;
-
-  orderType: OrderType;
-  setOrderType: (v: OrderType) => void;
-  table?: string;
-  setTable: (v: string) => void;
 }
 
-export default function OrderFooter({
-  onSubmit,
-  submitting,
-  disabled,
-  totalItems,
-  totalPrice,
-  customerName,
-  customerPhone,
-  setCustomerName,
-  setCustomerPhone,
-  readyTime,
-  setReadyTime,
-  isPreorder,
-  setIsPreorder,
-  preorderDate,
-  setPreorderDate,
-  orderType,
-  setOrderType,
-  table,
-  setTable,
-}: Props) {
+export default function OrderFooter({ onSubmit, submitting, disabled }: Props) {
+  const { getTotalItems, getOrderTotal } = useOrderStore();
+
+  const totalItems = getTotalItems();
+  const totalPrice = getOrderTotal();
+
   return (
     <View className="p-4 bg-white border-t border-gray-200">
-      <CustomerInfoForm
-        name={customerName}
-        phone={customerPhone}
-        onChangeName={setCustomerName}
-        onChangePhone={setCustomerPhone}
-      />
-
-      <ReadyTimeSelector
-        readyTime={readyTime}
-        onSelectReadyTime={setReadyTime}
-        isPreorder={isPreorder}
-        onTogglePreorder={setIsPreorder}
-        preorderDate={preorderDate}
-        onChangePreorderDate={setPreorderDate}
-      />
+      {/* These components now read/write from the store directly */}
+      <CustomerInfoForm />
+      <ReadyTimeSelector />
 
       <TouchableOpacity
         onPress={onSubmit}

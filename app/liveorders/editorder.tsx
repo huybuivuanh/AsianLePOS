@@ -18,33 +18,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function EditOrder() {
   const router = useRouter();
-  const {
-    orderItems,
-    submitOrder,
-    customerName,
-    setCustomerName,
-    customerPhone,
-    setCustomerPhone,
-    readyTime,
-    setReadyTime,
-    isPreorder,
-    setIsPreorder,
-    preorderDate,
-    setPreorderDate,
-    orderType,
-    setOrderType,
-    table,
-    setTable,
-    getTotalItems,
-    getOrderTotal,
-    updateQuantity,
-  } = useOrderStore();
+  const { order, updateQuantity, submitOrder, clearOrder } = useOrderStore();
 
-  // Local state
+  const { user } = useAuth();
+
+  // Local UI states
   const [submitting, setSubmitting] = useState(false);
   const [footerVisible, setFooterVisible] = useState(false);
-  const { user } = useAuth();
-  const { clearOrder } = useOrderStore();
 
   // Handle order submission
   const handleSubmit = async () => {
@@ -52,6 +32,7 @@ export default function EditOrder() {
       Alert.alert("Error", "You must be logged in to submit an order.");
       return;
     }
+
     try {
       const staff: User = {
         id: user.uid,
@@ -73,11 +54,13 @@ export default function EditOrder() {
   };
 
   const isSubmitDisabled =
-    submitting || orderItems.length === 0 || (!customerName && !customerPhone);
+    submitting ||
+    (order.orderItems?.length ?? 0) === 0 ||
+    (!order.name && !order.phoneNumber);
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      {/* Header */}
+      {/* Custom Header */}
       <Header
         title="Edit Order"
         onBack={() => {
@@ -91,25 +74,27 @@ export default function EditOrder() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={90}
       >
+        {/* Add Item Button */}
         <View className="flex-row justify-center items-center p-4">
           <TouchableOpacity
-            className="bg-orange-400 px-4 py-3 rounded-full w-80 mb-4 items-center "
-            onPress={() => handleAddItem()}
+            className="bg-orange-400 px-4 py-3 rounded-full w-80 mb-4 items-center"
+            onPress={handleAddItem}
           >
             <Text className="text-white font-semibold">Add Item</Text>
           </TouchableOpacity>
         </View>
-        {/* Scrollable content */}
+
+        {/* Scrollable Items */}
         <KeyboardAwareScrollView
           className="flex-1 px-4"
           keyboardShouldPersistTaps="handled"
         >
-          {orderItems.length === 0 ? (
+          {!order.orderItems || order.orderItems.length === 0 ? (
             <Text className="text-gray-500 text-center mt-10">
               Your order is empty.
             </Text>
           ) : (
-            orderItems.map((item, index) => (
+            order.orderItems.map((item, index) => (
               <OrderItemCard
                 key={`${item.id}-${index}`}
                 item={item}
@@ -119,7 +104,8 @@ export default function EditOrder() {
           )}
         </KeyboardAwareScrollView>
 
-        {orderItems.length > 0 && (
+        {/* Toggle Footer */}
+        {order.orderItems && order.orderItems.length > 0 && (
           <TouchableOpacity
             onPress={() => setFooterVisible(!footerVisible)}
             className="bg-orange-300 py-4 px-4 rounded-lg mx-4 mb-2 items-center"
@@ -136,22 +122,6 @@ export default function EditOrder() {
             onSubmit={handleSubmit}
             submitting={submitting}
             disabled={isSubmitDisabled}
-            totalItems={getTotalItems()}
-            totalPrice={getOrderTotal()}
-            customerName={customerName}
-            customerPhone={customerPhone}
-            setCustomerName={setCustomerName}
-            setCustomerPhone={setCustomerPhone}
-            readyTime={readyTime}
-            setReadyTime={setReadyTime}
-            isPreorder={isPreorder}
-            setIsPreorder={setIsPreorder}
-            preorderDate={preorderDate}
-            setPreorderDate={setPreorderDate}
-            orderType={orderType}
-            setOrderType={setOrderType}
-            table={table}
-            setTable={setTable}
           />
         )}
       </KeyboardAvoidingView>
