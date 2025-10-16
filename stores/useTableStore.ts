@@ -1,4 +1,5 @@
 import { TableStatus } from "@/types/enum";
+import { sortTables } from "@/utils/utils";
 import {
   collection,
   doc,
@@ -88,7 +89,8 @@ export const useTableStore = create<TableStore>((set, get) => ({
         ...(doc.data() as Table),
         tableNumber: doc.id,
       }));
-      set({ tables: tablesData });
+      const sortedTables = sortTables(tablesData);
+      set({ tables: sortedTables });
     });
     return unsubscribe;
   },

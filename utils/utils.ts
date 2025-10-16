@@ -17,3 +17,9 @@ export const formatDate = (timestamp: Timestamp) => {
 export const generateFirestoreId = () => {
   return doc(collection(db, "dummy")).id;
 };
+
+export const sortTables = (tables: Table[]): Table[] => {
+  return [...tables].sort(
+    (a, b) => parseInt(a.tableNumber, 10) - parseInt(b.tableNumber, 10)
+  );
+};
