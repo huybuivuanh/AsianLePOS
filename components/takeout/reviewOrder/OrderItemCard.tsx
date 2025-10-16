@@ -42,7 +42,7 @@ export default function OrderItemCard({ item }: Props) {
         <TouchableOpacity
           className="w-10 h-10 rounded-full bg-gray-200 justify-center items-center mr-4"
           onPress={() =>
-            item.id && updateQuantity(item.id, Math.max(item.quantity - 1, 1))
+            item.id && updateQuantity(item.id, Math.max(item.quantity - 1, 0))
           }
         >
           <Text className="text-2xl font-bold">−</Text>

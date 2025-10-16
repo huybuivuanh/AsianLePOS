@@ -13,9 +13,14 @@ import { db } from "../lib/firebaseConfig";
 type TableStore = {
   tables: Table[];
   getTable: (tableNumber: string) => Table | undefined;
-  setTableStatus: (tableNumber: string, status: TableStatus) => Promise<void>;
-  setGuests: (tableNumber: string, guests: number) => Promise<void>;
+
+  // Local state updates
+  setTableStatusLocal: (tableNumber: string, status: TableStatus) => void;
+  setGuestsLocal: (tableNumber: string, guests: number) => void;
+
+  // Firestore update
   updateTable: (tableNumber: string, data: Partial<Table>) => Promise<void>;
+
   subscribeToTables: () => Promise<() => void>;
   initializeTables: () => Promise<void>;
 };
@@ -26,14 +31,24 @@ export const useTableStore = create<TableStore>((set, get) => ({
   getTable: (tableNumber) =>
     get().tables.find((t) => t.tableNumber === tableNumber),
 
-  setTableStatus: async (tableNumber, status) => {
-    await get().updateTable(tableNumber, { status });
+  // ✅ Local state only (no Firestore)
+  setTableStatusLocal: (tableNumber, status) => {
+    set((state) => ({
+      tables: state.tables.map((t) =>
+        t.tableNumber === tableNumber ? { ...t, status } : t
+      ),
+    }));
   },
 
-  setGuests: async (tableNumber, guests) => {
-    await get().updateTable(tableNumber, { guests });
+  setGuestsLocal: (tableNumber, guests) => {
+    set((state) => ({
+      tables: state.tables.map((t) =>
+        t.tableNumber === tableNumber ? { ...t, guests } : t
+      ),
+    }));
   },
 
+  // ✅ Firestore update (called on Submit)
   updateTable: async (tableNumber, data) => {
     const tableRef = doc(db, "tables", tableNumber);
     await updateDoc(tableRef, data);

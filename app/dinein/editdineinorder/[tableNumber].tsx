@@ -16,16 +16,11 @@ import {
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useTableStore } from "@/stores/useTableStore";
-import { OrderType } from "@/types/enum";
-import { generateFirestoreId } from "@/utils/utils";
-
 export default function EditDinInOrder() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
   const router = useRouter();
   const { order } = useOrderStore();
-  const { submitOrder, clearOrder, updateOrder } = useOrderStore();
-  const { updateTable } = useTableStore();
+  const { updateOrderOnFirestore } = useOrderStore();
 
   const { user } = useAuth();
 
@@ -45,14 +40,8 @@ export default function EditDinInOrder() {
         name: user.displayName || "Unknown",
         email: user.email || undefined,
       };
-      const orderId = generateFirestoreId();
-      updateTable(tableNumber, { currentOrderId: orderId });
-      updateOrder({
-        id: orderId,
-        orderType: OrderType.DineIn,
-      });
       setSubmitting(true);
-      await submitOrder(staff);
+      await updateOrderOnFirestore(staff);
       router.replace({
         pathname: "/dinein/table/[tableNumber]",
         params: { tableNumber },
@@ -77,7 +66,6 @@ export default function EditDinInOrder() {
         title="Edit Order"
         onBack={() => {
           router.back();
-          clearOrder();
         }}
       />
 
@@ -112,26 +100,23 @@ export default function EditDinInOrder() {
           )}
         </KeyboardAwareScrollView>
 
-        {/* Clear + Toggle Footer */}
-        {order.orderItems && order.orderItems.length > 0 && (
-          <View className="flex-row justify-between items-center px-4 mb-2">
-            <TouchableOpacity
-              onPress={handleSubmit}
-              disabled={isSubmitDisabled}
-              className={`flex-1 bg-gray-800 py-4 rounded-lg items-center ${
-                isSubmitDisabled ? "opacity-50" : ""
-              }`}
-            >
-              {submitting ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text className="text-white font-bold text-base">
-                  Submit Update
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        )}
+        <View className="flex-row justify-between items-center px-4 mb-2">
+          <TouchableOpacity
+            onPress={handleSubmit}
+            disabled={isSubmitDisabled}
+            className={`flex-1 bg-gray-800 py-4 rounded-lg items-center ${
+              isSubmitDisabled ? "opacity-50" : ""
+            }`}
+          >
+            {submitting ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text className="text-white font-bold text-base">
+                Submit Update
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

@@ -86,6 +86,6 @@ declare global {
     tableNumber: string;
     status: TableStatus;
     guests: number;
-    currentOrderId: string;
+    currentOrderId: string | null;
   };
 }

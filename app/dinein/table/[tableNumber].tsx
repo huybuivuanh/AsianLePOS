@@ -3,13 +3,14 @@ import Header from "@/components/ui/Header";
 import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
+import { TableStatus } from "@/types/enum";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Pressable,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -18,12 +19,18 @@ export default function TablePage() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
   const router = useRouter();
 
-  const { getTable } = useTableStore();
+  const { getTable, updateTable } = useTableStore();
   const table = getTable(tableNumber!);
 
   const { dineInOrders, loading: ordersLoading } = useLiveOrdersStore();
-  const { order, setOrder, clearOrder, setEditingOrder, isActive } =
-    useOrderStore();
+  const {
+    order,
+    setOrder,
+    clearOrder,
+    setEditingOrder,
+    cancelOrder,
+    isActive,
+  } = useOrderStore();
 
   // ✅ Find the current order using table.currentOrderId
   const currentOrder = useMemo(() => {
@@ -48,7 +55,21 @@ export default function TablePage() {
     );
   }
 
-  const handleSave = () => router.back();
+  const handleResetTable = async () => {
+    if (!order.id) return;
+
+    try {
+      await cancelOrder(order.id);
+      await updateTable(tableNumber!, {
+        status: TableStatus.Open,
+        currentOrderId: undefined,
+        guests: 0,
+      });
+      clearOrder();
+    } catch (error: any) {
+      console.log("Failed to cancel order:", error);
+    }
+  };
 
   // Determine if there is a "real" active order
   const hasActiveOrder = Boolean(isActive && order.id);
@@ -117,35 +138,91 @@ export default function TablePage() {
         )}
 
         {/* Footer Actions */}
-        <View className="flex-row justify-between m-4 space-x-4">
-          <Pressable
-            onPress={handleSave}
-            className="flex-1 mr-2 bg-blue-500 p-4 rounded-lg items-center"
-          >
-            <Text className="text-white text-lg font-semibold">Save</Text>
-          </Pressable>
+        <View className="m-4">
+          {/* Row 1: Reset + Print */}
+          <View className="flex-row justify-between mb-4">
+            <TouchableOpacity
+              onPress={handleResetTable}
+              activeOpacity={0.7}
+              className="bg-red-500 px-5 py-3 rounded-lg items-center justify-center"
+              style={{ flex: 1, marginRight: 8 }}
+            >
+              <Text className="text-white text-base font-semibold">
+                Reset Table
+              </Text>
+            </TouchableOpacity>
 
-          <Pressable
-            onPress={() => {
-              if (hasActiveOrder) {
-                router.push({
-                  pathname: "/dinein/editdineinorder/[tableNumber]",
-                  params: { tableNumber },
-                });
-                setEditingOrder(true);
-              } else {
-                router.push({
-                  pathname: "/dinein/takeorder/[tableNumber]",
-                  params: { tableNumber },
-                });
-              }
-            }}
-            className="flex-1 bg-green-500 p-4 rounded-lg items-center"
-          >
-            <Text className="text-white text-lg font-semibold">
-              {hasActiveOrder ? "Edit Order" : "Take Order"}
-            </Text>
-          </Pressable>
+            <TouchableOpacity
+              onPress={() => {
+                if (!order?.id) return;
+                console.log("🖨 Printing order:", order.id);
+              }}
+              activeOpacity={0.7}
+              disabled={!hasActiveOrder}
+              className={`px-5 py-3 rounded-lg items-center justify-center ${
+                hasActiveOrder ? "bg-blue-500" : "bg-blue-300"
+              }`}
+              style={{ flex: 1, marginLeft: 8 }}
+            >
+              <Text className="text-white text-base font-semibold">
+                Print Order
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Row 2: Take/Edit + Complete */}
+          <View className="flex-row justify-between">
+            <TouchableOpacity
+              onPress={() => {
+                if (hasActiveOrder) {
+                  router.push({
+                    pathname: "/dinein/editdineinorder/[tableNumber]",
+                    params: { tableNumber },
+                  });
+                  setEditingOrder(true);
+                } else {
+                  router.push({
+                    pathname: "/dinein/takeorder/[tableNumber]",
+                    params: { tableNumber },
+                  });
+                }
+              }}
+              activeOpacity={0.7}
+              className="bg-orange-500 px-5 py-3 rounded-lg items-center justify-center"
+              style={{ flex: 1, marginRight: 8 }}
+            >
+              <Text className="text-white text-base font-semibold">
+                {hasActiveOrder ? "Edit Order" : "Take Order"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={async () => {
+                if (!order?.id) return;
+                try {
+                  await updateTable(tableNumber!, {
+                    status: TableStatus.Open,
+                    currentOrderId: undefined,
+                    guests: 0,
+                  });
+                  clearOrder();
+                  console.log("✅ Order completed:", order.id);
+                } catch (err) {
+                  console.error("Failed to complete order:", err);
+                }
+              }}
+              activeOpacity={0.7}
+              disabled={!hasActiveOrder}
+              className={`px-5 py-3 rounded-lg items-center justify-center ${
+                hasActiveOrder ? "bg-green-500" : "bg-gray-400"
+              }`}
+              style={{ flex: 1, marginLeft: 8 }}
+            >
+              <Text className="text-white text-base font-semibold">
+                Complete
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </SafeAreaView>
