@@ -26,7 +26,7 @@ export default function LiveOrders() {
 
   const handleComplete = async (order: Order) => {
     try {
-      await completeOrder(order.id!);
+      await completeOrder(order);
     } catch (error) {
       console.error("❌ Error completing order:", error);
     }
@@ -34,7 +34,7 @@ export default function LiveOrders() {
 
   const handleCancel = async (order: Order) => {
     try {
-      await cancelOrder(order.id!);
+      await cancelOrder(order);
     } catch (error) {
       console.error("❌ Error canceling order:", error);
     }

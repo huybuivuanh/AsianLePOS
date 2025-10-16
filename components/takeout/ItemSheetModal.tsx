@@ -7,7 +7,16 @@ import {
 } from "@gorhom/bottom-sheet";
 import { X } from "lucide-react-native";
 import React, { useEffect, useRef, useState } from "react";
-import { Alert, Platform, Text, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { AddExtraEditor } from "./AddExtraEditor";
+import { ItemChangeEditor } from "./ItemChangeEditor";
 
 type Props = {
   item: MenuItem;
@@ -23,6 +32,8 @@ export default function ItemSheetModal({ item, onSubmit, onClose }: Props) {
   const [selectedOptions, setSelectedOptions] = useState<
     Record<string, string[]>
   >({});
+  const [extras, setExtras] = useState<AddExtra[]>([]);
+  const [changes, setChanges] = useState<ItemChange[]>([]);
 
   const { optionGroups, options } = useMenuStore();
 
@@ -89,10 +100,17 @@ export default function ItemSheetModal({ item, onSubmit, onClose }: Props) {
       });
     });
 
-    const orderItemPrice =
-      optionsToSubmit.reduce((acc, option) => acc + (option.price || 0), 0) +
-      (item.price || 0);
+    // Calculate total price including extras and changes
+    const extrasTotal = extras.reduce((sum, e) => sum + (e.price || 0), 0);
+    const changesTotal = changes.reduce((sum, c) => sum + (c.price || 0), 0);
 
+    const orderItemPrice =
+      (item.price || 0) +
+      optionsToSubmit.reduce((acc, o) => acc + (o.price || 0), 0) +
+      extrasTotal +
+      changesTotal;
+
+    // Build order item
     const cleanItem: OrderItem = {
       id: generateFirestoreId(),
       item: item,
@@ -100,6 +118,8 @@ export default function ItemSheetModal({ item, onSubmit, onClose }: Props) {
       quantity: quantity,
       ...(instructions !== "" && { instructions }),
       ...(optionsToSubmit.length > 0 && { options: optionsToSubmit }),
+      ...(extras.length > 0 && { extras }), // Add extras
+      ...(changes.length > 0 && { changes }), // Add changes
     };
 
     onSubmit(cleanItem);
@@ -118,81 +138,90 @@ export default function ItemSheetModal({ item, onSubmit, onClose }: Props) {
     >
       <View className="flex-1">
         {/* Scrollable content */}
-        <BottomSheetScrollView
-          contentContainerStyle={{
-            padding: 16,
-            paddingBottom: Platform.OS === "ios" ? 180 : 160, // leave room for footer
-            flexGrow: 1,
-          }}
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-          {/* Header */}
-          <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-2xl font-bold flex-1">{item.name}</Text>
-            <TouchableOpacity
-              onPress={() => bottomSheetRef.current?.dismiss()}
-              className="w-9 h-9 rounded-full bg-gray-100 justify-center items-center"
-            >
-              <X size={20} color="black" />
-            </TouchableOpacity>
-          </View>
+          <BottomSheetScrollView
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{
+              padding: 16,
+              paddingBottom: Platform.OS === "ios" ? 180 : 160, // leave room for footer
+              flexGrow: 1,
+            }}
+          >
+            {/* Header */}
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-2xl font-bold flex-1">{item.name}</Text>
+              <TouchableOpacity
+                onPress={() => bottomSheetRef.current?.dismiss()}
+                className="w-9 h-9 rounded-full bg-gray-100 justify-center items-center"
+              >
+                <X size={20} color="black" />
+              </TouchableOpacity>
+            </View>
 
-          {/* Instructions */}
-          <Text className="text-base mb-2">Special instructions:</Text>
-          <BottomSheetTextInput
-            className="border border-gray-300 rounded-lg p-3 mb-4 min-h-[80px]"
-            placeholder="Add instructions..."
-            multiline
-            value={instructions}
-            onChangeText={setInstructions}
-          />
+            {/* Instructions */}
+            <Text className="text-base mb-2">Special instructions:</Text>
+            <BottomSheetTextInput
+              className="border border-gray-300 rounded-lg p-3 mb-4 min-h-[80px]"
+              placeholder="Add instructions..."
+              multiline
+              value={instructions}
+              onChangeText={setInstructions}
+            />
 
-          {/* Option Groups */}
-          {item.optionGroupIds?.map((groupId) => {
-            const group = optionGroups.find((g) => g.id === groupId);
-            if (!group) return null;
+            {/* Option Groups */}
+            {item.optionGroupIds?.map((groupId) => {
+              const group = optionGroups.find((g) => g.id === groupId);
+              if (!group) return null;
 
-            return (
-              <View key={group.id} className="mb-4">
-                <View className="flex-row items-center mb-3">
-                  <Text className="text-2xl font-semibold text-gray-800">
-                    {group.name}
-                  </Text>
-                  {group.minSelection > 0 && (
-                    <Text className="ml-2 text-xs font-semibold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
-                      Required
+              return (
+                <View key={group.id} className="mb-4">
+                  <View className="flex-row items-center mb-3">
+                    <Text className="text-2xl font-semibold text-gray-800">
+                      {group.name}
                     </Text>
-                  )}
-                </View>
-
-                {group.optionIds?.map((optionId) => {
-                  const option = options.find((o) => o.id === optionId);
-                  if (!option) return null;
-
-                  const isSelected = selectedOptions[group.id!]?.includes(
-                    option.id!
-                  );
-
-                  return (
-                    <TouchableOpacity
-                      key={option.id}
-                      onPress={() => toggleOption(group, option)}
-                      className={`py-2 px-3 mb-2 rounded-lg border ${
-                        isSelected
-                          ? "border-blue-600 bg-blue-100"
-                          : "border-gray-300 bg-white"
-                      }`}
-                    >
-                      <Text className="text-base">
-                        {option.name}{" "}
-                        {option.price > 0 && `- $${option.price.toFixed(2)}`}
+                    {group.minSelection > 0 && (
+                      <Text className="ml-2 text-xs font-semibold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
+                        Required
                       </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            );
-          })}
-        </BottomSheetScrollView>
+                    )}
+                  </View>
+
+                  {group.optionIds?.map((optionId) => {
+                    const option = options.find((o) => o.id === optionId);
+                    if (!option) return null;
+
+                    const isSelected = selectedOptions[group.id!]?.includes(
+                      option.id!
+                    );
+
+                    return (
+                      <TouchableOpacity
+                        key={option.id}
+                        onPress={() => toggleOption(group, option)}
+                        className={`py-2 px-3 mb-2 rounded-lg border ${
+                          isSelected
+                            ? "border-blue-600 bg-blue-100"
+                            : "border-gray-300 bg-white"
+                        }`}
+                      >
+                        <Text className="text-base">
+                          {option.name}{" "}
+                          {option.price > 0 && `- $${option.price.toFixed(2)}`}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+
+                  <AddExtraEditor extras={extras} onChange={setExtras} />
+                  <ItemChangeEditor changes={changes} onChange={setChanges} />
+                </View>
+              );
+            })}
+          </BottomSheetScrollView>
+        </KeyboardAvoidingView>
 
         {/* Fixed footer: quantity + submit */}
         <View className="absolute bottom-0 left-0 right-0 p-4 pb-8 bg-white border-t border-gray-200">
