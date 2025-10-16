@@ -29,6 +29,7 @@ export default function TablePage() {
     clearOrder,
     setEditingOrder,
     cancelOrder,
+    completeOrder,
     isActive,
   } = useOrderStore();
 
@@ -55,19 +56,34 @@ export default function TablePage() {
     );
   }
 
-  const handleResetTable = async () => {
+  const handleCancelOrder = async () => {
     if (!order.id) return;
 
     try {
-      await cancelOrder(order.id);
+      await cancelOrder(order);
       await updateTable(tableNumber!, {
         status: TableStatus.Open,
-        currentOrderId: undefined,
+        currentOrderId: null,
         guests: 0,
       });
       clearOrder();
     } catch (error: any) {
       console.log("Failed to cancel order:", error);
+    }
+  };
+
+  const handleCompleteOrder = async (order: Partial<Order>) => {
+    if (!order) return;
+    try {
+      await updateTable(tableNumber!, {
+        status: TableStatus.Open,
+        currentOrderId: null,
+        guests: 0,
+      });
+      clearOrder();
+      await completeOrder(order);
+    } catch (err) {
+      console.error("Failed to complete order:", err);
     }
   };
 
@@ -142,13 +158,14 @@ export default function TablePage() {
           {/* Row 1: Reset + Print */}
           <View className="flex-row justify-between mb-4">
             <TouchableOpacity
-              onPress={handleResetTable}
+              onPress={handleCancelOrder}
               activeOpacity={0.7}
               className="bg-red-500 px-5 py-3 rounded-lg items-center justify-center"
               style={{ flex: 1, marginRight: 8 }}
+              disabled={!hasActiveOrder}
             >
               <Text className="text-white text-base font-semibold">
-                Reset Table
+                Cancel Order
               </Text>
             </TouchableOpacity>
 
@@ -198,18 +215,7 @@ export default function TablePage() {
 
             <TouchableOpacity
               onPress={async () => {
-                if (!order?.id) return;
-                try {
-                  await updateTable(tableNumber!, {
-                    status: TableStatus.Open,
-                    currentOrderId: undefined,
-                    guests: 0,
-                  });
-                  clearOrder();
-                  console.log("✅ Order completed:", order.id);
-                } catch (err) {
-                  console.error("Failed to complete order:", err);
-                }
+                handleCompleteOrder(order);
               }}
               activeOpacity={0.7}
               disabled={!hasActiveOrder}
