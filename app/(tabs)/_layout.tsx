@@ -3,6 +3,7 @@ import ModalProvider from "@/providers/ModalProvider";
 import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { loadCachedMenu, useMenuStore } from "@/stores/useMenuStore";
 import { useOrderHistoryStore } from "@/stores/useOrderHistoryStore";
+import { useTableStore } from "@/stores/useTableStore";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
 import { useEffect } from "react";
@@ -15,30 +16,52 @@ export default function TabsLayout() {
   const { subscribeToMenuVersion, loading: menuLoading } = useMenuStore();
   const { subscribeToLiveOrders } = useLiveOrdersStore();
   const { subscribeToOrderHistory } = useOrderHistoryStore();
+  const { subscribeToTables } = useTableStore();
 
+  // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/login");
     }
   }, [user, authLoading, router]);
 
+  // Subscriptions setup
   useEffect(() => {
     if (!user) return;
+
     loadCachedMenu();
-    const unsubscribe = subscribeToMenuVersion();
-    const unsubscribeToLiveOrders = subscribeToLiveOrders();
-    const unsubscribeToOrderHistory = subscribeToOrderHistory();
+
+    const unsubscribeAll = async () => {
+      const unsubscribeMenu = subscribeToMenuVersion();
+      const unsubscribeOrders = subscribeToLiveOrders();
+      const unsubscribeHistory = subscribeToOrderHistory();
+
+      // ✅ Handle async subscribeToTables
+      const unsubscribeTables = await subscribeToTables();
+
+      return () => {
+        unsubscribeMenu?.();
+        unsubscribeOrders?.();
+        unsubscribeHistory?.();
+        unsubscribeTables?.();
+      };
+    };
+
+    let cleanup: (() => void) | undefined;
+
+    unsubscribeAll().then((unsub) => {
+      cleanup = unsub;
+    });
 
     return () => {
-      unsubscribe?.();
-      unsubscribeToLiveOrders?.();
-      unsubscribeToOrderHistory?.();
+      cleanup?.();
     };
   }, [
     user,
     subscribeToMenuVersion,
     subscribeToLiveOrders,
     subscribeToOrderHistory,
+    subscribeToTables,
   ]);
 
   if (authLoading || !user || menuLoading) {

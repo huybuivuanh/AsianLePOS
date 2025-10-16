@@ -1,6 +1,5 @@
 import { db } from "@/lib/firebaseConfig";
 import { OrderStatus, OrderType } from "@/types/enum";
-import { generateFirestoreId } from "@/utils/utils";
 import {
   deleteDoc,
   doc,
@@ -14,6 +13,7 @@ import { create } from "zustand";
 type OrderState = {
   order: Partial<Order>;
   editingOrder: boolean;
+  isActive: boolean;
 
   // actions
   setEditingOrder: (editing: boolean) => void;
@@ -45,6 +45,7 @@ const defaultOrder: Partial<Order> = {
 export const useOrderStore = create<OrderState>((set, get) => ({
   order: { ...defaultOrder },
   editingOrder: false,
+  isActive: false,
 
   setEditingOrder: (editing) => set({ editingOrder: editing }),
 
@@ -86,7 +87,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }));
   },
 
-  clearOrder: () => set({ order: { ...defaultOrder } }),
+  clearOrder: () => set({ order: { ...defaultOrder }, isActive: false }),
 
   getTotalItems: () => {
     return (get().order.orderItems ?? []).reduce(
@@ -102,15 +103,20 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     );
   },
 
-  setOrder: (order) => set({ order }),
+  setOrder: (order) => set({ order, isActive: true }),
 
   submitOrder: async (staff: User) => {
     const { order } = get();
 
-    if (!order.orderItems || order.orderItems.length === 0)
-      throw new Error("Cannot submit empty order.");
-    if (!order.name && !order.phoneNumber)
-      throw new Error("Missing customer info.");
+    let firestorecollection = "takeOutOrders";
+    if (order.orderType !== OrderType.DineIn) {
+      if (!order.orderItems || order.orderItems.length === 0)
+        throw new Error("Cannot submit empty order.");
+      if (!order.name && !order.phoneNumber)
+        throw new Error("Missing customer info.");
+    } else {
+      firestorecollection = "dineInOrders";
+    }
 
     const total = (order.orderItems ?? []).reduce(
       (acc, i) => acc + i.price * i.quantity,
@@ -126,10 +132,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       createdAt: Timestamp.fromDate(new Date()),
     };
 
-    const orderId = generateFirestoreId();
-
-    await setDoc(doc(db, "takeOutOrders", orderId), orderToSubmit);
-    await setDoc(doc(db, "orderHistory", orderId), orderToSubmit);
+    await setDoc(doc(db, firestorecollection, order.id!), orderToSubmit);
+    await setDoc(doc(db, "orderHistory", order.id!), orderToSubmit);
 
     get().clearOrder();
   },
@@ -139,7 +143,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
     if (!order.id) throw new Error("Cannot update order without ID.");
 
-    const orderRef = doc(db, "takeOutOrders", order.id);
+    const firestorecollection =
+      order.orderType === OrderType.DineIn ? "dineInOrders" : "takeOutOrders";
+
+    const orderRef = doc(db, firestorecollection, order.id);
 
     // Include staff info in the update
     const updateData: Partial<Order> = {

@@ -14,7 +14,7 @@ export default function Header({
       <TouchableOpacity onPress={onBack}>
         <Ionicons name="arrow-back" size={30} color="white" />
       </TouchableOpacity>
-      <Text className="text-white text-lg font-semibold">{title}</Text>
+      <Text className="text-white text-xl font-semibold">{title}</Text>
       {/* spacer */}
       <View style={{ width: 30 }} />
     </View>

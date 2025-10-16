@@ -1,12 +1,14 @@
-import OrderFooter from "@/components/takeout/reviewOrder/OrderFooter";
 import OrderItemCard from "@/components/takeout/reviewOrder/OrderItemCard";
 import Header from "@/components/ui/Header";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrderStore } from "@/stores/useOrderStore";
+import { useTableStore } from "@/stores/useTableStore";
+import { OrderType } from "@/types/enum";
 import { generateFirestoreId } from "@/utils/utils";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -17,13 +19,21 @@ import {
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function ReviewOrder() {
+export default function ReviewDineInOrder() {
+  const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
   const router = useRouter();
-  const { order, submitOrder, clearOrder, updateOrder } = useOrderStore();
+  const {
+    order,
+    submitOrder,
+    clearOrder,
+    getTotalItems,
+    getOrderTotal,
+    updateOrder,
+  } = useOrderStore();
 
   const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
-  const [footerVisible, setFooterVisible] = useState(false);
+  const { updateTable } = useTableStore();
 
   const handleSubmit = async () => {
     if (!user) {
@@ -37,12 +47,18 @@ export default function ReviewOrder() {
         name: user.displayName || "Unknown",
         email: user.email || undefined,
       };
+      const orderId = generateFirestoreId();
+      updateTable(tableNumber, { currentOrderId: orderId });
       updateOrder({
-        id: generateFirestoreId(),
+        id: orderId,
+        orderType: OrderType.DineIn,
       });
       setSubmitting(true);
       await submitOrder(staff);
-      router.back();
+      router.push({
+        pathname: "/dinein/table/[tableNumber]",
+        params: { tableNumber },
+      });
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to submit order.");
     } finally {
@@ -50,10 +66,7 @@ export default function ReviewOrder() {
     }
   };
 
-  const isSubmitDisabled =
-    submitting ||
-    (order.orderItems?.length ?? 0) === 0 ||
-    (!order.name && !order.phoneNumber);
+  const isSubmitDisabled = submitting || (order.orderItems?.length ?? 0) === 0;
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -84,32 +97,32 @@ export default function ReviewOrder() {
 
         {/* Clear + Toggle Footer */}
         {order.orderItems && order.orderItems.length > 0 && (
-          <View className="flex-row justify-between items-center">
+          <View className="flex-row justify-between items-center px-4 mb-2">
             <TouchableOpacity
-              onPress={() => setFooterVisible(!footerVisible)}
-              className="bg-orange-300 py-4 px-4 rounded-lg mx-4 mb-2 items-center flex-1 ml-2"
+              onPress={clearOrder}
+              className="flex-1 mr-2 bg-orange-400 py-4 rounded-lg items-center"
             >
-              <Text className="text-gray-800 font-medium">
-                {footerVisible ? "Hide Submit Section" : "Show Submit Section"}
+              <Text className="text-white font-bold text-base">
+                Clear Order
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={clearOrder}
-              className="bg-orange-300 py-4 px-4 rounded-lg mx-4 mb-2 items-center flex-1 mr-2"
+              onPress={handleSubmit}
+              disabled={isSubmitDisabled}
+              className={`flex-1 bg-gray-800 py-4 rounded-lg items-center ${
+                isSubmitDisabled ? "opacity-50" : ""
+              }`}
             >
-              <Text className="text-gray-800 font-medium">Clear Order</Text>
+              {submitting ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text className="text-white font-bold text-base">
+                  {`Submit ${getTotalItems()} Item(s) - $${getOrderTotal().toFixed(2)}`}
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
-        )}
-
-        {/* Footer (customer info, time selectors, submit) */}
-        {footerVisible && (
-          <OrderFooter
-            onSubmit={handleSubmit}
-            submitting={submitting}
-            disabled={isSubmitDisabled}
-          />
         )}
       </KeyboardAvoidingView>
     </SafeAreaView>

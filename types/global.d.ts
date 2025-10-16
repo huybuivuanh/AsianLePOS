@@ -74,7 +74,6 @@ declare global {
     isPreorder: boolean;
     preorderTime?: TimeStamp;
     orderType: OrderType;
-    table?: string;
     orderItems: OrderItem[];
     total: number;
     status: OrderStatus;
@@ -87,6 +86,6 @@ declare global {
     tableNumber: string;
     status: TableStatus;
     guests: number;
-    currentOrder?: Order;
+    currentOrderId: string;
   };
 }
