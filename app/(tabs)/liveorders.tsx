@@ -17,8 +17,13 @@ export default function LiveOrders() {
   const { takeOutOrders, loading } = useLiveOrdersStore();
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const router = useRouter();
-  const { setOrder, setEditingOrder, cancelOrder, completeOrder } =
-    useOrderStore();
+  const {
+    setOrder,
+    setEditingOrder,
+    cancelOrder,
+    completeOrder,
+    submitToPrintQueue,
+  } = useOrderStore();
 
   const toggleExpand = (id: string) => {
     setExpandedOrderId((prev) => (prev === id ? null : id));
@@ -40,12 +45,12 @@ export default function LiveOrders() {
     }
   };
 
-  const handlePrint = (order: Order, withNumber: boolean) => {
-    // TODO: trigger your printer logic here
-    console.log(
-      withNumber ? "🖨 Print With Number" : "🖨 Print Without Number",
-      order.id
-    );
+  const handlePrint = async (order: Order) => {
+    try {
+      await submitToPrintQueue(order);
+    } catch (error) {
+      console.error("❌ Error submitting to print queue:", error);
+    }
   };
 
   function handleEditOrder(order: Order) {
@@ -219,7 +224,7 @@ export default function LiveOrders() {
             <View className="flex-row justify-between mt-3">
               <TouchableOpacity
                 className="bg-blue-500 px-5 py-3 rounded-full"
-                onPress={() => handlePrint(item, true)}
+                onPress={() => handlePrint(item)}
               >
                 <Text className="text-white font-semibold">Print</Text>
               </TouchableOpacity>

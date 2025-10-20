@@ -1,6 +1,7 @@
 import { db } from "@/lib/firebaseConfig";
 import { OrderStatus, OrderType } from "@/types/enum";
 import {
+  collection,
   deleteDoc,
   doc,
   setDoc,
@@ -30,6 +31,7 @@ type OrderState = {
   updateOrderOnFirestore: (staff: User) => Promise<void>;
   cancelOrder: (order: Partial<Order>) => Promise<void>;
   completeOrder: (order: Partial<Order>) => Promise<void>;
+  submitToPrintQueue: (order: Partial<Order>) => Promise<void>;
 };
 
 // Default "empty" order
@@ -206,5 +208,19 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     await updateDoc(orderHistoryRef, {
       status: OrderStatus.Completed,
     });
+  },
+
+  submitToPrintQueue: async (order: Partial<Order>) => {
+    if (!order.id) throw new Error("Order ID is required to print.");
+
+    const collectionName =
+      order.orderType === OrderType.DineIn ? "dineInOrders" : "takeOutOrders";
+    const orderRef = doc(db, collectionName, order.id);
+    await updateDoc(orderRef, {
+      addedToPrintQueue: true,
+    });
+
+    const printQueueRef = doc(collection(db, "printQueue"));
+    await setDoc(printQueueRef, order);
   },
 }));

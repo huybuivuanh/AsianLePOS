@@ -31,6 +31,7 @@ export default function TablePage() {
     cancelOrder,
     completeOrder,
     updateOrder,
+    submitToPrintQueue,
     isActive,
   } = useOrderStore();
 
@@ -91,6 +92,14 @@ export default function TablePage() {
       await completeOrder(order);
     } catch (err) {
       console.error("Failed to complete order:", err);
+    }
+  };
+
+  const handlePrint = async (order: Partial<Order>) => {
+    try {
+      await submitToPrintQueue(order);
+    } catch (error) {
+      console.error("❌ Error submitting to print queue:", error);
     }
   };
 
@@ -231,10 +240,7 @@ export default function TablePage() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => {
-                if (!order?.id) return;
-                console.log("🖨 Printing order:", order.id);
-              }}
+              onPress={() => handlePrint(order)}
               activeOpacity={0.7}
               disabled={!hasActiveOrder}
               className={`px-5 py-3 rounded-lg items-center justify-center ${
