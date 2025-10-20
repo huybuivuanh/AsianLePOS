@@ -55,6 +55,8 @@ export default function ReviewDineInOrder() {
       updateOrder({
         id: orderId,
         orderType: OrderType.DineIn,
+        tableNumber: tableNumber,
+        guests: order.guests,
       });
       setSubmitting(true);
       await submitOrder(staff);

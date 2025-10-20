@@ -88,7 +88,9 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }));
   },
 
-  clearOrder: () => set({ order: { ...defaultOrder }, isActive: false }),
+  clearOrder: () => {
+    set({ order: { ...defaultOrder }, isActive: false });
+  },
 
   getTotalItems: () => {
     return (get().order.orderItems ?? []).reduce(

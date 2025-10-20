@@ -76,6 +76,8 @@ declare global {
     readyTime?: number;
     isPreorder: boolean;
     preorderTime?: TimeStamp;
+    tableNumber?: string;
+    guests?: number;
     orderType: OrderType;
     orderItems: OrderItem[];
     total: number;

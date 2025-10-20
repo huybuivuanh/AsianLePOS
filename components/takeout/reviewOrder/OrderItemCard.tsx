@@ -23,7 +23,7 @@ export default function OrderItemCard({ item }: Props) {
 
     const updates: Partial<OrderItem> = {};
     updates.togo = newFlag === "toGo";
-    updates.appetizer = newFlag === "appetizer" ? true : item.appetizer;
+    updates.appetizer = newFlag === "appetizer";
 
     updateOrderItem(item.id, updates);
   };

@@ -34,6 +34,8 @@ export default function TablePage() {
     isActive,
   } = useOrderStore();
 
+  const orderTotal = useOrderStore((state) => state.getOrderTotal());
+
   // ✅ Find the current order using table.currentOrderId
   const currentOrder = useMemo(() => {
     if (!table?.currentOrderId) return undefined;
@@ -41,6 +43,10 @@ export default function TablePage() {
       (o) => o.id === table.currentOrderId && o.status !== "completed"
     );
   }, [dineInOrders, table]);
+
+  const pst = orderTotal * 0.06;
+  const gst = orderTotal * 0.05;
+  const grandTotal = orderTotal + pst + gst;
 
   // ✅ Sync order store with live data
   useEffect(() => {
@@ -174,6 +180,40 @@ export default function TablePage() {
 
         {/* Footer Actions */}
         <View className="m-4">
+          {hasActiveOrder && (
+            <View className="bg-white p-4 rounded-lg shadow-sm mb-4">
+              <View className="flex-row justify-between mb-1">
+                <Text className="text-base text-gray-700">Subtotal</Text>
+                <Text className="text-base text-gray-700">
+                  ${orderTotal.toFixed(2)}
+                </Text>
+              </View>
+
+              <View className="flex-row justify-between mb-1">
+                <Text className="text-base text-gray-700">PST (6%)</Text>
+                <Text className="text-base text-gray-700">
+                  ${pst.toFixed(2)}
+                </Text>
+              </View>
+
+              <View className="flex-row justify-between mb-2">
+                <Text className="text-base text-gray-700">GST (5%)</Text>
+                <Text className="text-base text-gray-700">
+                  ${gst.toFixed(2)}
+                </Text>
+              </View>
+
+              <View className="border-t border-gray-200 mt-2 pt-2 flex-row justify-between items-center">
+                <Text className="text-lg font-semibold text-gray-800">
+                  Total
+                </Text>
+                <Text className="text-xl font-bold text-gray-900">
+                  ${grandTotal.toFixed(2)}
+                </Text>
+              </View>
+            </View>
+          )}
+
           {/* Row 1: Reset + Print */}
           <View className="flex-row justify-between mb-4">
             <TouchableOpacity

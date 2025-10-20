@@ -1,5 +1,5 @@
 import { useOrderHistoryStore } from "@/stores/useOrderHistoryStore";
-import { OrderStatus } from "@/types/enum";
+import { OrderStatus, OrderType } from "@/types/enum";
 import { formatDate } from "@/utils/utils";
 import React, { useState } from "react";
 import {
@@ -20,6 +20,10 @@ export default function OrderHistory() {
   };
 
   const renderOrder = ({ item }: { item: Order }) => {
+    const subtotal = item.total;
+    const pst = subtotal * 0.06;
+    const gst = subtotal * 0.05;
+    const total = subtotal + pst + gst;
     const expanded = expandedOrderId === item.id;
 
     return (
@@ -28,17 +32,31 @@ export default function OrderHistory() {
           className="flex-row justify-between items-center"
           onPress={() => toggleExpand(item.id!)}
         >
-          <View>
-            <Text className="font-semibold text-gray-800 text-base">
-              Name: {item.name || ""}
-            </Text>
-            <Text className="font-semibold text-gray-800 text-base">
-              Phone #: {item.phoneNumber || ""}
-            </Text>
-            <Text className="font-semibold text-gray-800 text-base">
-              Time: {formatDate(item.createdAt)}
-            </Text>
-          </View>
+          {item.orderType === OrderType.TakeOut ? (
+            <View>
+              <Text className="font-semibold text-gray-800 text-base">
+                Name: {item.name || ""}
+              </Text>
+              <Text className="font-semibold text-gray-800 text-base">
+                Phone #: {item.phoneNumber || ""}
+              </Text>
+              <Text className="font-semibold text-gray-800 text-base">
+                Time: {formatDate(item.createdAt)}
+              </Text>
+            </View>
+          ) : (
+            <View>
+              <Text className="font-semibold text-gray-800 text-base">
+                Table Number: {item.tableNumber}
+              </Text>
+              <Text className="font-semibold text-gray-800 text-base">
+                Guest: {item.guests}
+              </Text>
+              <Text className="font-semibold text-gray-800 text-base">
+                Time: {formatDate(item.createdAt)}
+              </Text>
+            </View>
+          )}
 
           <View
             className={`px-3 py-1 rounded-full ${
@@ -93,6 +111,30 @@ export default function OrderHistory() {
                       </View>
                     )}
 
+                    {/* Add Extras */}
+                    {orderItem.extras && orderItem.extras.length > 0 && (
+                      <View>
+                        {orderItem.extras.map((extra, index) => (
+                          <Text key={index} className="text-base text-gray-600">
+                            • Add: {extra.description}- $
+                            {extra.price.toFixed(2)}
+                          </Text>
+                        ))}
+                      </View>
+                    )}
+
+                    {/* Item Changes */}
+                    {orderItem.changes && orderItem.changes.length > 0 && (
+                      <View>
+                        {orderItem.changes.map((change, index) => (
+                          <Text key={index} className="text-base text-gray-600">
+                            • Change: {change.from} → {change.to} - $
+                            {change.price.toFixed(2)}
+                          </Text>
+                        ))}
+                      </View>
+                    )}
+
                     {/* Special Instructions */}
                     {orderItem.instructions && (
                       <Text className="text-base text-gray-500 mt-2 italic">
@@ -104,9 +146,38 @@ export default function OrderHistory() {
               </View>
             ))}
 
-            <Text className="text-right font-semibold text-base mt-2">
-              Total: ${item.total.toFixed(2)}
-            </Text>
+            {/* Tax breakdown */}
+            <View className="mt-2 p-2 border-t border-gray-200">
+              <View className="flex-row justify-between mb-1">
+                <Text className="text-base text-gray-700">Subtotal</Text>
+                <Text className="text-base text-gray-700">
+                  ${subtotal.toFixed(2)}
+                </Text>
+              </View>
+
+              <View className="flex-row justify-between mb-1">
+                <Text className="text-base text-gray-700">PST (6%)</Text>
+                <Text className="text-base text-gray-700">
+                  ${pst.toFixed(2)}
+                </Text>
+              </View>
+
+              <View className="flex-row justify-between mb-1">
+                <Text className="text-base text-gray-700">GST (5%)</Text>
+                <Text className="text-base text-gray-700">
+                  ${gst.toFixed(2)}
+                </Text>
+              </View>
+
+              <View className="flex-row justify-between mt-1 pt-1 border-t border-gray-200">
+                <Text className="text-base font-semibold text-gray-800">
+                  Total
+                </Text>
+                <Text className="text-base font-bold text-gray-900">
+                  ${total.toFixed(2)}
+                </Text>
+              </View>
+            </View>
           </View>
         )}
       </View>

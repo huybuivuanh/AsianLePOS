@@ -55,6 +55,10 @@ export default function LiveOrders() {
   }
 
   const renderOrder = ({ item }: { item: Order }) => {
+    const subtotal = item.total;
+    const pst = subtotal * 0.06;
+    const gst = subtotal * 0.05;
+    const total = subtotal + pst + gst;
     const expanded = expandedOrderId === item.id;
 
     return (
@@ -177,9 +181,38 @@ export default function LiveOrders() {
               </View>
             ))}
 
-            <Text className="text-right font-semibold text-base mt-2">
-              Total: ${item.total.toFixed(2)}
-            </Text>
+            {/* Tax breakdown */}
+            <View className="mt-2 p-2 border-t border-gray-200">
+              <View className="flex-row justify-between mb-1">
+                <Text className="text-base text-gray-700">Subtotal</Text>
+                <Text className="text-base text-gray-700">
+                  ${subtotal.toFixed(2)}
+                </Text>
+              </View>
+
+              <View className="flex-row justify-between mb-1">
+                <Text className="text-base text-gray-700">PST (6%)</Text>
+                <Text className="text-base text-gray-700">
+                  ${pst.toFixed(2)}
+                </Text>
+              </View>
+
+              <View className="flex-row justify-between mb-1">
+                <Text className="text-base text-gray-700">GST (5%)</Text>
+                <Text className="text-base text-gray-700">
+                  ${gst.toFixed(2)}
+                </Text>
+              </View>
+
+              <View className="flex-row justify-between mt-1 pt-1 border-t border-gray-200">
+                <Text className="text-base font-semibold text-gray-800">
+                  Total
+                </Text>
+                <Text className="text-base font-bold text-gray-900">
+                  ${total.toFixed(2)}
+                </Text>
+              </View>
+            </View>
 
             {/* Buttons */}
 
