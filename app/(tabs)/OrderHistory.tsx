@@ -27,7 +27,9 @@ export default function OrderHistory() {
     const expanded = expandedOrderId === item.id;
 
     return (
-      <View className="bg-white p-4 mb-3 rounded-xl shadow-sm">
+      <View
+        className={`${item.orderType === OrderType.TakeOut ? "bg-blue-100" : "bg-yellow-100"} p-4 mb-3 rounded-xl shadow-sm`}
+      >
         <TouchableOpacity
           className="flex-row justify-between items-center"
           onPress={() => toggleExpand(item.id!)}
