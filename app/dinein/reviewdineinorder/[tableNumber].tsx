@@ -3,7 +3,7 @@ import Header from "@/components/ui/Header";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
-import { OrderType } from "@/types/enum";
+import { OrderType, TableStatus } from "@/types/enum";
 import { generateFirestoreId } from "@/utils/utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -48,7 +48,10 @@ export default function ReviewDineInOrder() {
         email: user.email || undefined,
       };
       const orderId = generateFirestoreId();
-      updateTable(tableNumber, { currentOrderId: orderId });
+      updateTable(tableNumber, {
+        currentOrderId: orderId,
+        status: TableStatus.Occupied,
+      });
       updateOrder({
         id: orderId,
         orderType: OrderType.DineIn,

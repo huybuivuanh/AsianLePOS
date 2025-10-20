@@ -1,6 +1,6 @@
 import SpecialFlagsSelector from "@/components/takeout/SpecialFlagsSelector";
 import { useOrderStore } from "@/stores/useOrderStore";
-import { KitchenType, OrderType } from "@/types/enum";
+import { OrderType } from "@/types/enum";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
@@ -14,7 +14,7 @@ export default function OrderItemCard({ item }: Props) {
   // Map the item's current flags to the FlagType for SpecialFlagsSelector
   const getSelectedFlag = (): "appetizer" | "toGo" | null => {
     if (item.togo) return "toGo";
-    if (item.kitchenType === KitchenType.Appetizer) return "appetizer";
+    if (item.appetizer) return "appetizer";
     return null;
   };
 
@@ -23,8 +23,7 @@ export default function OrderItemCard({ item }: Props) {
 
     const updates: Partial<OrderItem> = {};
     updates.togo = newFlag === "toGo";
-    updates.kitchenType =
-      newFlag === "appetizer" ? KitchenType.Appetizer : item.kitchenType;
+    updates.appetizer = newFlag === "appetizer" ? true : item.appetizer;
 
     updateOrderItem(item.id, updates);
   };

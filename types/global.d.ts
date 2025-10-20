@@ -52,6 +52,7 @@ declare global {
     changes?: ItemChange[];
     extras?: AddExtra[];
     togo: boolean;
+    appetizer: boolean;
     kitchenType: KitchenType;
     instructions?: string;
   };

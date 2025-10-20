@@ -1,5 +1,4 @@
 export enum KitchenType {
-  Appetizer = "Appetizer",
   A = "A",
   B = "B",
   C = "C",

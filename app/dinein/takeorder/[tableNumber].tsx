@@ -17,7 +17,8 @@ export default function TakeOrder() {
   const { openModal } = useModalStore();
   const [query, setQuery] = useState("");
   const { addItem } = useOrderStore();
-  const { getTotalItems, setEditingOrder } = useOrderStore();
+  const totalItems = useOrderStore((state) => state.getTotalItems());
+  const setEditingOrder = useOrderStore((state) => state.setEditingOrder);
 
   const visibleItems = useMemo(() => {
     const allowedIds = new Set<number | string>();
@@ -89,7 +90,7 @@ export default function TakeOrder() {
           }}
         >
           <Text className="text-white font-bold text-lg">
-            View Order {`(${getTotalItems()})`}
+            View Order {`(${totalItems})`}
           </Text>
         </TouchableOpacity>
       </View>

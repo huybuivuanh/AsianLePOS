@@ -1,5 +1,5 @@
 import { useMenuStore } from "@/stores/useMenuStore";
-import { KitchenType, OrderType } from "@/types/enum";
+import { OrderType } from "@/types/enum";
 import { generateFirestoreId } from "@/utils/utils";
 import {
   BottomSheetModal,
@@ -122,8 +122,8 @@ export default function ItemSheetModal({
       id: generateFirestoreId(),
       name: item.name,
       togo: specialFlag === "toGo",
-      kitchenType:
-        specialFlag === "appetizer" ? KitchenType.Appetizer : item.kitchenType,
+      appetizer: specialFlag === "appetizer",
+      kitchenType: item.kitchenType,
       price: orderItemPrice,
       quantity,
       ...(instructions !== "" && { instructions }),

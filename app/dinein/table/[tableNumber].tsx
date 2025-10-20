@@ -3,7 +3,7 @@ import Header from "@/components/ui/Header";
 import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
-import { TableStatus } from "@/types/enum";
+import { OrderType, TableStatus } from "@/types/enum";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo } from "react";
 import {
@@ -18,8 +18,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function TablePage() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
   const router = useRouter();
-
-  const { getTable, updateTable } = useTableStore();
+  const updateTable = useTableStore((state) => state.updateTable);
+  const getTable = useTableStore((state) => state.getTable);
   const table = getTable(tableNumber!);
 
   const { dineInOrders, loading: ordersLoading } = useLiveOrdersStore();
@@ -30,6 +30,7 @@ export default function TablePage() {
     setEditingOrder,
     cancelOrder,
     completeOrder,
+    updateOrder,
     isActive,
   } = useOrderStore();
 
@@ -115,38 +116,56 @@ export default function TablePage() {
             data={order.orderItems}
             keyExtractor={(item, index) => item.id ?? index.toString()}
             renderItem={({ item }) => (
-              <View
-                key={item.id}
-                className="flex-row justify-between items-center mb-1 p-4"
-              >
-                <View className="flex-1">
-                  <Text className="text-lg font-semibold">
-                    {item.quantity} x {item.name} - $
-                    {(item.price * item.quantity).toFixed(2)}
+              <View className="flex-1 bg-white m-2 p-4 rounded-lg">
+                {/* Main item info */}
+                <Text className="text-lg font-semibold">
+                  {item.quantity} x {item.name} - $
+                  {(item.price * item.quantity).toFixed(2)}
+                  {item.togo && " - (To Go)"}
+                  {item.appetizer && " - (Appetizer)"}
+                </Text>
+
+                {/* Options */}
+                {item.options && item.options.length > 0 && (
+                  <View className="mt-2 space-y-1">
+                    {item.options.map((option) => (
+                      <Text key={option.id} className="text-base text-gray-600">
+                        • {option.name}
+                        {option.price > 0 && ` - $${option.price.toFixed(2)}`}
+                      </Text>
+                    ))}
+                  </View>
+                )}
+
+                {/* Add Extras */}
+                {item.extras && item.extras.length > 0 && (
+                  <View>
+                    {item.extras.map((extra, index) => (
+                      <Text key={index} className="text-base text-gray-600">
+                        • Add: {extra.description}- ${extra.price.toFixed(2)}
+                      </Text>
+                    ))}
+                  </View>
+                )}
+
+                {/* Item Changes */}
+                {item.changes && item.changes.length > 0 && (
+                  <View>
+                    {item.changes.map((change, index) => (
+                      <Text key={index} className="text-base text-gray-600">
+                        • Change: {change.from} → {change.to} - $
+                        {change.price.toFixed(2)}
+                      </Text>
+                    ))}
+                  </View>
+                )}
+
+                {/* Special Instructions */}
+                {item.instructions && (
+                  <Text className="text-base text-gray-500 mt-2 italic">
+                    {`"${item.instructions}"`}
                   </Text>
-
-                  {/* Options */}
-                  {item.options && item.options.length > 0 && (
-                    <View className="mt-1 space-y-1">
-                      {item.options.map((option) => (
-                        <Text
-                          key={option.id}
-                          className="text-base text-gray-600"
-                        >
-                          • {option.name}
-                          {option.price > 0 && ` - $${option.price.toFixed(2)}`}
-                        </Text>
-                      ))}
-                    </View>
-                  )}
-
-                  {/* Special Instructions */}
-                  {item.instructions && (
-                    <Text className="text-base text-gray-500 mt-2 italic">
-                      {`"${item.instructions}"`}
-                    </Text>
-                  )}
-                </View>
+                )}
               </View>
             )}
             className="mt-4"
@@ -193,6 +212,7 @@ export default function TablePage() {
           <View className="flex-row justify-between">
             <TouchableOpacity
               onPress={() => {
+                updateOrder({ orderType: OrderType.DineIn });
                 if (hasActiveOrder) {
                   router.push({
                     pathname: "/dinein/editdineinorder/[tableNumber]",
@@ -222,7 +242,7 @@ export default function TablePage() {
               activeOpacity={0.7}
               disabled={!hasActiveOrder}
               className={`px-5 py-3 rounded-lg items-center justify-center ${
-                hasActiveOrder ? "bg-green-500" : "bg-gray-400"
+                hasActiveOrder ? "bg-green-500" : "bg-green-200"
               }`}
               style={{ flex: 1, marginLeft: 8 }}
             >

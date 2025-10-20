@@ -48,7 +48,7 @@ export default function EditTable() {
 
   const handleClearTable = () => {
     setGuests(0);
-    setStatus(TableStatus.Open);
+    if (table.currentOrderId === null) setStatus(TableStatus.Open);
   };
 
   const handleSubmit = async () => {
