@@ -32,16 +32,19 @@ export default function EditTable() {
   const increaseGuests = () => {
     const newGuests = table.guests + 1;
     setGuestsLocal(tableNumber, newGuests);
-
     if (newGuests > 0) setTableStatusLocal(tableNumber, TableStatus.Occupied);
   };
 
   const decreaseGuests = () => {
     const newGuests = Math.max(0, table.guests - 1);
     setGuestsLocal(tableNumber, newGuests);
-
     if (newGuests === 0 && table.currentOrderId!)
       setTableStatusLocal(tableNumber, TableStatus.Open);
+  };
+
+  const handleClearTable = () => {
+    setGuestsLocal(tableNumber, 0);
+    setTableStatusLocal(tableNumber, TableStatus.Open);
   };
 
   const handleSubmit = async () => {
@@ -80,7 +83,7 @@ export default function EditTable() {
             Number of Guests
           </Text>
 
-          <View className="flex-row items-center">
+          <View className="flex-row items-center mb-4">
             <TouchableOpacity
               onPress={decreaseGuests}
               activeOpacity={0.7}
@@ -101,6 +104,20 @@ export default function EditTable() {
               <Text className="text-2xl font-bold text-gray-700">＋</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Clear Table Button */}
+          <TouchableOpacity
+            onPress={handleClearTable}
+            activeOpacity={0.7}
+            disabled={submitting}
+            className={`mt-2 px-6 py-3 rounded-lg border border-gray-300 bg-gray-50 ${
+              submitting ? "opacity-50" : ""
+            }`}
+          >
+            <Text className="text-gray-700 font-semibold text-base">
+              Clear Table
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Submit Button */}

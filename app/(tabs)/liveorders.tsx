@@ -126,7 +126,7 @@ export default function LiveOrders() {
                 <View className="flex-row justify-between items-start p-1 rounded-lg">
                   <View className="flex-1">
                     <Text className="text-m font-semibold">
-                      {orderItem.quantity} x {orderItem.item.name} - $
+                      {orderItem.quantity} x {orderItem.name} - $
                       {(orderItem.price * orderItem.quantity).toFixed(2)}
                     </Text>
 

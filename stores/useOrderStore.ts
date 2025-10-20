@@ -24,6 +24,7 @@ type OrderState = {
   clearOrder: () => void;
   getTotalItems: () => number;
   getOrderTotal: () => number;
+  updateOrderItem: (itemId: string, fields: Partial<OrderItem>) => void;
   setOrder: (order: Order) => void;
   submitOrder: (staff: User) => Promise<void>;
   updateOrderOnFirestore: (staff: User) => Promise<void>;
@@ -102,6 +103,16 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       0
     );
   },
+
+  updateOrderItem: (itemId: string, fields: Partial<OrderItem>) =>
+    set((state) => ({
+      order: {
+        ...state.order,
+        orderItems: state.order.orderItems?.map((item) =>
+          item.id === itemId ? { ...item, ...fields } : item
+        ),
+      },
+    })),
 
   setOrder: (order) => set({ order, isActive: true }),
 

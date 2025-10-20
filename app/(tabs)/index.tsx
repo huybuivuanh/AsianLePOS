@@ -1,6 +1,7 @@
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useModalStore } from "@/stores/useModalStore";
 import { useOrderStore } from "@/stores/useOrderStore";
+import { OrderType } from "@/types/enum";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -14,7 +15,8 @@ export default function TakeOut() {
   const { openModal } = useModalStore();
   const [query, setQuery] = useState("");
   const { addItem } = useOrderStore();
-  const { getTotalItems, setEditingOrder } = useOrderStore();
+  const totalItems = useOrderStore((state) => state.getTotalItems());
+  const setEditingOrder = useOrderStore((state) => state.setEditingOrder);
 
   const visibleItems = useMemo(() => {
     const allowedIds = new Set<number | string>();
@@ -41,6 +43,7 @@ export default function TakeOut() {
   const handleSelectItem = (item: MenuItem) => {
     openModal("itemSheet", {
       item,
+      orderType: OrderType.TakeOut,
       onSubmit: (orderItem: OrderItem) => {
         addItem(orderItem);
       },
@@ -79,7 +82,7 @@ export default function TakeOut() {
           }}
         >
           <Text className="text-white font-bold text-lg">
-            View Order {`(${getTotalItems()})`}
+            View Order {`(${totalItems})`}
           </Text>
         </TouchableOpacity>
       </View>

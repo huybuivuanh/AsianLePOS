@@ -45,12 +45,14 @@ declare global {
 
   type OrderItem = {
     id?: string;
-    item: MenuItem;
+    name: string;
     price: number;
     quantity: number;
     options?: ItemOtpion[];
     changes?: ItemChange[];
     extras?: AddExtra[];
+    togo: boolean;
+    kitchenType: KitchenType;
     instructions?: string;
   };
 

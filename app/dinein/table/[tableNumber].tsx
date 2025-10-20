@@ -121,7 +121,7 @@ export default function TablePage() {
               >
                 <View className="flex-1">
                   <Text className="text-lg font-semibold">
-                    {item.quantity} x {item.item.name} - $
+                    {item.quantity} x {item.name} - $
                     {(item.price * item.quantity).toFixed(2)}
                   </Text>
 
@@ -160,7 +160,9 @@ export default function TablePage() {
             <TouchableOpacity
               onPress={handleCancelOrder}
               activeOpacity={0.7}
-              className="bg-red-500 px-5 py-3 rounded-lg items-center justify-center"
+              className={`${
+                hasActiveOrder ? "bg-red-500" : "bg-red-300"
+              } px-5 py-3 rounded-lg items-center justify-center`}
               style={{ flex: 1, marginRight: 8 }}
               disabled={!hasActiveOrder}
             >

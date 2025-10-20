@@ -1,4 +1,6 @@
+import SpecialFlagsSelector from "@/components/takeout/SpecialFlagsSelector";
 import { useOrderStore } from "@/stores/useOrderStore";
+import { KitchenType, OrderType } from "@/types/enum";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
@@ -7,23 +9,70 @@ interface Props {
 }
 
 export default function OrderItemCard({ item }: Props) {
-  const { updateQuantity } = useOrderStore();
+  const { updateQuantity, updateOrderItem, order } = useOrderStore();
+
+  // Map the item's current flags to the FlagType for SpecialFlagsSelector
+  const getSelectedFlag = (): "appetizer" | "toGo" | null => {
+    if (item.togo) return "toGo";
+    if (item.kitchenType === KitchenType.Appetizer) return "appetizer";
+    return null;
+  };
+
+  const handleFlagChange = (newFlag: "appetizer" | "toGo" | null) => {
+    if (!item.id) return;
+
+    const updates: Partial<OrderItem> = {};
+    updates.togo = newFlag === "toGo";
+    updates.kitchenType =
+      newFlag === "appetizer" ? KitchenType.Appetizer : item.kitchenType;
+
+    updateOrderItem(item.id, updates);
+  };
 
   return (
     <View className="flex-row justify-between items-start mb-4 bg-gray-100 p-4 rounded-lg">
       <View className="flex-1">
+        {/* Main item info */}
         <Text className="text-lg font-semibold">
-          {item.quantity} x {item.item.name} - $
+          {item.quantity} x {item.name} - $
           {(item.price * item.quantity).toFixed(2)}
         </Text>
 
         {/* Options */}
         {item.options && item.options.length > 0 && (
-          <View className="mt-1 space-y-1">
+          <View className="mt-2 space-y-1">
             {item.options.map((option) => (
               <Text key={option.id} className="text-base text-gray-600">
                 • {option.name}
                 {option.price > 0 && ` - $${option.price.toFixed(2)}`}
+              </Text>
+            ))}
+          </View>
+        )}
+
+        {/* Add Extras */}
+        {item.extras && item.extras.length > 0 && (
+          <View className="mt-2">
+            <Text className="text-lg font-semibold text-gray-700">
+              ➕ Add Extras
+            </Text>
+            {item.extras.map((extra, index) => (
+              <Text key={index} className="text-base text-gray-600 ml-2">
+                • {extra.description}- ${extra.price.toFixed(2)}
+              </Text>
+            ))}
+          </View>
+        )}
+
+        {/* Item Changes */}
+        {item.changes && item.changes.length > 0 && (
+          <View className="mt-4">
+            <Text className="text-lg font-semibold text-gray-700">
+              🔁 Item Changes
+            </Text>
+            {item.changes.map((change, index) => (
+              <Text key={index} className="text-base text-gray-600 ml-2">
+                • {change.from} → {change.to} - ${change.price.toFixed(2)}
               </Text>
             ))}
           </View>
@@ -34,6 +83,14 @@ export default function OrderItemCard({ item }: Props) {
           <Text className="text-base text-gray-500 mt-2 italic">
             {`"${item.instructions}"`}
           </Text>
+        )}
+
+        {/* Flags */}
+        {order.orderType === OrderType.DineIn && (
+          <SpecialFlagsSelector
+            selected={getSelectedFlag()}
+            onChange={handleFlagChange}
+          />
         )}
       </View>
 

@@ -8,40 +8,20 @@ export const AddExtraEditor = ({
   extras: AddExtra[];
   onChange: (updated: AddExtra[]) => void;
 }) => {
-  const [newExtra, setNewExtra] = useState({ description: "", price: "0" });
+  const [newExtra, setNewExtra] = useState({ description: "", price: "" });
 
   const handleAdd = () => {
     if (newExtra.description.trim() === "") return;
+    const price = parseFloat(newExtra.price) || 0;
 
-    onChange([
-      ...extras,
-      {
-        description: newExtra.description.trim(),
-        price: parseFloat(newExtra.price) || 0,
-      },
-    ]);
-
-    setNewExtra({ description: "", price: "0" });
-  };
-
-  const handleUpdate = (
-    index: number,
-    key: "description" | "price",
-    value: string
-  ) => {
-    const updated = [...extras];
-    updated[index] = {
-      ...updated[index],
-      [key]: key === "price" ? parseFloat(value) || 0 : value,
-    };
-    onChange(updated);
+    onChange([...extras, { description: newExtra.description.trim(), price }]);
+    setNewExtra({ description: "", price: "" });
   };
 
   const handleRemove = (index: number) => {
     onChange(extras.filter((_, i) => i !== index));
   };
 
-  // Disable Add if description is empty
   const isAddDisabled = newExtra.description.trim() === "";
 
   return (
@@ -49,8 +29,8 @@ export const AddExtraEditor = ({
       <Text className="text-xl font-semibold mb-2">Add Extras</Text>
 
       {/* New Extra Input */}
-      <View className="flex-row items-end mb-3">
-        <View className="flex-1 mr-2">
+      <View className="flex-row items-end mb-3 space-x-2">
+        <View className="flex-1">
           <Text className="text-sm text-gray-600 mb-1">Description</Text>
           <TextInput
             className="border border-gray-300 rounded-xl p-3"
@@ -62,7 +42,7 @@ export const AddExtraEditor = ({
           />
         </View>
 
-        <View className="w-24 mr-2">
+        <View className="w-24">
           <Text className="text-sm text-gray-600 mb-1">Price</Text>
           <TextInput
             className="border border-gray-300 rounded-xl p-3 text-right"
@@ -86,33 +66,29 @@ export const AddExtraEditor = ({
         </TouchableOpacity>
       </View>
 
-      {/* Editable List */}
+      {/* Read-only List */}
       {extras.map((item, index) => (
         <View
           key={index}
-          className="flex-row items-center mb-3 border border-gray-300 rounded-xl p-2"
+          className="flex-row items-center mb-2 border border-gray-300 rounded-xl p-3 bg-gray-50"
         >
-          <View className="flex-1 mr-2">
-            <Text className="text-sm text-gray-600 mb-1">Description</Text>
-            <TextInput
-              value={item.description}
-              onChangeText={(text) => handleUpdate(index, "description", text)}
-            />
+          <View className="flex-1">
+            <Text className="text-sm font-semibold text-gray-700">Add</Text>
+            <Text className="text-gray-800">{item.description}</Text>
           </View>
-          <View className="w-24 mr-2">
-            <Text className="text-sm text-gray-600 mb-1">Price</Text>
-            <TextInput
-              className="text-right"
-              keyboardType="numeric"
-              value={item.price.toString()}
-              onChangeText={(text) => handleUpdate(index, "price", text)}
-            />
+
+          <View className="w-24">
+            <Text className="text-sm font-semibold text-gray-700">Price</Text>
+            <Text className="text-gray-800 text-right">
+              ${item.price.toFixed(2)}
+            </Text>
           </View>
+
           <TouchableOpacity
-            className="bg-red-500 px-3 py-1 rounded-full"
+            className="bg-red-500 px-3 py-1 rounded-full ml-2"
             onPress={() => handleRemove(index)}
           >
-            <Text className="text-white text-sm">×</Text>
+            <Text className="text-white text-sm font-bold">×</Text>
           </TouchableOpacity>
         </View>
       ))}

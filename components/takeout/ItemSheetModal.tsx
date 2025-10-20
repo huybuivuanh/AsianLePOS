@@ -1,4 +1,5 @@
 import { useMenuStore } from "@/stores/useMenuStore";
+import { KitchenType, OrderType } from "@/types/enum";
 import { generateFirestoreId } from "@/utils/utils";
 import {
   BottomSheetModal,
@@ -17,14 +18,21 @@ import {
 } from "react-native";
 import { AddExtraEditor } from "./AddExtraEditor";
 import { ItemChangeEditor } from "./ItemChangeEditor";
+import SpecialFlagsSelector from "./SpecialFlagsSelector";
 
 type Props = {
   item: MenuItem;
+  orderType: OrderType;
   onSubmit: (orderItem: OrderItem) => void;
   onClose: () => void;
 };
 
-export default function ItemSheetModal({ item, onSubmit, onClose }: Props) {
+export default function ItemSheetModal({
+  item,
+  orderType,
+  onSubmit,
+  onClose,
+}: Props) {
   const bottomSheetRef = useRef<BottomSheetModal>(null);
 
   const [quantity, setQuantity] = useState(1);
@@ -34,6 +42,10 @@ export default function ItemSheetModal({ item, onSubmit, onClose }: Props) {
   >({});
   const [extras, setExtras] = useState<AddExtra[]>([]);
   const [changes, setChanges] = useState<ItemChange[]>([]);
+  const [specialFlag, setSpecialFlag] = useState<"appetizer" | "toGo" | null>(
+    null
+  );
+  const [footerHeight, setFooterHeight] = useState(0);
 
   const { optionGroups, options } = useMenuStore();
 
@@ -52,17 +64,13 @@ export default function ItemSheetModal({ item, onSubmit, onClose }: Props) {
       let updated: string[];
 
       if (group.maxSelection === 1) {
-        // Radio button behavior: selecting a new option replaces the old one
         updated = [option.id!];
       } else {
-        // Multi-select behavior
         if (current.includes(option.id!)) {
           updated = current.filter((id) => id !== option.id!);
         } else {
-          // Enforce maxSelection
-          if (group.maxSelection && current.length >= group.maxSelection) {
-            return prev; // do nothing if max reached
-          }
+          if (group.maxSelection && current.length >= group.maxSelection)
+            return prev;
           updated = [...current, option.id!];
         }
       }
@@ -74,7 +82,6 @@ export default function ItemSheetModal({ item, onSubmit, onClose }: Props) {
   const handleSubmit = () => {
     if (!item || !options || !optionGroups) return;
 
-    // Validate minSelection
     const groups =
       (item.optionGroupIds
         ?.map((id) => optionGroups.find((g) => g.id === id))
@@ -91,7 +98,6 @@ export default function ItemSheetModal({ item, onSubmit, onClose }: Props) {
       }
     }
 
-    // Flatten selected options
     const optionsToSubmit: ItemOption[] = [];
     Object.entries(selectedOptions).forEach(([groupId, optionIds]) => {
       optionIds.forEach((optId) => {
@@ -100,7 +106,6 @@ export default function ItemSheetModal({ item, onSubmit, onClose }: Props) {
       });
     });
 
-    // Calculate total price including extras and changes
     const extrasTotal = extras.reduce((sum, e) => sum + (e.price || 0), 0);
     const changesTotal = changes.reduce((sum, c) => sum + (c.price || 0), 0);
 
@@ -110,16 +115,18 @@ export default function ItemSheetModal({ item, onSubmit, onClose }: Props) {
       extrasTotal +
       changesTotal;
 
-    // Build order item
     const cleanItem: OrderItem = {
       id: generateFirestoreId(),
-      item: item,
+      name: item.name,
+      togo: specialFlag === "toGo",
+      kitchenType:
+        specialFlag === "appetizer" ? KitchenType.Appetizer : item.kitchenType,
       price: orderItemPrice,
-      quantity: quantity,
+      quantity,
       ...(instructions !== "" && { instructions }),
       ...(optionsToSubmit.length > 0 && { options: optionsToSubmit }),
-      ...(extras.length > 0 && { extras }), // Add extras
-      ...(changes.length > 0 && { changes }), // Add changes
+      ...(extras.length > 0 && { extras }),
+      ...(changes.length > 0 && { changes }),
     };
 
     onSubmit(cleanItem);
@@ -136,18 +143,17 @@ export default function ItemSheetModal({ item, onSubmit, onClose }: Props) {
       enablePanDownToClose
       onDismiss={onClose}
     >
-      <View className="flex-1">
-        {/* Scrollable content */}
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-        >
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <View className="flex-1">
+          {/* Scrollable content */}
           <BottomSheetScrollView
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={{
               padding: 16,
-              paddingBottom: Platform.OS === "ios" ? 180 : 160, // leave room for footer
-              flexGrow: 1,
+              paddingBottom: footerHeight + 32,
             }}
           >
             {/* Header */}
@@ -214,45 +220,54 @@ export default function ItemSheetModal({ item, onSubmit, onClose }: Props) {
                       </TouchableOpacity>
                     );
                   })}
-
-                  <AddExtraEditor extras={extras} onChange={setExtras} />
-                  <ItemChangeEditor changes={changes} onChange={setChanges} />
                 </View>
               );
             })}
+
+            <AddExtraEditor extras={extras} onChange={setExtras} />
+            <ItemChangeEditor changes={changes} onChange={setChanges} />
+            {orderType === OrderType.DineIn && (
+              <SpecialFlagsSelector
+                selected={specialFlag}
+                onChange={setSpecialFlag}
+              />
+            )}
           </BottomSheetScrollView>
-        </KeyboardAvoidingView>
 
-        {/* Fixed footer: quantity + submit */}
-        <View className="absolute bottom-0 left-0 right-0 p-4 pb-8 bg-white border-t border-gray-200">
-          {/* Quantity Stepper */}
-          <View className="flex-row justify-center items-center mb-4">
+          {/* Sticky footer */}
+          <View
+            onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}
+            className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-10"
+          >
+            {/* Quantity Stepper */}
+            <View className="flex-row justify-center items-center mb-4">
+              <TouchableOpacity
+                className="w-14 h-14 rounded-full bg-gray-200 justify-center items-center"
+                onPress={() => setQuantity((q) => Math.max(1, q - 1))}
+              >
+                <Text className="text-2xl font-bold">−</Text>
+              </TouchableOpacity>
+
+              <Text className="mx-6 text-2xl font-semibold">{quantity}</Text>
+
+              <TouchableOpacity
+                className="w-14 h-14 rounded-full bg-gray-200 justify-center items-center"
+                onPress={() => setQuantity((q) => q + 1)}
+              >
+                <Text className="text-2xl font-bold">＋</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Add to Order Button */}
             <TouchableOpacity
-              className="w-14 h-14 rounded-full bg-gray-200 justify-center items-center"
-              onPress={() => setQuantity((q) => Math.max(1, q - 1))}
+              className="bg-gray-800 py-4 rounded-lg items-center w-full"
+              onPress={handleSubmit}
             >
-              <Text className="text-2xl font-bold">−</Text>
-            </TouchableOpacity>
-
-            <Text className="mx-6 text-2xl font-semibold">{quantity}</Text>
-
-            <TouchableOpacity
-              className="w-14 h-14 rounded-full bg-gray-200 justify-center items-center"
-              onPress={() => setQuantity((q) => q + 1)}
-            >
-              <Text className="text-2xl font-bold">＋</Text>
+              <Text className="text-white font-bold text-lg">Add to Order</Text>
             </TouchableOpacity>
           </View>
-
-          {/* Add to Order Button */}
-          <TouchableOpacity
-            className="bg-gray-800 py-4 rounded-lg items-center w-full"
-            onPress={handleSubmit}
-          >
-            <Text className="text-white font-bold text-lg">Add to Order</Text>
-          </TouchableOpacity>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </BottomSheetModal>
   );
 }

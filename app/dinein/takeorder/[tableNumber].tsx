@@ -2,6 +2,7 @@ import Header from "@/components/ui/Header";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useModalStore } from "@/stores/useModalStore";
 import { useOrderStore } from "@/stores/useOrderStore";
+import { OrderType } from "@/types/enum";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -43,6 +44,7 @@ export default function TakeOrder() {
   const handleSelectItem = (item: MenuItem) => {
     openModal("itemSheet", {
       item,
+      orderType: OrderType.DineIn,
       onSubmit: (orderItem: OrderItem) => {
         addItem(orderItem);
       },
