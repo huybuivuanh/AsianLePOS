@@ -15,10 +15,6 @@ type TableStore = {
   tables: Table[];
   getTable: (tableNumber: string) => Table | undefined;
 
-  // Local state updates
-  setTableStatusLocal: (tableNumber: string, status: TableStatus) => void;
-  setGuestsLocal: (tableNumber: string, guests: number) => void;
-
   // Firestore update
   updateTable: (tableNumber: string, data: Partial<Table>) => Promise<void>;
 
@@ -31,23 +27,6 @@ export const useTableStore = create<TableStore>((set, get) => ({
 
   getTable: (tableNumber) =>
     get().tables.find((t) => t.tableNumber === tableNumber),
-
-  // ✅ Local state only (no Firestore)
-  setTableStatusLocal: (tableNumber, status) => {
-    set((state) => ({
-      tables: state.tables.map((t) =>
-        t.tableNumber === tableNumber ? { ...t, status } : t
-      ),
-    }));
-  },
-
-  setGuestsLocal: (tableNumber, guests) => {
-    set((state) => ({
-      tables: state.tables.map((t) =>
-        t.tableNumber === tableNumber ? { ...t, guests } : t
-      ),
-    }));
-  },
 
   // ✅ Firestore update (called on Submit)
   updateTable: async (tableNumber, data) => {

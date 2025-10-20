@@ -2,24 +2,28 @@ import Header from "@/components/ui/Header";
 import { useTableStore } from "@/stores/useTableStore";
 import { TableStatus } from "@/types/enum";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function EditTable() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
+  const router = useRouter();
   const table = useTableStore((state) =>
     state.tables.find((t) => t.tableNumber === tableNumber)
   );
-  const router = useRouter();
-
-  const setGuestsLocal = useTableStore((state) => state.setGuestsLocal);
-  const setTableStatusLocal = useTableStore(
-    (state) => state.setTableStatusLocal
-  );
   const updateTable = useTableStore((state) => state.updateTable);
 
+  const [guests, setGuests] = useState<number>(0);
+  const [status, setStatus] = useState<TableStatus>(TableStatus.Open);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (table) {
+      setGuests(table.guests);
+      setStatus(table.status);
+    }
+  }, [table]);
 
   if (!table) {
     return (
@@ -30,29 +34,29 @@ export default function EditTable() {
   }
 
   const increaseGuests = () => {
-    const newGuests = table.guests + 1;
-    setGuestsLocal(tableNumber, newGuests);
-    if (newGuests > 0) setTableStatusLocal(tableNumber, TableStatus.Occupied);
+    const newGuests = guests + 1;
+    setGuests(newGuests);
+    if (newGuests > 0 && status === TableStatus.Open)
+      setStatus(TableStatus.Occupied);
   };
 
   const decreaseGuests = () => {
-    const newGuests = Math.max(0, table.guests - 1);
-    setGuestsLocal(tableNumber, newGuests);
-    if (newGuests === 0 && table.currentOrderId!)
-      setTableStatusLocal(tableNumber, TableStatus.Open);
+    const newGuests = Math.max(0, guests - 1);
+    setGuests(newGuests);
+    if (newGuests === 0) setStatus(TableStatus.Open);
   };
 
   const handleClearTable = () => {
-    setGuestsLocal(tableNumber, 0);
-    setTableStatusLocal(tableNumber, TableStatus.Open);
+    setGuests(0);
+    setStatus(TableStatus.Open);
   };
 
   const handleSubmit = async () => {
     try {
       setSubmitting(true);
       await updateTable(tableNumber, {
-        guests: table.guests,
-        status: table.status,
+        guests,
+        status,
       });
       router.back();
     } catch (error) {
@@ -70,12 +74,10 @@ export default function EditTable() {
           {/* Status */}
           <Text
             className={`text-xl font-bold mb-4 ${
-              table.status === TableStatus.Open
-                ? "text-green-600"
-                : "text-orange-400"
+              status === TableStatus.Open ? "text-green-600" : "text-orange-400"
             }`}
           >
-            {table.status}
+            {status}
           </Text>
 
           {/* Guest Counter */}
@@ -93,7 +95,7 @@ export default function EditTable() {
             </TouchableOpacity>
 
             <Text className="mx-6 text-3xl font-bold text-gray-800">
-              {table.guests}
+              {guests}
             </Text>
 
             <TouchableOpacity

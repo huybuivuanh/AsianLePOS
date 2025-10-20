@@ -1,6 +1,7 @@
 import { useTableStore } from "@/stores/useTableStore";
 import { TableStatus } from "@/types/enum";
 import { useRouter } from "expo-router";
+import { Check, X } from "lucide-react-native";
 import React from "react";
 import { FlatList, ListRenderItem, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -34,7 +35,15 @@ export default function DineIn() {
           <View className="flex-row justify-between items-center">
             <Text className="text-lg font-bold">Table {item.tableNumber}</Text>
           </View>
-          <Text className="text-sm">Guests: {item.guests}</Text>
+          <Text className="text-sm mb-1">Guests: {item.guests}</Text>
+          <View className="flex-row items-center space-x-1">
+            <Text className="text-sm">Order:</Text>
+            {item.currentOrderId ? (
+              <Check size={16} color="green" />
+            ) : (
+              <X size={16} color="red" />
+            )}
+          </View>
         </View>
       </Pressable>
     );
