@@ -138,7 +138,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       ...order,
       staff,
       total,
-      status: OrderStatus.Pending,
+      status: OrderStatus.InProgress,
       printed: false,
       createdAt: Timestamp.fromDate(new Date()),
     };

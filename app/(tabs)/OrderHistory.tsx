@@ -42,24 +42,20 @@ export default function OrderHistory() {
 
           <View
             className={`px-3 py-1 rounded-full ${
-              item.status === OrderStatus.Pending
-                ? "bg-yellow-100"
-                : item.status === OrderStatus.InProgress
-                  ? "bg-blue-100"
-                  : item.status === OrderStatus.Completed
-                    ? "bg-green-100"
-                    : "bg-red-200"
+              item.status === OrderStatus.InProgress
+                ? "bg-blue-100"
+                : item.status === OrderStatus.Completed
+                  ? "bg-green-100"
+                  : "bg-red-200"
             }`}
           >
             <Text
               className={`text-xs font-semibold ${
-                item.status === OrderStatus.Pending
-                  ? "text-yellow-700"
-                  : item.status === OrderStatus.InProgress
-                    ? "text-blue-700"
-                    : item.status === OrderStatus.Completed
-                      ? "text-green-700"
-                      : "text-red-700"
+                item.status === OrderStatus.InProgress
+                  ? "text-blue-700"
+                  : item.status === OrderStatus.Completed
+                    ? "text-green-700"
+                    : "text-red-700"
               }`}
             >
               {item.status}
@@ -77,7 +73,7 @@ export default function OrderHistory() {
                 <View className="flex-row justify-between items-start p-1 rounded-lg">
                   <View className="flex-1">
                     <Text className="text-m font-semibold">
-                      {orderItem.quantity} x {orderItem.item.name} - $
+                      {orderItem.quantity} x {orderItem.name} - $
                       {(orderItem.price * orderItem.quantity).toFixed(2)}
                     </Text>
 

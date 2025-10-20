@@ -91,24 +91,20 @@ export default function LiveOrders() {
 
           <View
             className={`px-3 py-1 rounded-full ${
-              item.status === OrderStatus.Pending
-                ? "bg-yellow-100"
-                : item.status === OrderStatus.InProgress
-                  ? "bg-blue-100"
-                  : item.status === OrderStatus.Completed
-                    ? "bg-green-100"
-                    : "bg-red-200"
+              item.status === OrderStatus.InProgress
+                ? "bg-blue-100"
+                : item.status === OrderStatus.Completed
+                  ? "bg-green-100"
+                  : "bg-red-200"
             }`}
           >
             <Text
               className={`text-xs font-semibold ${
-                item.status === OrderStatus.Pending
-                  ? "text-yellow-700"
-                  : item.status === OrderStatus.InProgress
-                    ? "text-blue-700"
-                    : item.status === OrderStatus.Completed
-                      ? "text-green-700"
-                      : "text-red-700"
+                item.status === OrderStatus.InProgress
+                  ? "text-blue-700"
+                  : item.status === OrderStatus.Completed
+                    ? "text-green-700"
+                    : "text-red-700"
               }`}
             >
               {item.status}
@@ -121,11 +117,11 @@ export default function LiveOrders() {
             {item.orderItems.map((orderItem, index) => (
               <View
                 key={`${orderItem.id} ${index}`}
-                className="flex-row justify-between items-center mb-1"
+                className="flex-row justify-between items-center mb-3 bg-gray-200 p-2 rounded-lg"
               >
                 <View className="flex-row justify-between items-start p-1 rounded-lg">
                   <View className="flex-1">
-                    <Text className="text-m font-semibold">
+                    <Text className="text-xl font-semibold">
                       {orderItem.quantity} x {orderItem.name} - $
                       {(orderItem.price * orderItem.quantity).toFixed(2)}
                     </Text>
@@ -141,6 +137,41 @@ export default function LiveOrders() {
                             • {option.name}
                             {option.price > 0 &&
                               ` - $${option.price.toFixed(2)}`}
+                          </Text>
+                        ))}
+                      </View>
+                    )}
+
+                    {/* Add Extras */}
+                    {orderItem.extras && orderItem.extras.length > 0 && (
+                      <View className="mt-2">
+                        <Text className="text-lg font-semibold text-gray-700">
+                          ➕ Add Extras
+                        </Text>
+                        {orderItem.extras.map((extra, index) => (
+                          <Text
+                            key={index}
+                            className="text-base text-gray-600 ml-2"
+                          >
+                            • {extra.description}- ${extra.price.toFixed(2)}
+                          </Text>
+                        ))}
+                      </View>
+                    )}
+
+                    {/* Item Changes */}
+                    {orderItem.changes && orderItem.changes.length > 0 && (
+                      <View className="mt-4">
+                        <Text className="text-lg font-semibold text-gray-700">
+                          🔁 Item Changes
+                        </Text>
+                        {orderItem.changes.map((change, index) => (
+                          <Text
+                            key={index}
+                            className="text-base text-gray-600 ml-2"
+                          >
+                            • {change.from} → {change.to} - $
+                            {change.price.toFixed(2)}
                           </Text>
                         ))}
                       </View>

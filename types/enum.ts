@@ -7,7 +7,6 @@ export enum KitchenType {
 }
 
 export enum OrderStatus {
-  Pending = "Pending",
   InProgress = "InProgress",
   Completed = "Completed",
   Canceled = "Canceled",
