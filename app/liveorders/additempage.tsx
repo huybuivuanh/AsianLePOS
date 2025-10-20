@@ -14,7 +14,7 @@ export default function AddItemPage() {
   const { categories, menuItems, loading } = useMenuStore();
   const { openModal } = useModalStore();
   const [query, setQuery] = useState("");
-  const { addItem } = useOrderStore();
+  const { addItem, order } = useOrderStore();
 
   const visibleItems = useMemo(() => {
     const allowedIds = new Set<number | string>();
@@ -41,6 +41,7 @@ export default function AddItemPage() {
   const handleSelectItem = (item: MenuItem) => {
     openModal("itemSheet", {
       item,
+      orderType: order.orderType,
       onSubmit: (orderItem: OrderItem) => {
         addItem(orderItem);
       },

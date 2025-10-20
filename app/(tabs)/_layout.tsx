@@ -74,6 +74,7 @@ export default function TabsLayout() {
 
   return (
     <>
+      <ModalProvider />
       <Tabs
         screenOptions={{
           headerShown: false,
@@ -133,7 +134,6 @@ export default function TabsLayout() {
           }}
         />
       </Tabs>
-      <ModalProvider />
     </>
   );
 }

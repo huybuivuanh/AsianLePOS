@@ -49,12 +49,15 @@ export default function ItemSheetModal({
 
   const { optionGroups, options } = useMenuStore();
 
+  useEffect(() => {
+    bottomSheetRef.current?.present();
+  }, []);
+
   // Reset modal state on new item
   useEffect(() => {
     setQuantity(1);
     setInstructions("");
     setSelectedOptions({});
-    bottomSheetRef.current?.present();
   }, [item]);
 
   // Toggle option selection
@@ -141,7 +144,11 @@ export default function ItemSheetModal({
       index={0}
       snapPoints={["95%"]}
       enablePanDownToClose
-      onDismiss={onClose}
+      onDismiss={() => {
+        onClose();
+        // cleanup — ensure modal state is cleared from zustand
+        setTimeout(() => bottomSheetRef.current?.dismiss(), 0);
+      }}
     >
       <KeyboardAvoidingView
         className="flex-1"
