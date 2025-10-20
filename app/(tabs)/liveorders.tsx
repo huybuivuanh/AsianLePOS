@@ -144,16 +144,11 @@ export default function LiveOrders() {
 
                     {/* Add Extras */}
                     {orderItem.extras && orderItem.extras.length > 0 && (
-                      <View className="mt-2">
-                        <Text className="text-lg font-semibold text-gray-700">
-                          ➕ Add Extras
-                        </Text>
+                      <View>
                         {orderItem.extras.map((extra, index) => (
-                          <Text
-                            key={index}
-                            className="text-base text-gray-600 ml-2"
-                          >
-                            • {extra.description}- ${extra.price.toFixed(2)}
+                          <Text key={index} className="text-base text-gray-600">
+                            • Add: {extra.description}- $
+                            {extra.price.toFixed(2)}
                           </Text>
                         ))}
                       </View>
@@ -161,16 +156,10 @@ export default function LiveOrders() {
 
                     {/* Item Changes */}
                     {orderItem.changes && orderItem.changes.length > 0 && (
-                      <View className="mt-4">
-                        <Text className="text-lg font-semibold text-gray-700">
-                          🔁 Item Changes
-                        </Text>
+                      <View>
                         {orderItem.changes.map((change, index) => (
-                          <Text
-                            key={index}
-                            className="text-base text-gray-600 ml-2"
-                          >
-                            • {change.from} → {change.to} - $
+                          <Text key={index} className="text-base text-gray-600">
+                            • Change: {change.from} → {change.to} - $
                             {change.price.toFixed(2)}
                           </Text>
                         ))}

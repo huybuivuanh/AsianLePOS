@@ -52,13 +52,10 @@ export default function OrderItemCard({ item }: Props) {
 
         {/* Add Extras */}
         {item.extras && item.extras.length > 0 && (
-          <View className="mt-2">
-            <Text className="text-lg font-semibold text-gray-700">
-              ➕ Add Extras
-            </Text>
+          <View>
             {item.extras.map((extra, index) => (
-              <Text key={index} className="text-base text-gray-600 ml-2">
-                • {extra.description}- ${extra.price.toFixed(2)}
+              <Text key={index} className="text-base text-gray-600">
+                • Add: {extra.description}- ${extra.price.toFixed(2)}
               </Text>
             ))}
           </View>
@@ -66,13 +63,11 @@ export default function OrderItemCard({ item }: Props) {
 
         {/* Item Changes */}
         {item.changes && item.changes.length > 0 && (
-          <View className="mt-4">
-            <Text className="text-lg font-semibold text-gray-700">
-              🔁 Item Changes
-            </Text>
+          <View>
             {item.changes.map((change, index) => (
-              <Text key={index} className="text-base text-gray-600 ml-2">
-                • {change.from} → {change.to} - ${change.price.toFixed(2)}
+              <Text key={index} className="text-base text-gray-600">
+                • Change: {change.from} → {change.to} - $
+                {change.price.toFixed(2)}
               </Text>
             ))}
           </View>
