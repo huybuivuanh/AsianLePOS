@@ -33,7 +33,7 @@ export default function ReviewDineInOrder() {
 
   const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
-  const { updateTable } = useTableStore();
+  const { updateTable, getTable } = useTableStore();
 
   const handleSubmit = async () => {
     if (!user) {
@@ -56,7 +56,7 @@ export default function ReviewDineInOrder() {
         id: orderId,
         orderType: OrderType.DineIn,
         tableNumber: tableNumber,
-        guests: order.guests,
+        guests: getTable(tableNumber)?.guests || 1,
       });
       setSubmitting(true);
       await submitOrder(staff);
