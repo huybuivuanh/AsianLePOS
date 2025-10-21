@@ -19,8 +19,9 @@ export default function TablePage() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
   const router = useRouter();
   const updateTable = useTableStore((state) => state.updateTable);
-  const getTable = useTableStore((state) => state.getTable);
-  const table = getTable(tableNumber!);
+  const table = useTableStore((state) =>
+    state.tables.find((t) => t.tableNumber === tableNumber)
+  );
   const [order, setOrder] = useState<Partial<Order>>({});
 
   const { dineInOrders, loading: ordersLoading } = useLiveOrdersStore();
@@ -30,7 +31,6 @@ export default function TablePage() {
     completeOrder,
     updateOrder,
     submitToPrintQueue,
-    isActive,
   } = useOrderStore();
 
   const orderTotal = useOrderStore((state) => state.getOrderTotal());
@@ -50,7 +50,8 @@ export default function TablePage() {
   // ✅ Sync order store with live data
   useEffect(() => {
     if (currentOrder) setOrder(currentOrder);
-  }, [currentOrder]);
+    else setOrder({});
+  }, [currentOrder, table]);
 
   // ✅ Loading or table not found
   if (!table || ordersLoading) {
@@ -100,9 +101,6 @@ export default function TablePage() {
     }
   };
 
-  // Determine if there is a "real" active order
-  const hasActiveOrder = Boolean(isActive && order.id);
-
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
       <Header
@@ -116,9 +114,7 @@ export default function TablePage() {
         <TableInfoCard tableNumber={tableNumber} />
 
         {/* Order Items */}
-        {!hasActiveOrder ||
-        !order.orderItems ||
-        order.orderItems.length === 0 ? (
+        {!order || !order.orderItems || order.orderItems.length === 0 ? (
           <Text className="text-gray-500 text-center mt-10">
             No active order for this table.
           </Text>
@@ -185,7 +181,7 @@ export default function TablePage() {
 
         {/* Footer Actions */}
         <View className="m-4">
-          {hasActiveOrder && (
+          {order && (
             <View className="bg-white p-4 rounded-lg shadow-sm mb-4">
               <View className="flex-row justify-between mb-1">
                 <Text className="text-base text-gray-700">Subtotal</Text>
@@ -225,10 +221,10 @@ export default function TablePage() {
               onPress={handleCancelOrder}
               activeOpacity={0.7}
               className={`${
-                hasActiveOrder ? "bg-red-500" : "bg-red-300"
+                order ? "bg-red-500" : "bg-red-300"
               } px-5 py-3 rounded-lg items-center justify-center`}
               style={{ flex: 1, marginRight: 8 }}
-              disabled={!hasActiveOrder}
+              disabled={!order}
             >
               <Text className="text-white text-base font-semibold">
                 Cancel Order
@@ -238,9 +234,9 @@ export default function TablePage() {
             <TouchableOpacity
               onPress={() => handlePrint(order)}
               activeOpacity={0.7}
-              disabled={!hasActiveOrder}
+              disabled={!order}
               className={`px-5 py-3 rounded-lg items-center justify-center ${
-                hasActiveOrder ? "bg-blue-500" : "bg-blue-300"
+                order ? "bg-blue-500" : "bg-blue-300"
               }`}
               style={{ flex: 1, marginLeft: 8 }}
             >
@@ -255,7 +251,7 @@ export default function TablePage() {
             <TouchableOpacity
               onPress={() => {
                 updateOrder({ orderType: OrderType.DineIn });
-                if (hasActiveOrder) {
+                if (order) {
                   router.push({
                     pathname: "/dinein/editdineinorder/[tableNumber]",
                     params: { tableNumber },
@@ -273,7 +269,7 @@ export default function TablePage() {
               style={{ flex: 1, marginRight: 8 }}
             >
               <Text className="text-white text-base font-semibold">
-                {hasActiveOrder ? "Edit Order" : "Take Order"}
+                {order ? "Edit Order" : "Take Order"}
               </Text>
             </TouchableOpacity>
 
@@ -282,9 +278,9 @@ export default function TablePage() {
                 handleCompleteOrder(order);
               }}
               activeOpacity={0.7}
-              disabled={!hasActiveOrder}
+              disabled={!order}
               className={`px-5 py-3 rounded-lg items-center justify-center ${
-                hasActiveOrder ? "bg-green-500" : "bg-green-200"
+                order ? "bg-green-500" : "bg-green-200"
               }`}
               style={{ flex: 1, marginLeft: 8 }}
             >

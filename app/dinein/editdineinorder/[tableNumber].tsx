@@ -1,9 +1,11 @@
 import OrderItemCard from "@/components/takeout/reviewOrder/OrderItemCard";
 import Header from "@/components/ui/Header";
 import { useAuth } from "@/providers/AuthProvider";
+import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
+import { useTableStore } from "@/stores/useTableStore";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -19,10 +21,30 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function EditDinInOrder() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
   const router = useRouter();
-  const { order } = useOrderStore();
+  const { order, setOrder, clearOrder } = useOrderStore();
   const { updateOrderOnFirestore } = useOrderStore();
 
   const { user } = useAuth();
+
+  const table = useTableStore((state) =>
+    state.tables.find((t) => t.tableNumber === tableNumber)
+  );
+
+  const { dineInOrders } = useLiveOrdersStore();
+
+  // ✅ Find the current order using table.currentOrderId
+  const currentOrder = useMemo(() => {
+    if (!table?.currentOrderId) return undefined;
+    return dineInOrders.find(
+      (o) => o.id === table.currentOrderId && o.status !== "completed"
+    );
+  }, [dineInOrders, table]);
+
+  // ✅ Sync order store with live data
+  useEffect(() => {
+    if (currentOrder) setOrder(currentOrder);
+    else clearOrder();
+  }, [currentOrder, table, clearOrder, setOrder]);
 
   // Local UI states
   const [submitting, setSubmitting] = useState(false);
