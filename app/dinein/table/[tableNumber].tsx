@@ -5,7 +5,7 @@ import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { OrderType, TableStatus } from "@/types/enum";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -21,12 +21,10 @@ export default function TablePage() {
   const updateTable = useTableStore((state) => state.updateTable);
   const getTable = useTableStore((state) => state.getTable);
   const table = getTable(tableNumber!);
+  const [order, setOrder] = useState<Partial<Order>>({});
 
   const { dineInOrders, loading: ordersLoading } = useLiveOrdersStore();
   const {
-    order,
-    setOrder,
-    clearOrder,
     setEditingOrder,
     cancelOrder,
     completeOrder,
@@ -52,8 +50,7 @@ export default function TablePage() {
   // ✅ Sync order store with live data
   useEffect(() => {
     if (currentOrder) setOrder(currentOrder);
-    else clearOrder();
-  }, [currentOrder, setOrder, clearOrder]);
+  }, [currentOrder]);
 
   // ✅ Loading or table not found
   if (!table || ordersLoading) {
@@ -74,7 +71,7 @@ export default function TablePage() {
         currentOrderId: null,
         guests: 0,
       });
-      clearOrder();
+      setOrder({});
     } catch (error: any) {
       console.log("Failed to cancel order:", error);
     }
@@ -88,7 +85,7 @@ export default function TablePage() {
         currentOrderId: null,
         guests: 0,
       });
-      clearOrder();
+      setOrder({});
       await completeOrder(order);
     } catch (err) {
       console.error("Failed to complete order:", err);
@@ -111,7 +108,6 @@ export default function TablePage() {
       <Header
         title={`Table ${tableNumber}`}
         onBack={() => {
-          clearOrder();
           router.replace("/dinein");
         }}
       />

@@ -48,7 +48,7 @@ declare global {
     name: string;
     price: number;
     quantity: number;
-    options?: ItemOtpion[];
+    options?: ItemOption[];
     changes?: ItemChange[];
     extras?: AddExtra[];
     togo: boolean;

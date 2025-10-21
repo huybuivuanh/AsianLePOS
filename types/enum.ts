@@ -25,8 +25,8 @@ export enum AlertType {
 }
 
 export enum OrderType {
-  DineIn = "DineIn",
-  TakeOut = "TakeOut",
+  DineIn = "Dine In",
+  TakeOut = "Take Out",
   Delivery = "Delivery",
 }
 
