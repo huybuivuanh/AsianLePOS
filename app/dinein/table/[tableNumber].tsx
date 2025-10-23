@@ -6,6 +6,7 @@ import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { OrderType, TableStatus } from "@/types/enum";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { Check, X } from "lucide-react-native";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -234,7 +235,7 @@ export default function TablePage() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => handlePrint}
+              onPress={handlePrint}
               activeOpacity={0.7}
               disabled={!order}
               className={`px-5 py-3 rounded-lg items-center justify-center ${
@@ -242,9 +243,16 @@ export default function TablePage() {
               }`}
               style={{ flex: 1, marginLeft: 8 }}
             >
-              <Text className="text-white text-base font-semibold">
-                Print Order
-              </Text>
+              <View className="flex-row items-center space-x-1">
+                <Text className="text-white text-base font-semibold">
+                  Print Order
+                </Text>
+                {order?.printed ? (
+                  <Check size={20} color="orange" />
+                ) : (
+                  <X size={20} color="red" />
+                )}
+              </View>
             </TouchableOpacity>
           </View>
 

@@ -22,14 +22,9 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 export default function ReviewDineInOrder() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
   const router = useRouter();
-  const {
-    order,
-    submitOrder,
-    clearOrder,
-    getTotalItems,
-    getOrderTotal,
-    updateOrder,
-  } = useOrderStore();
+  const { submitOrder, clearOrder, getTotalItems, getOrderTotal, updateOrder } =
+    useOrderStore();
+  const order = useOrderStore((state) => state.order);
 
   const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
@@ -54,12 +49,13 @@ export default function ReviewDineInOrder() {
       });
       updateOrder({
         id: orderId,
+        staff: staff,
         orderType: OrderType.DineIn,
         tableNumber: tableNumber,
         guests: getTable(tableNumber)?.guests || 1,
       });
       setSubmitting(true);
-      await submitOrder(staff);
+      await submitOrder(order);
       router.push({
         pathname: "/dinein/table/[tableNumber]",
         params: { tableNumber },

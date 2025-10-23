@@ -26,9 +26,9 @@ type OrderState = {
   getTotalItems: () => number;
   getOrderTotal: () => number;
   updateOrderItem: (itemId: string, fields: Partial<OrderItem>) => void;
-  setOrder: (order: Order) => void;
-  submitOrder: (staff: User) => Promise<void>;
-  updateOrderOnFirestore: (staff: User) => Promise<void>;
+  setOrder: (order: Partial<Order>) => void;
+  submitOrder: (order: Partial<Order>) => Promise<void>;
+  updateOrderOnFirestore: (order: Partial<Order>) => Promise<void>;
   cancelOrder: (order: Partial<Order>) => Promise<void>;
   completeOrder: (order: Partial<Order>) => Promise<void>;
   submitToPrintQueue: (order: Partial<Order>) => Promise<void>;
@@ -120,8 +120,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
   setOrder: (order) => set({ order, isActive: true }),
 
-  submitOrder: async (staff: User) => {
-    const { order } = get();
+  submitOrder: async (order) => {
+    if (!order.id) throw new Error("Cannot update order without ID.");
 
     let firestorecollection = "takeOutOrders";
     if (order.orderType !== OrderType.DineIn) {
@@ -140,7 +140,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
     const orderToSubmit: Partial<Order> = {
       ...order,
-      staff,
       total,
       status: OrderStatus.InProgress,
       printed: false,
@@ -153,9 +152,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     get().clearOrder();
   },
 
-  updateOrderOnFirestore: async (staff: User) => {
-    const { order } = get();
-
+  updateOrderOnFirestore: async (order) => {
     if (!order.id) throw new Error("Cannot update order without ID.");
 
     const firestorecollection =
@@ -166,7 +163,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     // Include staff info in the update
     const updateData: Partial<Order> = {
       ...order,
-      staff,
       total: (order.orderItems ?? []).reduce(
         (acc, i) => acc + i.price * i.quantity,
         0

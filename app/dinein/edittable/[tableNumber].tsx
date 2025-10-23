@@ -1,5 +1,7 @@
 import SafeAreaViewWrapper from "@/components/SafeAreaViewWrapper";
 import Header from "@/components/ui/Header";
+import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
+import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { TableStatus } from "@/types/enum";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -13,6 +15,8 @@ export default function EditTable() {
     state.tables.find((t) => t.tableNumber === tableNumber)
   );
   const updateTable = useTableStore((state) => state.updateTable);
+  const { updateOrderOnFirestore } = useOrderStore();
+  const { dineInOrders } = useLiveOrdersStore();
 
   const [guests, setGuests] = useState<number>(0);
   const [status, setStatus] = useState<TableStatus>(TableStatus.Open);
@@ -58,6 +62,10 @@ export default function EditTable() {
         guests,
         status,
       });
+      const order = dineInOrders.find((o) => o.id === table.currentOrderId);
+      if (order) {
+        await updateOrderOnFirestore({ ...order, guests: guests });
+      }
       router.back();
     } catch (error) {
       console.error("Failed to update table:", error);
