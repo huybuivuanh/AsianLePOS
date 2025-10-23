@@ -73,7 +73,7 @@ export default function LiveOrders() {
     const expanded = expandedOrderId === item.id;
 
     return (
-      <View className="bg-gray-100 p-4 mb-3 rounded-xl shadow-sm">
+      <View className="bg-blue-100 p-4 mb-3 rounded-xl shadow-sm">
         <TouchableOpacity
           className="flex-row justify-between items-center"
           onPress={() => toggleExpand(item.id!)}
@@ -88,6 +88,11 @@ export default function LiveOrders() {
             <Text className="font-semibold text-gray-800 text-base">
               Time: {formatDate(item.createdAt)}
             </Text>
+            {item.isPreorder && (
+              <Text className="font-semibold text-gray-800 text-base">
+                Preorder: {formatDate(item.preorderTime)}
+              </Text>
+            )}
           </View>
 
           <View
