@@ -10,6 +10,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -120,23 +121,27 @@ export default function Item() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0} // adjust if needed
-      >
+    <KeyboardAvoidingView
+      className="flex-1"
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <SafeAreaView className="flex-1 bg-white">
         <Header title={item.name} onBack={() => router.back()} />
 
-        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
+        <ScrollView
+          keyboardShouldPersistTaps="always"
+          contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        >
           {/* Instructions */}
           <Text className="text-base mb-2">Special instructions:</Text>
           <TextInput
             className="border border-gray-300 rounded-lg p-3 mb-4 min-h-[80px]"
             placeholder="Add instructions..."
-            multiline
             value={instructions}
             onChangeText={setInstructions}
+            returnKeyLabel="Hide"
+            returnKeyType="done"
+            onSubmitEditing={() => Keyboard.dismiss()}
           />
 
           {/* Option Groups */}
@@ -194,33 +199,34 @@ export default function Item() {
               onChange={setSpecialFlag}
             />
           )}
-        </ScrollView>
 
-        <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
-          <View className="flex-row justify-center items-center mb-4">
+          {/* Footer now inside scroll view */}
+          <View className="mt-6 border-t border-gray-200 pt-4">
+            <View className="flex-row justify-center items-center mb-4">
+              <TouchableOpacity
+                className="w-14 h-14 rounded-full bg-gray-200 justify-center items-center"
+                onPress={() => setQuantity((q) => Math.max(1, q - 1))}
+              >
+                <Text className="text-2xl font-bold">−</Text>
+              </TouchableOpacity>
+              <Text className="mx-6 text-2xl font-semibold">{quantity}</Text>
+              <TouchableOpacity
+                className="w-14 h-14 rounded-full bg-gray-200 justify-center items-center"
+                onPress={() => setQuantity((q) => q + 1)}
+              >
+                <Text className="text-2xl font-bold">＋</Text>
+              </TouchableOpacity>
+            </View>
+
             <TouchableOpacity
-              className="w-14 h-14 rounded-full bg-gray-200 justify-center items-center"
-              onPress={() => setQuantity((q) => Math.max(1, q - 1))}
+              className="bg-gray-800 py-4 rounded-lg items-center"
+              onPress={handleSubmit}
             >
-              <Text className="text-2xl font-bold">−</Text>
-            </TouchableOpacity>
-            <Text className="mx-6 text-2xl font-semibold">{quantity}</Text>
-            <TouchableOpacity
-              className="w-14 h-14 rounded-full bg-gray-200 justify-center items-center"
-              onPress={() => setQuantity((q) => q + 1)}
-            >
-              <Text className="text-2xl font-bold">＋</Text>
+              <Text className="text-white font-bold text-lg">Add to Order</Text>
             </TouchableOpacity>
           </View>
-
-          <TouchableOpacity
-            className="bg-gray-800 py-4 rounded-lg items-center"
-            onPress={handleSubmit}
-          >
-            <Text className="text-white font-bold text-lg">Add to Order</Text>
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }

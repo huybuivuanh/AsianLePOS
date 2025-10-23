@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Keyboard, Pressable, Text, TextInput, View } from "react-native";
 import { auth } from "../../lib/firebaseConfig";
 
 export default function LoginPage() {
@@ -32,6 +32,9 @@ export default function LoginPage() {
         autoCapitalize="none"
         keyboardType="email-address"
         className="border rounded-lg px-3 py-2 mb-4"
+        returnKeyLabel="Hide"
+        returnKeyType="done"
+        onSubmitEditing={() => Keyboard.dismiss()}
       />
 
       <TextInput
@@ -40,6 +43,9 @@ export default function LoginPage() {
         onChangeText={setPassword}
         secureTextEntry
         className="border rounded-lg px-3 py-2 mb-4"
+        returnKeyLabel="Hide"
+        returnKeyType="done"
+        onSubmitEditing={() => Keyboard.dismiss()}
       />
 
       <Pressable onPress={handleLogin} className="bg-blue-600 py-2 rounded-lg">

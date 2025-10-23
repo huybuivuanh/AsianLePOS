@@ -1,6 +1,6 @@
 import { useOrderStore } from "@/stores/useOrderStore";
 import React from "react";
-import { Text, TextInput, View } from "react-native";
+import { Keyboard, Text, TextInput, View } from "react-native";
 
 export default function CustomerInfoForm() {
   const { order, updateOrder } = useOrderStore();
@@ -25,6 +25,9 @@ export default function CustomerInfoForm() {
           onChangeText={(text) => updateOrder({ phoneNumber: text })}
           keyboardType="phone-pad"
           className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-base bg-white"
+          returnKeyLabel="Hide"
+          returnKeyType="done"
+          onSubmitEditing={() => Keyboard.dismiss()}
         />
       </View>
     </View>

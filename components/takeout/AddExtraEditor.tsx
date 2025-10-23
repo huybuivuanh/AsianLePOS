@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  Keyboard,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function AddExtraEditor({
   extras,
@@ -39,6 +45,9 @@ export default function AddExtraEditor({
             onChangeText={(text) =>
               setNewExtra((prev) => ({ ...prev, description: text }))
             }
+            returnKeyLabel="Hide"
+            returnKeyType="done"
+            onSubmitEditing={() => Keyboard.dismiss()}
           />
         </View>
 
@@ -52,6 +61,9 @@ export default function AddExtraEditor({
             onChangeText={(text) =>
               setNewExtra((prev) => ({ ...prev, price: text }))
             }
+            returnKeyLabel="Hide"
+            returnKeyType="done"
+            onSubmitEditing={() => Keyboard.dismiss()}
           />
         </View>
 

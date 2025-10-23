@@ -3,7 +3,7 @@ import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { Text, TextInput, View } from "react-native";
+import { Keyboard, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CategoryList from "../../components/takeout/CategoryList";
 import SearchResults from "../../components/takeout/SearchResults";
@@ -39,7 +39,7 @@ export default function AddItemPage() {
   const handleSelectItem = (item: MenuItem) => {
     router.push({
       pathname: "/item/[itemId]",
-      params: { itemId: item.id, orderType: order.orderType },
+      params: { itemId: item.id!, orderType: order.orderType },
     });
   };
 
@@ -52,6 +52,9 @@ export default function AddItemPage() {
           value={query}
           onChangeText={setQuery}
           className="border border-gray-300 rounded-lg p-3 mb-4"
+          returnKeyLabel="Hide"
+          returnKeyType="done"
+          onSubmitEditing={() => Keyboard.dismiss()}
         />
 
         {query.trim() ? (
