@@ -12,7 +12,7 @@ export default function Header({
   return (
     <View className="flex-row items-center justify-between px-4 py-3 bg-gray-400">
       <TouchableOpacity onPress={onBack}>
-        <Ionicons name="arrow-back" size={30} color="white" />
+        <Ionicons name="arrow-back" size={40} color="white" />
       </TouchableOpacity>
       <Text className="text-white text-xl font-semibold">{title}</Text>
       {/* spacer */}

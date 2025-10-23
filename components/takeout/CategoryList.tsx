@@ -14,6 +14,7 @@ export default function CategoryList({
 }: Props) {
   return (
     <FlatList
+      keyboardShouldPersistTaps="always"
       data={categories}
       keyExtractor={(cat) => cat.id!}
       contentContainerStyle={{ paddingBottom: 100 }}

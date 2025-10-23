@@ -274,6 +274,7 @@ export default function LiveOrders() {
         </View>
       ) : (
         <FlatList
+          keyboardShouldPersistTaps="always"
           data={takeOutOrders}
           keyExtractor={(item) => item.id!}
           renderItem={renderOrder}

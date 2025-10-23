@@ -59,6 +59,7 @@ export default function DineIn() {
     <SafeAreaViewWrapper className="p-4">
       {/* Table Grid */}
       <FlatList
+        keyboardShouldPersistTaps="always"
         data={tables}
         renderItem={renderItem}
         keyExtractor={(item) => item.tableNumber}

@@ -22,7 +22,7 @@ export default function TablePage() {
   const table = useTableStore((state) =>
     state.tables.find((t) => t.tableNumber === tableNumber)
   );
-  const [order, setOrder] = useState<Partial<Order>>({});
+  const [order, setOrder] = useState<Partial<Order> | null>(null);
 
   const { dineInOrders, loading: ordersLoading } = useLiveOrdersStore();
   const {
@@ -50,7 +50,7 @@ export default function TablePage() {
   // ✅ Sync order store with live data
   useEffect(() => {
     if (currentOrder) setOrder(currentOrder);
-    else setOrder({});
+    else setOrder(null);
   }, [currentOrder, table]);
 
   // ✅ Loading or table not found
@@ -63,7 +63,7 @@ export default function TablePage() {
   }
 
   const handleCancelOrder = async () => {
-    if (!order.id) return;
+    if (!order) return;
 
     try {
       await cancelOrder(order);
@@ -72,13 +72,13 @@ export default function TablePage() {
         currentOrderId: null,
         guests: 0,
       });
-      setOrder({});
+      setOrder(null);
     } catch (error: any) {
       console.log("Failed to cancel order:", error);
     }
   };
 
-  const handleCompleteOrder = async (order: Partial<Order>) => {
+  const handleCompleteOrder = async () => {
     if (!order) return;
     try {
       await updateTable(tableNumber!, {
@@ -86,14 +86,15 @@ export default function TablePage() {
         currentOrderId: null,
         guests: 0,
       });
-      setOrder({});
+      setOrder(null);
       await completeOrder(order);
     } catch (err) {
       console.error("Failed to complete order:", err);
     }
   };
 
-  const handlePrint = async (order: Partial<Order>) => {
+  const handlePrint = async () => {
+    if (!order) return;
     try {
       await submitToPrintQueue(order);
     } catch (error) {
@@ -120,6 +121,7 @@ export default function TablePage() {
           </Text>
         ) : (
           <FlatList
+            keyboardShouldPersistTaps="always"
             data={order.orderItems}
             keyExtractor={(item, index) => item.id ?? index.toString()}
             renderItem={({ item }) => (
@@ -232,7 +234,7 @@ export default function TablePage() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => handlePrint(order)}
+              onPress={() => handlePrint}
               activeOpacity={0.7}
               disabled={!order}
               className={`px-5 py-3 rounded-lg items-center justify-center ${
@@ -274,9 +276,7 @@ export default function TablePage() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={async () => {
-                handleCompleteOrder(order);
-              }}
+              onPress={handleCompleteOrder}
               activeOpacity={0.7}
               disabled={!order}
               className={`px-5 py-3 rounded-lg items-center justify-center ${

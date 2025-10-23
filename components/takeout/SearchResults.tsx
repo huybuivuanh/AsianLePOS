@@ -19,6 +19,7 @@ export default function SearchResults({ items, query, onSelectItem }: Props) {
 
   return (
     <FlatList
+      keyboardShouldPersistTaps="always"
       data={filteredItems}
       keyExtractor={(item) => item.id!}
       renderItem={({ item }) => (

@@ -15,6 +15,7 @@ export default function CategoryItem({ category, items, onSelectItem }: Props) {
 
       {items.length ? (
         <FlatList
+          keyboardShouldPersistTaps="always"
           data={items}
           keyExtractor={(item) => item.id!}
           scrollEnabled={false}

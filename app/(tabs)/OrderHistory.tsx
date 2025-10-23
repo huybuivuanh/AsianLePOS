@@ -204,6 +204,7 @@ export default function OrderHistory() {
         </View>
       ) : (
         <FlatList
+          keyboardShouldPersistTaps="always"
           data={orderHistory}
           keyExtractor={(item) => item.id!}
           renderItem={renderOrder}
