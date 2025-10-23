@@ -41,10 +41,7 @@ export default function EditOrder() {
         email: user.email || undefined,
       };
       setSubmitting(true);
-      updateOrder({
-        staff: staff,
-      });
-      await updateOrderOnFirestore(order);
+      await updateOrderOnFirestore({ ...order, staff });
       router.back();
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to submit order.");

@@ -19,7 +19,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 
 export default function ReviewOrder() {
   const router = useRouter();
-  const { submitOrder, clearOrder, updateOrder } = useOrderStore();
+  const { submitOrder, clearOrder } = useOrderStore();
   const order = useOrderStore((state) => state.order);
 
   const { user } = useAuth();
@@ -38,12 +38,17 @@ export default function ReviewOrder() {
         name: user.displayName || "Unknown",
         email: user.email || undefined,
       };
-      updateOrder({
-        id: generateFirestoreId(),
+
+      const orderId = generateFirestoreId();
+
+      const newOrder = {
+        ...order,
+        id: orderId,
         staff: staff,
-      });
+      };
+
       setSubmitting(true);
-      await submitOrder(order);
+      await submitOrder(newOrder);
       router.back();
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to submit order.");

@@ -14,7 +14,6 @@ import { create } from "zustand";
 type OrderState = {
   order: Partial<Order>;
   editingOrder: boolean;
-  isActive: boolean;
 
   // actions
   setEditingOrder: (editing: boolean) => void;
@@ -48,7 +47,6 @@ const defaultOrder: Partial<Order> = {
 export const useOrderStore = create<OrderState>((set, get) => ({
   order: { ...defaultOrder },
   editingOrder: false,
-  isActive: false,
 
   setEditingOrder: (editing) => set({ editingOrder: editing }),
 
@@ -91,7 +89,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   },
 
   clearOrder: () => {
-    set({ order: { ...defaultOrder }, isActive: false });
+    set({ order: defaultOrder });
   },
 
   getTotalItems: () => {
@@ -118,10 +116,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       },
     })),
 
-  setOrder: (order) => set({ order, isActive: true }),
+  setOrder: (order) => set({ order }),
 
   submitOrder: async (order) => {
-    if (!order.id) throw new Error("Cannot update order without ID.");
+    if (!order.id) throw new Error("Cannot submit order without ID.");
 
     let firestorecollection = "takeOutOrders";
     if (order.orderType !== OrderType.DineIn) {

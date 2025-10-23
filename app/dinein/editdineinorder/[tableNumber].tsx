@@ -63,11 +63,8 @@ export default function EditDinInOrder() {
         name: user.displayName || "Unknown",
         email: user.email || undefined,
       };
-      updateOrder({
-        staff: staff,
-      });
       setSubmitting(true);
-      await updateOrderOnFirestore(order);
+      await updateOrderOnFirestore({ ...order, staff });
       router.replace({
         pathname: "/dinein/table/[tableNumber]",
         params: { tableNumber },

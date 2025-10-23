@@ -39,9 +39,7 @@ export default function TablePage() {
   // ✅ Find the current order using table.currentOrderId
   const currentOrder = useMemo(() => {
     if (!table?.currentOrderId) return undefined;
-    return dineInOrders.find(
-      (o) => o.id === table.currentOrderId && o.status !== "completed"
-    );
+    return dineInOrders.find((o) => o.id === table.currentOrderId);
   }, [dineInOrders, table]);
 
   const pst = orderTotal * 0.06;

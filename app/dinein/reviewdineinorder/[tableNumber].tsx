@@ -37,25 +37,32 @@ export default function ReviewDineInOrder() {
     }
 
     try {
+      setSubmitting(true);
+
       const staff: User = {
         id: user.uid,
         name: user.displayName || "Unknown",
         email: user.email || undefined,
       };
+
       const orderId = generateFirestoreId();
-      updateTable(tableNumber, {
-        currentOrderId: orderId,
-        status: TableStatus.Occupied,
-      });
-      updateOrder({
+
+      const newOrder = {
+        ...order,
         id: orderId,
         staff: staff,
         orderType: OrderType.DineIn,
         tableNumber: tableNumber,
         guests: getTable(tableNumber)?.guests || 1,
+      };
+
+      await updateTable(tableNumber, {
+        currentOrderId: orderId,
+        status: TableStatus.Occupied,
       });
-      setSubmitting(true);
-      await submitOrder(order);
+
+      await submitOrder(newOrder);
+
       router.push({
         pathname: "/dinein/table/[tableNumber]",
         params: { tableNumber },
