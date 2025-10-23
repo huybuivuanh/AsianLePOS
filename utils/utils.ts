@@ -23,3 +23,12 @@ export const sortTables = (tables: Table[]): Table[] => {
     (a, b) => parseInt(a.tableNumber, 10) - parseInt(b.tableNumber, 10)
   );
 };
+
+export const sortOrdersByDate = (orders: Order[]): Order[] => {
+  return [...orders].sort((a, b) => {
+    const timeA = a.createdAt?.toMillis?.() ?? 0;
+    const timeB = b.createdAt?.toMillis?.() ?? 0;
+
+    return timeB - timeA;
+  });
+};

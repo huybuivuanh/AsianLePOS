@@ -2,7 +2,7 @@ import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderStatus } from "@/types/enum";
 import { formatDate } from "@/utils/utils";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -15,7 +15,13 @@ import SafeAreaViewWrapper from "../../components/SafeAreaViewWrapper";
 
 export default function LiveOrders() {
   const { takeOutOrders, loading } = useLiveOrdersStore();
-  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const params = useLocalSearchParams<{ orderId?: string | string[] }>();
+  const orderIdParam = Array.isArray(params.orderId)
+    ? params.orderId[0]
+    : params.orderId;
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(
+    orderIdParam || null
+  );
   const router = useRouter();
   const {
     setOrder,

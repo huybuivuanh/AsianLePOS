@@ -21,7 +21,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 export default function EditDinInOrder() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
   const router = useRouter();
-  const { setOrder, clearOrder, updateOrder } = useOrderStore();
+  const { setOrder, clearOrder } = useOrderStore();
   const { updateOrderOnFirestore } = useOrderStore();
   const order = useOrderStore((state) => state.order);
 

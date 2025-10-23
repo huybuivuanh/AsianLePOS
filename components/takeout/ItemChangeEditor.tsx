@@ -33,7 +33,7 @@ export default function ItemChangeEditor({
   };
 
   const isAddDisabled =
-    newChange.from.trim() === "" && newChange.to.trim() === "";
+    newChange.from.trim() === "" || newChange.to.trim() === "";
 
   return (
     <View className="mt-4 mb-6">

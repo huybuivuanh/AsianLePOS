@@ -1,4 +1,5 @@
 // app/stores/useLiveOrdersStore.ts
+import { sortOrdersByDate } from "@/utils/utils";
 import { collection, onSnapshot } from "firebase/firestore";
 import { create } from "zustand";
 import { db } from "../lib/firebaseConfig";
@@ -21,7 +22,8 @@ export const useOrderHistoryStore = create<OrderHistoryState>((set) => ({
         id: doc.id,
         ...(doc.data() as Order),
       }));
-      set({ orderHistory: orderHistoryData, loading: false });
+      const sortedData = sortOrdersByDate(orderHistoryData);
+      set({ orderHistory: sortedData, loading: false });
     });
 
     return () => {

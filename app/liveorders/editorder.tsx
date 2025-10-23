@@ -18,7 +18,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 
 export default function EditOrder() {
   const router = useRouter();
-  const { updateOrderOnFirestore, updateOrder, clearOrder } = useOrderStore();
+  const { updateOrderOnFirestore, clearOrder } = useOrderStore();
   const order = useOrderStore((state) => state.order);
 
   const { user } = useAuth();

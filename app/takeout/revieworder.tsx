@@ -49,7 +49,10 @@ export default function ReviewOrder() {
 
       setSubmitting(true);
       await submitOrder(newOrder);
-      router.back();
+      router.push({
+        pathname: "/liveorders",
+        params: { orderId: orderId },
+      });
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to submit order.");
     } finally {

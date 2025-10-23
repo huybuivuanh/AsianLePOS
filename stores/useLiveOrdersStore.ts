@@ -1,4 +1,5 @@
 // app/stores/useLiveOrdersStore.ts
+import { sortOrdersByDate } from "@/utils/utils";
 import { collection, onSnapshot } from "firebase/firestore";
 import { create } from "zustand";
 import { db } from "../lib/firebaseConfig";
@@ -25,7 +26,8 @@ export const useLiveOrdersStore = create<LiveOrdersState>((set) => ({
         id: doc.id,
         ...(doc.data() as Order),
       }));
-      set({ dineInOrders: dineInData, loading: false });
+      const sortedData = sortOrdersByDate(dineInData);
+      set({ dineInOrders: sortedData, loading: false });
     });
 
     // Subscribe to takeOutOrders
@@ -35,7 +37,8 @@ export const useLiveOrdersStore = create<LiveOrdersState>((set) => ({
         id: doc.id,
         ...(doc.data() as Order),
       }));
-      set({ takeOutOrders: takeOutData, loading: false });
+      const sortedData = sortOrdersByDate(takeOutData);
+      set({ takeOutOrders: sortedData, loading: false });
     });
 
     // Return a combined unsubscribe function
