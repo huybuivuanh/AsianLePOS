@@ -1,10 +1,10 @@
+import SafeAreaViewWrapper from "@/components/SafeAreaViewWrapper";
 import Header from "@/components/ui/Header";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { Keyboard, Text, TextInput, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import CategoryList from "../../components/takeout/CategoryList";
 import SearchResults from "../../components/takeout/SearchResults";
 
@@ -44,7 +44,7 @@ export default function AddItemPage() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaViewWrapper className="flex-1 bg-white">
       <Header title="Add Item" onBack={() => router.back()} />
       <View className="flex-1 bg-white p-4 pt-6">
         <TextInput
@@ -71,6 +71,6 @@ export default function AddItemPage() {
           />
         )}
       </View>
-    </SafeAreaView>
+    </SafeAreaViewWrapper>
   );
 }

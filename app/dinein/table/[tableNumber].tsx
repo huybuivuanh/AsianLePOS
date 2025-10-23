@@ -1,4 +1,5 @@
 import TableInfoCard from "@/components/dinein/TableInfoCard";
+import SafeAreaViewWrapper from "@/components/SafeAreaViewWrapper";
 import Header from "@/components/ui/Header";
 import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
@@ -13,7 +14,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function TablePage() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
@@ -56,9 +56,9 @@ export default function TablePage() {
   // ✅ Loading or table not found
   if (!table || ordersLoading) {
     return (
-      <SafeAreaView className="flex-1 justify-center items-center bg-gray-100">
+      <SafeAreaViewWrapper className="flex-1 justify-center items-center bg-gray-100">
         <ActivityIndicator size="large" color="#000" />
-      </SafeAreaView>
+      </SafeAreaViewWrapper>
     );
   }
 
@@ -102,7 +102,7 @@ export default function TablePage() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100">
+    <SafeAreaViewWrapper className="flex-1 bg-gray-100">
       <Header
         title={`Table ${tableNumber}`}
         onBack={() => {
@@ -291,6 +291,6 @@ export default function TablePage() {
           </View>
         </View>
       </View>
-    </SafeAreaView>
+    </SafeAreaViewWrapper>
   );
 }

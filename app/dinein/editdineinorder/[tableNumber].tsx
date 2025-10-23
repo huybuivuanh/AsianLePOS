@@ -1,3 +1,4 @@
+import SafeAreaViewWrapper from "@/components/SafeAreaViewWrapper";
 import OrderItemCard from "@/components/takeout/reviewOrder/OrderItemCard";
 import Header from "@/components/ui/Header";
 import { useAuth } from "@/providers/AuthProvider";
@@ -16,7 +17,6 @@ import {
   View,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function EditDinInOrder() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
@@ -82,7 +82,7 @@ export default function EditDinInOrder() {
   const isSubmitDisabled = submitting || (order.orderItems?.length ?? 0) === 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaViewWrapper className="flex-1 bg-white">
       {/* Custom Header */}
       <Header
         title="Edit Order"
@@ -140,6 +140,6 @@ export default function EditDinInOrder() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeAreaViewWrapper>
   );
 }

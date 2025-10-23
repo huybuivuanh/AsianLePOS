@@ -1,3 +1,4 @@
+import SafeAreaViewWrapper from "@/components/SafeAreaViewWrapper";
 import AddExtraEditor from "@/components/takeout/AddExtraEditor";
 import ItemChangeEditor from "@/components/takeout/ItemChangeEditor";
 import SpecialFlagsSelector from "@/components/takeout/SpecialFlagsSelector";
@@ -19,7 +20,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Item() {
   const router = useRouter();
@@ -41,9 +41,9 @@ export default function Item() {
 
   if (!item)
     return (
-      <SafeAreaView>
+      <SafeAreaViewWrapper>
         <Text>Item not found</Text>
-      </SafeAreaView>
+      </SafeAreaViewWrapper>
     );
 
   const toggleOption = (group: OptionGroup, option: ItemOption) => {
@@ -125,7 +125,7 @@ export default function Item() {
       className="flex-1"
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <SafeAreaView className="flex-1 bg-white">
+      <SafeAreaViewWrapper className="flex-1 bg-white">
         <Header title={item.name} onBack={() => router.back()} />
 
         <ScrollView
@@ -226,7 +226,7 @@ export default function Item() {
             </TouchableOpacity>
           </View>
         </ScrollView>
-      </SafeAreaView>
+      </SafeAreaViewWrapper>
     </KeyboardAvoidingView>
   );
 }

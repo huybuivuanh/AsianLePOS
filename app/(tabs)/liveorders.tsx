@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import SafeAreaViewWrapper from "../../components/SafeAreaViewWrapper";
 
 export default function LiveOrders() {
   const { takeOutOrders, loading } = useLiveOrdersStore();
@@ -67,7 +67,7 @@ export default function LiveOrders() {
     const expanded = expandedOrderId === item.id;
 
     return (
-      <View className="bg-white p-4 mb-3 rounded-xl shadow-sm">
+      <View className="bg-gray-100 p-4 mb-3 rounded-xl shadow-sm">
         <TouchableOpacity
           className="flex-row justify-between items-center"
           onPress={() => toggleExpand(item.id!)}
@@ -259,15 +259,15 @@ export default function LiveOrders() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 justify-center items-center bg-white">
+      <SafeAreaViewWrapper className="flex-1 justify-center items-center bg-white">
         <ActivityIndicator size="large" color="#007AFF" />
         <Text className="mt-2 text-gray-600">Loading live orders...</Text>
-      </SafeAreaView>
+      </SafeAreaViewWrapper>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100 p-4">
+    <SafeAreaViewWrapper className="flex-1 p-4">
       {takeOutOrders.length === 0 ? (
         <View className="flex-1 justify-center items-center">
           <Text className="text-gray-500">No takeout orders yet.</Text>
@@ -279,6 +279,6 @@ export default function LiveOrders() {
           renderItem={renderOrder}
         />
       )}
-    </SafeAreaView>
+    </SafeAreaViewWrapper>
   );
 }

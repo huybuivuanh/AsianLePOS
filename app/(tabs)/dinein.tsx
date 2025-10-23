@@ -1,3 +1,4 @@
+import SafeAreaViewWrapper from "@/components/SafeAreaViewWrapper";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { TableStatus } from "@/types/enum";
@@ -5,7 +6,6 @@ import { useRouter } from "expo-router";
 import { Check, X } from "lucide-react-native";
 import React, { useEffect } from "react";
 import { FlatList, ListRenderItem, Pressable, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function DineIn() {
   const { tables } = useTableStore();
@@ -56,7 +56,7 @@ export default function DineIn() {
   };
 
   return (
-    <SafeAreaView className="flex-1 p-4 bg-gray-100">
+    <SafeAreaViewWrapper className="p-4">
       {/* Table Grid */}
       <FlatList
         data={tables}
@@ -65,6 +65,6 @@ export default function DineIn() {
         numColumns={3}
         contentContainerStyle={{ paddingBottom: 16 }}
       />
-    </SafeAreaView>
+    </SafeAreaViewWrapper>
   );
 }

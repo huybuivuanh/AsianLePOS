@@ -1,3 +1,4 @@
+import SafeAreaViewWrapper from "@/components/SafeAreaViewWrapper";
 import Header from "@/components/ui/Header";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
@@ -11,7 +12,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import CategoryList from "../../../components/takeout/CategoryList";
 import SearchResults from "../../../components/takeout/SearchResults";
 
@@ -53,7 +53,7 @@ export default function TakeOrder() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaViewWrapper className="flex-1 bg-white">
       <Header title="Take Order" onBack={() => router.back()} />
       <View className="p-4">
         <TextInput
@@ -97,6 +97,6 @@ export default function TakeOrder() {
           </Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </SafeAreaViewWrapper>
   );
 }

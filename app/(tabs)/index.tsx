@@ -1,3 +1,4 @@
+import SafeAreaViewWrapper from "@/components/SafeAreaViewWrapper";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enum";
@@ -10,7 +11,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import CategoryList from "../../components/takeout/CategoryList";
 import SearchResults from "../../components/takeout/SearchResults";
 
@@ -51,7 +51,7 @@ export default function TakeOut() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white p-4">
+    <SafeAreaViewWrapper className="p-4">
       <TextInput
         placeholder="Search for an item..."
         value={query}
@@ -89,6 +89,6 @@ export default function TakeOut() {
           </Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </SafeAreaViewWrapper>
   );
 }

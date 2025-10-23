@@ -1,3 +1,4 @@
+import SafeAreaViewWrapper from "@/components/SafeAreaViewWrapper";
 import OrderFooter from "@/components/takeout/reviewOrder/OrderFooter";
 import OrderItemCard from "@/components/takeout/reviewOrder/OrderItemCard";
 import Header from "@/components/ui/Header";
@@ -15,7 +16,6 @@ import {
   View,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ReviewOrder() {
   const router = useRouter();
@@ -56,7 +56,7 @@ export default function ReviewOrder() {
     (!order.name && !order.phoneNumber);
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaViewWrapper className="flex-1 bg-white">
       {/* Header */}
       <View className="pb-4">
         <Header title="Review Order" onBack={() => router.back()} />
@@ -112,6 +112,6 @@ export default function ReviewOrder() {
           />
         )}
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeAreaViewWrapper>
   );
 }

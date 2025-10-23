@@ -1,10 +1,10 @@
+import SafeAreaViewWrapper from "@/components/SafeAreaViewWrapper";
 import Header from "@/components/ui/Header";
 import { useTableStore } from "@/stores/useTableStore";
 import { TableStatus } from "@/types/enum";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function EditTable() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
@@ -67,7 +67,7 @@ export default function EditTable() {
   };
 
   return (
-    <SafeAreaView className="w-full flex-1 bg-gray-100">
+    <SafeAreaViewWrapper className="w-full flex-1 bg-gray-100">
       <Header title="Edit Table" onBack={() => router.back()} />
       <View className="p-6 flex-1 justify-between">
         <View className="bg-white rounded-2xl shadow-md border border-gray-100 p-6 items-center">
@@ -135,6 +135,6 @@ export default function EditTable() {
           </Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </SafeAreaViewWrapper>
   );
 }

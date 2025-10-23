@@ -1,3 +1,4 @@
+import SafeAreaViewWrapper from "@/components/SafeAreaViewWrapper";
 import { useOrderHistoryStore } from "@/stores/useOrderHistoryStore";
 import { OrderStatus, OrderType } from "@/types/enum";
 import { formatDate } from "@/utils/utils";
@@ -9,7 +10,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function OrderHistory() {
   const { orderHistory, loading } = useOrderHistoryStore();
@@ -30,6 +30,7 @@ export default function OrderHistory() {
       <View
         className={`${item.orderType === OrderType.TakeOut ? "bg-blue-100" : "bg-yellow-100"} p-4 mb-3 rounded-xl shadow-sm`}
       >
+        <View></View>
         <TouchableOpacity
           className="flex-row justify-between items-center"
           onPress={() => toggleExpand(item.id!)}
@@ -188,15 +189,15 @@ export default function OrderHistory() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 justify-center items-center bg-white">
+      <SafeAreaViewWrapper className="flex-1 justify-center items-center bg-white">
         <ActivityIndicator size="large" color="#007AFF" />
         <Text className="mt-2 text-gray-600">Loading live orders...</Text>
-      </SafeAreaView>
+      </SafeAreaViewWrapper>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100 p-4">
+    <SafeAreaViewWrapper className="p-4">
       {orderHistory.length === 0 ? (
         <View className="flex-1 justify-center items-center">
           <Text className="text-gray-500">No takeout orders yet.</Text>
@@ -208,6 +209,6 @@ export default function OrderHistory() {
           renderItem={renderOrder}
         />
       )}
-    </SafeAreaView>
+    </SafeAreaViewWrapper>
   );
 }
