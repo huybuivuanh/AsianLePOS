@@ -34,14 +34,13 @@ export default function TablePage() {
     submitToPrintQueue,
   } = useOrderStore();
 
-  const orderTotal = useOrderStore((state) => state.getOrderTotal());
-
   // ✅ Find the current order using table.currentOrderId
   const currentOrder = useMemo(() => {
     if (!table?.currentOrderId) return undefined;
     return dineInOrders.find((o) => o.id === table.currentOrderId);
   }, [dineInOrders, table]);
 
+  const orderTotal = order?.total ?? 0;
   const pst = orderTotal * 0.06;
   const gst = orderTotal * 0.05;
   const grandTotal = orderTotal + pst + gst;
