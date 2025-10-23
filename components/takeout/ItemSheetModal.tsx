@@ -16,8 +16,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { AddExtraEditor } from "./AddExtraEditor";
-import { ItemChangeEditor } from "./ItemChangeEditor";
+import AddExtraEditor from "./AddExtraEditor";
+import ItemChangeEditor from "./ItemChangeEditor";
 import SpecialFlagsSelector from "./SpecialFlagsSelector";
 
 type Props = {

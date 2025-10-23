@@ -1,6 +1,5 @@
 import Header from "@/components/ui/Header";
 import { useMenuStore } from "@/stores/useMenuStore";
-import { useModalStore } from "@/stores/useModalStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
@@ -12,9 +11,8 @@ import SearchResults from "../../components/takeout/SearchResults";
 export default function AddItemPage() {
   const router = useRouter();
   const { categories, menuItems, loading } = useMenuStore();
-  const { openModal } = useModalStore();
   const [query, setQuery] = useState("");
-  const { addItem, order } = useOrderStore();
+  const { order } = useOrderStore();
 
   const visibleItems = useMemo(() => {
     const allowedIds = new Set<number | string>();
@@ -39,12 +37,9 @@ export default function AddItemPage() {
   if (!categories.length) return <Text>No categories found</Text>;
 
   const handleSelectItem = (item: MenuItem) => {
-    openModal("itemSheet", {
-      item,
-      orderType: order.orderType,
-      onSubmit: (orderItem: OrderItem) => {
-        addItem(orderItem);
-      },
+    router.push({
+      pathname: "/item/[itemId]",
+      params: { itemId: item.id, orderType: order.orderType },
     });
   };
 

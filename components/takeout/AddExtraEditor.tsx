@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 
-export const AddExtraEditor = ({
+export default function AddExtraEditor({
   extras,
   onChange,
 }: {
   extras: AddExtra[];
   onChange: (updated: AddExtra[]) => void;
-}) => {
+}) {
   const [newExtra, setNewExtra] = useState({ description: "", price: "" });
 
   const handleAdd = () => {
@@ -94,4 +94,4 @@ export const AddExtraEditor = ({
       ))}
     </View>
   );
-};
+}

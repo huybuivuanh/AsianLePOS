@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 
-export const ItemChangeEditor = ({
+export default function ItemChangeEditor({
   changes,
   onChange,
 }: {
   changes: ItemChange[];
   onChange: (updated: ItemChange[]) => void;
-}) => {
+}) {
   const [newChange, setNewChange] = useState({ from: "", to: "", price: "" });
 
   const handleAdd = () => {
@@ -116,4 +116,4 @@ export const ItemChangeEditor = ({
       ))}
     </View>
   );
-};
+}

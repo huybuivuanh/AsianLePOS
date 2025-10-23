@@ -1,6 +1,5 @@
 import Header from "@/components/ui/Header";
 import { useMenuStore } from "@/stores/useMenuStore";
-import { useModalStore } from "@/stores/useModalStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enum";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -14,9 +13,7 @@ export default function TakeOrder() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
   const router = useRouter();
   const { categories, menuItems, loading } = useMenuStore();
-  const { openModal } = useModalStore();
   const [query, setQuery] = useState("");
-  const { addItem } = useOrderStore();
   const totalItems = useOrderStore((state) => state.getTotalItems());
   const setEditingOrder = useOrderStore((state) => state.setEditingOrder);
 
@@ -43,12 +40,9 @@ export default function TakeOrder() {
   if (!categories.length) return <Text>No categories found</Text>;
 
   const handleSelectItem = (item: MenuItem) => {
-    openModal("itemSheet", {
-      item,
-      orderType: OrderType.DineIn,
-      onSubmit: (orderItem: OrderItem) => {
-        addItem(orderItem);
-      },
+    router.push({
+      pathname: "/item/[itemId]",
+      params: { itemId: item.id, orderType: OrderType.DineIn },
     });
   };
 
