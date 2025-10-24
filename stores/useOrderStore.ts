@@ -2,11 +2,11 @@ import { db } from "@/lib/firebaseConfig";
 import { OrderStatus, OrderType } from "@/types/enum";
 import {
   collection,
-  deleteDoc,
   doc,
   setDoc,
   Timestamp,
   updateDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { create } from "zustand";
 
@@ -144,8 +144,11 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       createdAt: Timestamp.fromDate(new Date()),
     };
 
-    await setDoc(doc(db, firestorecollection, order.id!), orderToSubmit);
-    await setDoc(doc(db, "orderHistory", order.id!), orderToSubmit);
+    // Use batch write for atomic operation and better performance
+    const batch = writeBatch(db);
+    batch.set(doc(db, firestorecollection, order.id!), orderToSubmit);
+    batch.set(doc(db, "orderHistory", order.id!), orderToSubmit);
+    await batch.commit();
 
     get().clearOrder();
   },
@@ -156,18 +159,29 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const firestorecollection =
       order.orderType === OrderType.DineIn ? "dineInOrders" : "takeOutOrders";
 
-    const orderRef = doc(db, firestorecollection, order.id);
+    // Calculate total
+    const total = (order.orderItems ?? []).reduce(
+      (acc, i) => acc + i.price * i.quantity,
+      0
+    );
 
-    // Include staff info in the update
     const updateData: Partial<Order> = {
       ...order,
-      total: (order.orderItems ?? []).reduce(
-        (acc, i) => acc + i.price * i.quantity,
-        0
-      ),
+      total,
     };
 
-    await updateDoc(orderRef, updateData);
+    // Use batch write to update both collections atomically
+    const batch = writeBatch(db);
+
+    // Update main order collection
+    const orderRef = doc(db, firestorecollection, order.id);
+    batch.update(orderRef, updateData);
+
+    // Update order history
+    const historyRef = doc(db, "orderHistory", order.id);
+    batch.update(historyRef, updateData);
+
+    await batch.commit();
   },
 
   cancelOrder: async (order: Partial<Order>) => {
@@ -177,14 +191,21 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     if (order.orderType === OrderType.DineIn) {
       firestorecollection = "dineInOrders";
     }
+
+    // Use batch write for atomic operation
+    const batch = writeBatch(db);
+
+    // Delete from main collection
     const orderRef = doc(db, firestorecollection, order.id);
+    batch.delete(orderRef);
 
-    await deleteDoc(orderRef);
-
+    // Update order history with canceled status
     const orderHistoryRef = doc(db, "orderHistory", order.id);
-    await updateDoc(orderHistoryRef, {
+    batch.update(orderHistoryRef, {
       status: OrderStatus.Canceled,
     });
+
+    await batch.commit();
   },
 
   completeOrder: async (order: Partial<Order>) => {
@@ -194,14 +215,21 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     if (order.orderType === OrderType.DineIn) {
       firestorecollection = "dineInOrders";
     }
+
+    // Use batch write for atomic operation
+    const batch = writeBatch(db);
+
+    // Delete from main collection
     const orderRef = doc(db, firestorecollection, order.id);
+    batch.delete(orderRef);
 
-    await deleteDoc(orderRef);
-
+    // Update order history with completed status
     const orderHistoryRef = doc(db, "orderHistory", order.id);
-    await updateDoc(orderHistoryRef, {
+    batch.update(orderHistoryRef, {
       status: OrderStatus.Completed,
     });
+
+    await batch.commit();
   },
 
   submitToPrintQueue: async (order: Partial<Order>) => {

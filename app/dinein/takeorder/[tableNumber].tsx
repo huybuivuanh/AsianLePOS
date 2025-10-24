@@ -4,6 +4,7 @@ import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enum";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { X } from "lucide-react-native";
 import React, { useMemo, useState } from "react";
 import {
   Keyboard,
@@ -56,15 +57,26 @@ export default function TakeOrder() {
     <SafeAreaViewWrapper className="flex-1 bg-white">
       <Header title="Take Order" onBack={() => router.back()} />
       <View className="p-4">
-        <TextInput
-          placeholder="Search for an item..."
-          value={query}
-          onChangeText={setQuery}
-          className="border border-gray-300 rounded-lg p-3 mb-4"
-          returnKeyLabel="Hide"
-          returnKeyType="done"
-          onSubmitEditing={() => Keyboard.dismiss()}
-        />
+        <View className="relative mb-4">
+          <TextInput
+            placeholder="Search for an item..."
+            value={query}
+            onChangeText={setQuery}
+            className="border border-gray-300 rounded-lg p-3 pr-12"
+            returnKeyLabel="Hide"
+            returnKeyType="done"
+            onSubmitEditing={() => Keyboard.dismiss()}
+          />
+          <TouchableOpacity
+            onPress={() => setQuery("")}
+            disabled={query.length === 0}
+            className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 ${
+              query.length === 0 ? "opacity-30" : ""
+            }`}
+          >
+            <X size={20} color="#6B7280" />
+          </TouchableOpacity>
+        </View>
 
         {query.trim() ? (
           <SearchResults

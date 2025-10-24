@@ -20,6 +20,7 @@ type TableStore = {
 
   subscribeToTables: () => Promise<() => void>;
   initializeTables: () => Promise<void>;
+  clearData: () => void;
 };
 
 export const useTableStore = create<TableStore>((set, get) => ({
@@ -72,5 +73,9 @@ export const useTableStore = create<TableStore>((set, get) => ({
       set({ tables: sortedTables });
     });
     return unsubscribe;
+  },
+
+  clearData: () => {
+    set({ tables: [] });
   },
 }));

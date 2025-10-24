@@ -18,6 +18,11 @@ export default function CategoryList({
       data={categories}
       keyExtractor={(cat) => cat.id!}
       contentContainerStyle={{ paddingBottom: 100 }}
+      removeClippedSubviews={true}
+      maxToRenderPerBatch={5}
+      windowSize={10}
+      initialNumToRender={5}
+      updateCellsBatchingPeriod={50}
       renderItem={({ item: category }) => {
         const items = categoryItemsMap.get(category.id!) ?? [];
         return (

@@ -1,12 +1,14 @@
 import SafeAreaViewWrapper from "@/components/SafeAreaViewWrapper";
 import OrderItemCard from "@/components/takeout/reviewOrder/OrderItemCard";
 import Header from "@/components/ui/Header";
+import { db } from "@/lib/firebaseConfig";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
-import { OrderType, TableStatus } from "@/types/enum";
+import { OrderStatus, OrderType, TableStatus } from "@/types/enum";
 import { generateFirestoreId } from "@/utils/utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { doc, Timestamp, writeBatch } from "firebase/firestore";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -56,12 +58,41 @@ export default function ReviewDineInOrder() {
         guests: getTable(tableNumber)?.guests || 0,
       };
 
-      await updateTable(tableNumber, {
+      // Use batch write for all operations to improve performance
+      const batch = writeBatch(db);
+
+      // Update table
+      const tableRef = doc(db, "tables", tableNumber);
+      batch.update(tableRef, {
         currentOrderId: orderId,
         status: TableStatus.Occupied,
       });
 
-      await submitOrder(newOrder);
+      // Calculate total
+      const total = (newOrder.orderItems ?? []).reduce(
+        (acc, i) => acc + i.price * i.quantity,
+        0
+      );
+
+      const orderToSubmit = {
+        ...newOrder,
+        total,
+        status: OrderStatus.InProgress,
+        printed: false,
+        createdAt: Timestamp.fromDate(new Date()),
+      };
+
+      // Add order to dineInOrders
+      batch.set(doc(db, "dineInOrders", orderId), orderToSubmit);
+
+      // Add order to orderHistory
+      batch.set(doc(db, "orderHistory", orderId), orderToSubmit);
+
+      // Execute all operations atomically
+      await batch.commit();
+
+      // Clear order from store
+      clearOrder();
 
       router.push({
         pathname: "/dinein/table/[tableNumber]",

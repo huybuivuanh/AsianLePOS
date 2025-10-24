@@ -2,8 +2,10 @@ import SafeAreaViewWrapper from "@/components/SafeAreaViewWrapper";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enum";
+import { debounce } from "@/utils/memoryUtils";
 import { useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import { X } from "lucide-react-native";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Keyboard,
   Text,
@@ -18,8 +20,26 @@ export default function TakeOut() {
   const router = useRouter();
   const { categories, menuItems, loading } = useMenuStore();
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const totalItems = useOrderStore((state) => state.getTotalItems());
   const setEditingOrder = useOrderStore((state) => state.setEditingOrder);
+
+  // Debounce search input to prevent excessive re-renders
+  const debouncedSetQuery = useMemo(
+    () =>
+      debounce((value: string) => {
+        setDebouncedQuery(value);
+      }, 300),
+    []
+  );
+
+  const handleQueryChange = useCallback(
+    (value: string) => {
+      setQuery(value);
+      debouncedSetQuery(value);
+    },
+    [debouncedSetQuery]
+  );
 
   const visibleItems = useMemo(() => {
     const allowedIds = new Set<number | string>();
@@ -52,20 +72,34 @@ export default function TakeOut() {
 
   return (
     <SafeAreaViewWrapper className="p-4">
-      <TextInput
-        placeholder="Search for an item..."
-        value={query}
-        onChangeText={setQuery}
-        className="border border-gray-300 rounded-lg p-3 mb-4"
-        returnKeyLabel="Hide"
-        returnKeyType="done"
-        onSubmitEditing={() => Keyboard.dismiss()}
-      />
+      <View className="relative mb-4">
+        <TextInput
+          placeholder="Search for an item..."
+          value={query}
+          onChangeText={handleQueryChange}
+          className="border border-gray-300 rounded-lg p-3 pr-12"
+          returnKeyLabel="Hide"
+          returnKeyType="done"
+          onSubmitEditing={() => Keyboard.dismiss()}
+        />
+        <TouchableOpacity
+          onPress={() => {
+            setQuery("");
+            setDebouncedQuery("");
+          }}
+          disabled={query.length === 0}
+          className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 ${
+            query.length === 0 ? "opacity-30" : ""
+          }`}
+        >
+          <X size={20} color="#6B7280" />
+        </TouchableOpacity>
+      </View>
 
-      {query.trim() ? (
+      {debouncedQuery.trim() ? (
         <SearchResults
           items={visibleItems}
-          query={query}
+          query={debouncedQuery}
           onSelectItem={handleSelectItem}
         />
       ) : (

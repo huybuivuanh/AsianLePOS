@@ -9,6 +9,7 @@ type LiveOrdersState = {
   takeOutOrders: Order[];
   loading: boolean;
   subscribeToLiveOrders: () => () => void;
+  clearData: () => void;
 };
 
 export const useLiveOrdersStore = create<LiveOrdersState>((set) => ({
@@ -46,5 +47,9 @@ export const useLiveOrdersStore = create<LiveOrdersState>((set) => ({
       unsubscribeDineIn();
       unsubscribeTakeOut();
     };
+  },
+
+  clearData: () => {
+    set({ dineInOrders: [], takeOutOrders: [], loading: true });
   },
 }));

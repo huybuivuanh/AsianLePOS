@@ -2,6 +2,7 @@
 import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { loadCachedMenu, useMenuStore } from "@/stores/useMenuStore";
 import { useOrderHistoryStore } from "@/stores/useOrderHistoryStore";
+import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
@@ -12,17 +13,39 @@ import { useAuth } from "../../providers/AuthProvider";
 export default function TabsLayout() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const { subscribeToMenuVersion, loading: menuLoading } = useMenuStore();
-  const { subscribeToLiveOrders } = useLiveOrdersStore();
-  const { subscribeToOrderHistory } = useOrderHistoryStore();
-  const { subscribeToTables } = useTableStore();
+  const {
+    subscribeToMenuVersion,
+    loading: menuLoading,
+    clearData: clearMenu,
+  } = useMenuStore();
+  const { subscribeToLiveOrders, clearData: clearLiveOrders } =
+    useLiveOrdersStore();
+  const { subscribeToOrderHistory, clearData: clearOrderHistory } =
+    useOrderHistoryStore();
+  const { subscribeToTables, clearData: clearTables } = useTableStore();
+  const { clearOrder } = useOrderStore();
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated and clear data
   useEffect(() => {
     if (!authLoading && !user) {
+      // Clear all store data when user logs out to prevent memory leaks
+      clearMenu();
+      clearLiveOrders();
+      clearOrderHistory();
+      clearTables();
+      clearOrder();
       router.push("/login");
     }
-  }, [user, authLoading, router]);
+  }, [
+    user,
+    authLoading,
+    router,
+    clearMenu,
+    clearLiveOrders,
+    clearOrderHistory,
+    clearTables,
+    clearOrder,
+  ]);
 
   // Subscriptions setup
   useEffect(() => {
@@ -30,13 +53,27 @@ export default function TabsLayout() {
 
     loadCachedMenu();
 
+    let isMounted = true;
+    let cleanup: (() => void) | undefined;
+
     const unsubscribeAll = async () => {
+      if (!isMounted) return;
+
       const unsubscribeMenu = subscribeToMenuVersion();
       const unsubscribeOrders = subscribeToLiveOrders();
       const unsubscribeHistory = subscribeToOrderHistory();
 
       // ✅ Handle async subscribeToTables
       const unsubscribeTables = await subscribeToTables();
+
+      if (!isMounted) {
+        // Clean up immediately if component unmounted during async operation
+        unsubscribeMenu?.();
+        unsubscribeOrders?.();
+        unsubscribeHistory?.();
+        unsubscribeTables?.();
+        return;
+      }
 
       return () => {
         unsubscribeMenu?.();
@@ -46,13 +83,14 @@ export default function TabsLayout() {
       };
     };
 
-    let cleanup: (() => void) | undefined;
-
     unsubscribeAll().then((unsub) => {
-      cleanup = unsub;
+      if (isMounted) {
+        cleanup = unsub;
+      }
     });
 
     return () => {
+      isMounted = false;
       cleanup?.();
     };
   }, [

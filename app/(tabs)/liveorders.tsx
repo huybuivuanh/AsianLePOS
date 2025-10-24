@@ -289,6 +289,16 @@ export default function LiveOrders() {
           data={takeOutOrders}
           keyExtractor={(item) => item.id!}
           renderItem={renderOrder}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+          initialNumToRender={10}
+          updateCellsBatchingPeriod={50}
+          getItemLayout={(data, index) => ({
+            length: 200, // Approximate item height
+            offset: 200 * index,
+            index,
+          })}
         />
       )}
     </SafeAreaViewWrapper>

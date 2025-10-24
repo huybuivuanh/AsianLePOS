@@ -11,6 +11,7 @@ type MenuState = {
   options: ItemOption[];
   loading: boolean;
   subscribeToMenuVersion: () => () => void;
+  clearData: () => void;
 };
 
 const STORAGE_KEY = "@menu_cache";
@@ -60,6 +61,16 @@ export const useMenuStore = create<MenuState>((set) => ({
     });
 
     return unsubscribe;
+  },
+
+  clearData: () => {
+    set({
+      categories: [],
+      menuItems: [],
+      optionGroups: [],
+      options: [],
+      loading: true,
+    });
   },
 }));
 

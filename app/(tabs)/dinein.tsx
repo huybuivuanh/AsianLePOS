@@ -65,6 +65,11 @@ export default function DineIn() {
         keyExtractor={(item) => item.tableNumber}
         numColumns={3}
         contentContainerStyle={{ paddingBottom: 16 }}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={15}
+        windowSize={10}
+        initialNumToRender={15}
+        updateCellsBatchingPeriod={50}
       />
     </SafeAreaViewWrapper>
   );

@@ -22,6 +22,11 @@ export default function SearchResults({ items, query, onSelectItem }: Props) {
       keyboardShouldPersistTaps="always"
       data={filteredItems}
       keyExtractor={(item) => item.id!}
+      removeClippedSubviews={true}
+      maxToRenderPerBatch={10}
+      windowSize={10}
+      initialNumToRender={10}
+      updateCellsBatchingPeriod={50}
       renderItem={({ item }) => (
         <TouchableOpacity
           className="mb-3 p-3 bg-gray-100 rounded-lg"

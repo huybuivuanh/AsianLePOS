@@ -1,6 +1,11 @@
 // app/stores/useLiveOrdersStore.ts
-import { sortOrdersByDate } from "@/utils/utils";
-import { collection, onSnapshot } from "firebase/firestore";
+import {
+  collection,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+} from "firebase/firestore";
 import { create } from "zustand";
 import { db } from "../lib/firebaseConfig";
 
@@ -8,6 +13,7 @@ type OrderHistoryState = {
   orderHistory: Order[];
   loading: boolean;
   subscribeToOrderHistory: () => () => void;
+  clearData: () => void;
 };
 
 export const useOrderHistoryStore = create<OrderHistoryState>((set) => ({
@@ -17,17 +23,24 @@ export const useOrderHistoryStore = create<OrderHistoryState>((set) => ({
     set({ loading: true });
 
     const orderHistoryRef = collection(db, "orderHistory");
-    const unsubscribeOrderHistory = onSnapshot(orderHistoryRef, (snapshot) => {
+    // Query to fetch only the latest 100 orders, ordered by createdAt descending
+    const q = query(orderHistoryRef, orderBy("createdAt", "desc"), limit(100));
+
+    const unsubscribeOrderHistory = onSnapshot(q, (snapshot) => {
       const orderHistoryData = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...(doc.data() as Order),
       }));
-      const sortedData = sortOrdersByDate(orderHistoryData);
-      set({ orderHistory: sortedData, loading: false });
+      // Data is already sorted by Firestore, no need for additional sorting
+      set({ orderHistory: orderHistoryData, loading: false });
     });
 
     return () => {
       unsubscribeOrderHistory();
     };
+  },
+
+  clearData: () => {
+    set({ orderHistory: [], loading: true });
   },
 }));
