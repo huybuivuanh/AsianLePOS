@@ -1,7 +1,7 @@
+import EditTableForm from "./EditTableForm";
 import { useTableStore } from "@/stores/useTableStore";
 import { TableStatus } from "@/types/enum";
-import { useRouter } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
 export default function TableInfoCard({
@@ -12,13 +12,7 @@ export default function TableInfoCard({
   const table = useTableStore((state) =>
     state.tables.find((t) => t.tableNumber === tableNumber)
   );
-  const router = useRouter();
-
-  const handleEditTable = () =>
-    router.push({
-      pathname: "/dinein/edittable/[tableNumber]",
-      params: { tableNumber },
-    });
+  const [isEditing, setIsEditing] = useState(false);
 
   if (!table) {
     return (
@@ -47,14 +41,21 @@ export default function TableInfoCard({
           Number of Guests: <Text className="font-bold">{table.guests}</Text>
         </Text>
 
-        {/* Edit Button */}
-        <Pressable
-          onPress={handleEditTable}
-          className="w-full bg-blue-500 py-3 rounded-lg items-center shadow"
-          android_ripple={{ color: "#2563eb" }}
-        >
-          <Text className="text-white font-semibold text-lg">Edit Table</Text>
-        </Pressable>
+        {/* Edit Form or Edit Button */}
+        {isEditing ? (
+          <EditTableForm
+            tableNumber={tableNumber}
+            onClose={() => setIsEditing(false)}
+          />
+        ) : (
+          <Pressable
+            onPress={() => setIsEditing(true)}
+            className="w-full bg-blue-500 py-3 rounded-lg items-center shadow"
+            android_ripple={{ color: "#2563eb" }}
+          >
+            <Text className="text-white font-semibold text-lg">Edit Table</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
