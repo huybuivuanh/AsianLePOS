@@ -8,7 +8,7 @@ import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enum";
 import { generateFirestoreId } from "@/utils/utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Keyboard,
@@ -23,21 +23,87 @@ import {
 
 export default function Item() {
   const router = useRouter();
-  const { itemId, orderType } = useLocalSearchParams();
+  const { itemId, orderType, orderItemId } = useLocalSearchParams();
   const { menuItems, optionGroups, options } = useMenuStore();
-  const { addItem } = useOrderStore();
+  const { addItem, updateOrderItem, order } = useOrderStore();
   const item = menuItems.find((i) => i.id === itemId);
+  const orderItemIdStr = Array.isArray(orderItemId)
+    ? orderItemId[0]
+    : orderItemId;
+  const isEditMode = !!orderItemIdStr;
 
-  const [quantity, setQuantity] = useState(1);
-  const [instructions, setInstructions] = useState("");
+  // Find the existing order item if in edit mode
+  const existingOrderItem = isEditMode
+    ? order.orderItems?.find((oi) => oi.id === orderItemIdStr)
+    : null;
+
+  const [quantity, setQuantity] = useState(existingOrderItem?.quantity ?? 1);
+  const [instructions, setInstructions] = useState(
+    existingOrderItem?.instructions ?? ""
+  );
   const [selectedOptions, setSelectedOptions] = useState<
     Record<string, string[]>
-  >({});
-  const [extras, setExtras] = useState<AddExtra[]>([]);
-  const [changes, setChanges] = useState<ItemChange[]>([]);
-  const [specialFlag, setSpecialFlag] = useState<"appetizer" | "toGo" | null>(
-    null
+  >(() => {
+    if (!existingOrderItem?.options || !optionGroups) return {};
+    const selected: Record<string, string[]> = {};
+    existingOrderItem.options.forEach((opt) => {
+      // Find which group this option belongs to
+      optionGroups.forEach((group) => {
+        if (group.optionIds?.includes(opt.id!)) {
+          if (!selected[group.id!]) selected[group.id!] = [];
+          selected[group.id!].push(opt.id!);
+        }
+      });
+    });
+    return selected;
+  });
+  const [extras, setExtras] = useState<AddExtra[]>(
+    existingOrderItem?.extras ?? []
   );
+  const [changes, setChanges] = useState<ItemChange[]>(
+    existingOrderItem?.changes ?? []
+  );
+  const [specialFlag, setSpecialFlag] = useState<"appetizer" | "toGo" | null>(
+    () => {
+      if (existingOrderItem?.togo) return "toGo";
+      if (existingOrderItem?.appetizer) return "appetizer";
+      return null;
+    }
+  );
+
+  // Sync form state when existingOrderItem changes (for edit mode)
+  useEffect(() => {
+    if (isEditMode && existingOrderItem) {
+      setQuantity(existingOrderItem.quantity ?? 1);
+      setInstructions(existingOrderItem.instructions ?? "");
+      setExtras(existingOrderItem.extras ?? []);
+      setChanges(existingOrderItem.changes ?? []);
+
+      if (existingOrderItem.togo) {
+        setSpecialFlag("toGo");
+      } else if (existingOrderItem.appetizer) {
+        setSpecialFlag("appetizer");
+      } else {
+        setSpecialFlag(null);
+      }
+
+      // Rebuild selectedOptions from existing order item
+      if (existingOrderItem.options && optionGroups) {
+        const selected: Record<string, string[]> = {};
+        existingOrderItem.options.forEach((opt) => {
+          optionGroups.forEach((group) => {
+            if (group.optionIds?.includes(opt.id!)) {
+              if (!selected[group.id!]) selected[group.id!] = [];
+              selected[group.id!].push(opt.id!);
+            }
+          });
+        });
+        setSelectedOptions(selected);
+      } else {
+        setSelectedOptions({});
+      }
+    }
+  }, [existingOrderItem, isEditMode, optionGroups]);
 
   if (!item)
     return (
@@ -102,21 +168,38 @@ export default function Item() {
       extrasTotal +
       changesTotal;
 
-    const cleanItem: OrderItem = {
-      id: generateFirestoreId(),
-      name: item.name,
-      togo: specialFlag === "toGo",
-      appetizer: specialFlag === "appetizer",
-      kitchenType: item.kitchenType,
-      price: orderItemPrice,
-      quantity,
-      ...(instructions !== "" && { instructions }),
-      ...(optionsToSubmit.length > 0 && { options: optionsToSubmit }),
-      ...(extras.length > 0 && { extras }),
-      ...(changes.length > 0 && { changes }),
-    };
-
-    addItem(cleanItem);
+    if (isEditMode && orderItemIdStr) {
+      // Update existing order item
+      const updatedItem: Partial<OrderItem> = {
+        name: item.name,
+        togo: specialFlag === "toGo",
+        appetizer: specialFlag === "appetizer",
+        kitchenType: item.kitchenType,
+        price: orderItemPrice,
+        quantity,
+        instructions: instructions || undefined,
+        options: optionsToSubmit,
+        extras: extras,
+        changes: changes,
+      };
+      updateOrderItem(orderItemIdStr, updatedItem);
+    } else {
+      // Add new order item
+      const cleanItem: OrderItem = {
+        id: generateFirestoreId(),
+        name: item.name,
+        togo: specialFlag === "toGo",
+        appetizer: specialFlag === "appetizer",
+        kitchenType: item.kitchenType,
+        price: orderItemPrice,
+        quantity,
+        ...(instructions !== "" && { instructions }),
+        ...(optionsToSubmit.length > 0 && { options: optionsToSubmit }),
+        ...(extras.length > 0 && { extras }),
+        ...(changes.length > 0 && { changes }),
+      };
+      addItem(cleanItem);
+    }
     router.back();
   };
 
@@ -222,7 +305,9 @@ export default function Item() {
               className="bg-gray-800 py-4 rounded-lg items-center"
               onPress={handleSubmit}
             >
-              <Text className="text-white font-bold text-lg">Add to Order</Text>
+              <Text className="text-white font-bold text-lg">
+                {isEditMode ? "Update Item" : "Add to Order"}
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
