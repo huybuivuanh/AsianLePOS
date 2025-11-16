@@ -1,5 +1,6 @@
 import SafeAreaViewWrapper from "@/components/SafeAreaViewWrapper";
 import { useOrderHistoryStore } from "@/stores/useOrderHistoryStore";
+import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderStatus, OrderType } from "@/types/enum";
 import { formatDate } from "@/utils/utils";
 import React, { useState } from "react";
@@ -14,9 +15,18 @@ import {
 export default function OrderHistory() {
   const { orderHistory, loading } = useOrderHistoryStore();
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const { submitToPrintQueue } = useOrderStore();
 
   const toggleExpand = (id: string) => {
     setExpandedOrderId((prev) => (prev === id ? null : id));
+  };
+
+  const handlePrint = async (order: Order) => {
+    try {
+      await submitToPrintQueue(order);
+    } catch (error) {
+      console.error("❌ Error submitting to print queue:", error);
+    }
   };
 
   const renderOrder = ({ item }: { item: Order }) => {
@@ -82,6 +92,12 @@ export default function OrderHistory() {
               {item.status}
             </Text>
           </View>
+          <TouchableOpacity
+            className="bg-blue-500 px-5 py-3 rounded-full"
+            onPress={() => handlePrint(item)}
+          >
+            <Text className="text-white font-semibold">Print</Text>
+          </TouchableOpacity>
         </TouchableOpacity>
 
         {expanded && (
