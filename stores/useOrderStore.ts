@@ -38,7 +38,7 @@ const defaultOrder: Partial<Order> = {
   orderItems: [],
   isPreorder: false,
   orderType: OrderType.TakeOut,
-  readyTime: 20,
+  readyTime: 15,
   printed: false,
   addedToPrintQueue: false,
   createdAt: new Date(),
