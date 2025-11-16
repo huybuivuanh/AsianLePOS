@@ -14,6 +14,27 @@ export const formatDate = (timestamp: Timestamp) => {
   return dayjs(date).format("DD MMM YYYY, hh:mm A");
 };
 
+// Convert Firestore Timestamp to JavaScript Date
+export const timestampToDate = (timestamp: Timestamp | Date | undefined): Date | undefined => {
+  if (!timestamp) return undefined;
+  if (timestamp instanceof Date) return timestamp;
+  if (timestamp.toDate) return timestamp.toDate();
+  // Fallback for plain objects with seconds/nanoseconds
+  if (typeof timestamp === 'object' && 'seconds' in timestamp) {
+    return new Date((timestamp as any).seconds * 1000 + ((timestamp as any).nanoseconds || 0) / 1_000_000);
+  }
+  return undefined;
+};
+
+// Convert order's Firestore Timestamps to JavaScript Dates
+export const convertOrderTimestamps = (order: Partial<Order>): Partial<Order> => {
+  return {
+    ...order,
+    preorderTime: timestampToDate(order.preorderTime as any),
+    createdAt: order.createdAt, // Keep as Timestamp for display purposes
+  };
+};
+
 export const generateFirestoreId = () => {
   return doc(collection(db, "dummy")).id;
 };

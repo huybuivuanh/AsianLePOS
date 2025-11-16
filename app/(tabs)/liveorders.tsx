@@ -1,7 +1,7 @@
 import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderStatus } from "@/types/enum";
-import { formatDate } from "@/utils/utils";
+import { convertOrderTimestamps, formatDate } from "@/utils/utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -61,7 +61,9 @@ export default function LiveOrders() {
 
   function handleEditOrder(order: Order) {
     setEditingOrder(true);
-    setOrder(order);
+    // Convert Firestore Timestamps to JavaScript Dates
+    const convertedOrder = convertOrderTimestamps(order);
+    setOrder(convertedOrder);
     router.push("/liveorders/editorder");
   }
 

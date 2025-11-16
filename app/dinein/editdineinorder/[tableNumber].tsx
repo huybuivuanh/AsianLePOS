@@ -5,6 +5,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
+import { convertOrderTimestamps } from "@/utils/utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -43,8 +44,13 @@ export default function EditDinInOrder() {
 
   // ✅ Sync order store with live data
   useEffect(() => {
-    if (currentOrder) setOrder(currentOrder);
-    else clearOrder();
+    if (currentOrder) {
+      // Convert Firestore Timestamps to JavaScript Dates
+      const convertedOrder = convertOrderTimestamps(currentOrder);
+      setOrder(convertedOrder);
+    } else {
+      clearOrder();
+    }
   }, [currentOrder, table, clearOrder, setOrder]);
 
   // Local UI states
