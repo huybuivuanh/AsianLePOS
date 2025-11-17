@@ -28,10 +28,29 @@ export const timestampToDate = (timestamp: Timestamp | Date | undefined): Date |
 
 // Convert order's Firestore Timestamps to JavaScript Dates
 export const convertOrderTimestamps = (order: Partial<Order>): Partial<Order> => {
+  // Calculate taxBreakDown if missing (for backward compatibility)
+  let taxBreakDown = order.taxBreakDown;
+  if (!taxBreakDown && order.total !== undefined) {
+    taxBreakDown = calculateTaxBreakdown(order.total);
+  }
+
   return {
     ...order,
     preorderTime: timestampToDate(order.preorderTime as any),
     createdAt: order.createdAt, // Keep as Timestamp for display purposes
+    taxBreakDown,
+  };
+};
+
+// Calculate tax breakdown for an order
+export const calculateTaxBreakdown = (subtotal: number): TaxBreakDown => {
+  const pst = subtotal * 0.06;
+  const gst = subtotal * 0.05;
+  const grandTotal = subtotal + pst + gst;
+  return {
+    pst,
+    gst,
+    grandTotal,
   };
 };
 

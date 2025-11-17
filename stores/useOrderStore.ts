@@ -1,5 +1,6 @@
 import { db } from "@/lib/firebaseConfig";
 import { OrderStatus, OrderType } from "@/types/enum";
+import { calculateTaxBreakdown } from "@/utils/utils";
 import {
   collection,
   doc,
@@ -23,7 +24,7 @@ type OrderState = {
   updateQuantity: (itemId: string, quantity: number) => void;
   clearOrder: () => void;
   getTotalItems: () => number;
-  getOrderTotal: () => number;
+  getTaxBreakdown: () => TaxBreakDown | undefined;
   updateOrderItem: (itemId: string, fields: Partial<OrderItem>) => void;
   setOrder: (order: Partial<Order>) => void;
   submitOrder: (order: Partial<Order>) => Promise<void>;
@@ -56,21 +57,41 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     })),
 
   addItem: (item) =>
-    set((state) => ({
-      order: {
-        ...state.order,
-        orderItems: [...(state.order.orderItems ?? []), item],
-      },
-    })),
+    set((state) => {
+      const newOrderItems = [...(state.order.orderItems ?? []), item];
+      const total = newOrderItems.reduce(
+        (acc, i) => acc + i.price * i.quantity,
+        0
+      );
+      const taxBreakDown = calculateTaxBreakdown(total);
+      return {
+        order: {
+          ...state.order,
+          orderItems: newOrderItems,
+          total,
+          taxBreakDown,
+        },
+      };
+    }),
 
   removeItem: (itemId) =>
-    set((state) => ({
-      order: {
-        ...state.order,
-        orderItems:
-          state.order.orderItems?.filter((i) => i.id !== itemId) ?? [],
-      },
-    })),
+    set((state) => {
+      const newOrderItems =
+        state.order.orderItems?.filter((i) => i.id !== itemId) ?? [];
+      const total = newOrderItems.reduce(
+        (acc, i) => acc + i.price * i.quantity,
+        0
+      );
+      const taxBreakDown = calculateTaxBreakdown(total);
+      return {
+        order: {
+          ...state.order,
+          orderItems: newOrderItems,
+          total,
+          taxBreakDown,
+        },
+      };
+    }),
 
   updateQuantity: (itemId, quantity) => {
     const items = get().order.orderItems ?? [];
@@ -78,14 +99,24 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       get().removeItem(itemId);
       return;
     }
-    set((state) => ({
-      order: {
-        ...state.order,
-        orderItems: items.map((i) =>
-          i.id === itemId ? { ...i, quantity } : i
-        ),
-      },
-    }));
+    set((state) => {
+      const newOrderItems = items.map((i) =>
+        i.id === itemId ? { ...i, quantity } : i
+      );
+      const total = newOrderItems.reduce(
+        (acc, i) => acc + i.price * i.quantity,
+        0
+      );
+      const taxBreakDown = calculateTaxBreakdown(total);
+      return {
+        order: {
+          ...state.order,
+          orderItems: newOrderItems,
+          total,
+          taxBreakDown,
+        },
+      };
+    });
   },
 
   clearOrder: () => {
@@ -99,22 +130,37 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     );
   },
 
-  getOrderTotal: () => {
-    return (get().order.orderItems ?? []).reduce(
+  getTaxBreakdown: () => {
+    const order = get().order;
+    if (order.taxBreakDown) {
+      return order.taxBreakDown;
+    }
+    const total = (order.orderItems ?? []).reduce(
       (acc, item) => acc + item.price * item.quantity,
       0
     );
+    return total > 0 ? calculateTaxBreakdown(total) : undefined;
   },
 
   updateOrderItem: (itemId: string, fields: Partial<OrderItem>) =>
-    set((state) => ({
-      order: {
-        ...state.order,
-        orderItems: state.order.orderItems?.map((item) =>
-          item.id === itemId ? { ...item, ...fields } : item
-        ),
-      },
-    })),
+    set((state) => {
+      const newOrderItems = state.order.orderItems?.map((item) =>
+        item.id === itemId ? { ...item, ...fields } : item
+      ) ?? [];
+      const total = newOrderItems.reduce(
+        (acc, i) => acc + i.price * i.quantity,
+        0
+      );
+      const taxBreakDown = calculateTaxBreakdown(total);
+      return {
+        order: {
+          ...state.order,
+          orderItems: newOrderItems,
+          total,
+          taxBreakDown,
+        },
+      };
+    }),
 
   setOrder: (order) => set({ order }),
 
@@ -136,9 +182,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       0
     );
 
+    const taxBreakDown = calculateTaxBreakdown(total);
+
     const orderToSubmit: Partial<Order> = {
       ...order,
       total,
+      taxBreakDown,
       status: OrderStatus.InProgress,
       printed: false,
       createdAt: Timestamp.fromDate(new Date()),
@@ -165,9 +214,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       0
     );
 
+    const taxBreakDown = calculateTaxBreakdown(total);
+
     const updateData: Partial<Order> = {
       ...order,
       total,
+      taxBreakDown,
     };
 
     // Use batch write to update both collections atomically

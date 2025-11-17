@@ -5,6 +5,7 @@ import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { OrderType, TableStatus } from "@/types/enum";
+import { calculateTaxBreakdown } from "@/utils/utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Check, X } from "lucide-react-native";
 import React, { useEffect, useMemo, useState } from "react";
@@ -40,10 +41,10 @@ export default function TablePage() {
     return dineInOrders.find((o) => o.id === table.currentOrderId);
   }, [dineInOrders, table]);
 
-  const orderTotal = order?.total ?? 0;
-  const pst = orderTotal * 0.06;
-  const gst = orderTotal * 0.05;
-  const grandTotal = orderTotal + pst + gst;
+  // Use taxBreakDown from order, or calculate it if missing
+  const taxBreakDown = order?.taxBreakDown || (order?.total !== undefined 
+    ? calculateTaxBreakdown(order.total) 
+    : undefined);
 
   // ✅ Sync order store with live data
   useEffect(() => {
@@ -188,21 +189,21 @@ export default function TablePage() {
               <View className="flex-row justify-between mb-1">
                 <Text className="text-base text-gray-700">Subtotal</Text>
                 <Text className="text-base text-gray-700">
-                  ${orderTotal.toFixed(2)}
+                  ${(order?.total ?? 0).toFixed(2)}
                 </Text>
               </View>
 
               <View className="flex-row justify-between mb-1">
                 <Text className="text-base text-gray-700">PST (6%)</Text>
                 <Text className="text-base text-gray-700">
-                  ${pst.toFixed(2)}
+                  ${(taxBreakDown?.pst ?? 0).toFixed(2)}
                 </Text>
               </View>
 
               <View className="flex-row justify-between mb-2">
                 <Text className="text-base text-gray-700">GST (5%)</Text>
                 <Text className="text-base text-gray-700">
-                  ${gst.toFixed(2)}
+                  ${(taxBreakDown?.gst ?? 0).toFixed(2)}
                 </Text>
               </View>
 
@@ -211,7 +212,7 @@ export default function TablePage() {
                   Total
                 </Text>
                 <Text className="text-xl font-bold text-gray-900">
-                  ${grandTotal.toFixed(2)}
+                  ${(taxBreakDown?.grandTotal ?? 0).toFixed(2)}
                 </Text>
               </View>
             </View>

@@ -6,7 +6,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { OrderStatus, OrderType, TableStatus } from "@/types/enum";
-import { generateFirestoreId } from "@/utils/utils";
+import { calculateTaxBreakdown, generateFirestoreId } from "@/utils/utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { doc, Timestamp, writeBatch } from "firebase/firestore";
 import React, { useState } from "react";
@@ -24,13 +24,12 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 export default function ReviewDineInOrder() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
   const router = useRouter();
-  const { submitOrder, clearOrder, getTotalItems, getOrderTotal } =
-    useOrderStore();
+  const { clearOrder, getTotalItems } = useOrderStore();
   const order = useOrderStore((state) => state.order);
 
   const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
-  const { updateTable, getTable } = useTableStore();
+  const { getTable } = useTableStore();
 
   const handleSubmit = async () => {
     if (!user) {
@@ -74,9 +73,12 @@ export default function ReviewDineInOrder() {
         0
       );
 
+      const taxBreakDown = calculateTaxBreakdown(total);
+
       const orderToSubmit = {
         ...newOrder,
         total,
+        taxBreakDown,
         status: OrderStatus.InProgress,
         printed: false,
         createdAt: Timestamp.fromDate(new Date()),
@@ -157,7 +159,7 @@ export default function ReviewDineInOrder() {
                 <ActivityIndicator color="white" />
               ) : (
                 <Text className="text-white font-bold text-base">
-                  {`Submit ${getTotalItems()} Item(s) - $${getOrderTotal().toFixed(2)}`}
+                  {`Submit ${getTotalItems()} Item(s) - $${(order.total ?? 0).toFixed(2)}`}
                 </Text>
               )}
             </TouchableOpacity>

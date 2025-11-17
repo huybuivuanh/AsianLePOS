@@ -75,6 +75,12 @@ declare global {
     price: number;
   };
 
+  type TaxBreakDown = {
+    pst: number;
+    gst: number;
+    grandTotal: number;
+  };
+
   type Order = {
     id?: string;
     name?: string;
@@ -88,6 +94,7 @@ declare global {
     orderType: OrderType;
     orderItems: OrderItem[];
     total: number;
+    taxBreakDown: TaxBreakDown;
     status: OrderStatus;
     printed: boolean;
     addedToPrintQueue: boolean;

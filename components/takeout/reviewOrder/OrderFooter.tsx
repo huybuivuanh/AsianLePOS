@@ -11,11 +11,10 @@ interface Props {
 }
 
 export default function OrderFooter({ onSubmit, submitting, disabled }: Props) {
-  const { editingOrder, getTotalItems, getOrderTotal } = useOrderStore();
+  const { editingOrder, getTotalItems, getTaxBreakdown } = useOrderStore();
 
   const totalItems = getTotalItems();
-  const totalPrice = getOrderTotal();
-
+  const taxBreakDown = getTaxBreakdown();
   return (
     <View className="p-4 bg-white border-t border-gray-200">
       {/* These components now read/write from the store directly */}
@@ -35,7 +34,7 @@ export default function OrderFooter({ onSubmit, submitting, disabled }: Props) {
           <Text className="text-white font-bold text-base">
             {editingOrder
               ? "Submit Update"
-              : ` Submit ${totalItems} Item(s) - $${totalPrice.toFixed(2)}`}
+              : ` Submit ${totalItems} Item(s) - $${taxBreakDown?.grandTotal.toFixed(2) ?? "0.00"}`}
           </Text>
         )}
       </TouchableOpacity>
