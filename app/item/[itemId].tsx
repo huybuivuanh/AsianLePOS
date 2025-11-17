@@ -143,11 +143,16 @@ export default function Item() {
 
       // For non-multiple selection groups
       if (group.maxSelection === 1) {
+        // If clicking the already selected option, deselect it
+        if (current[option.id!]) {
+          return { ...prev, [group.id!]: {} };
+        }
+        // Otherwise, select this option (deselecting any previous selection)
         return { ...prev, [group.id!]: { [option.id!]: 1 } };
       } else {
         const currentIds = Object.keys(current);
         if (current[option.id!]) {
-          // Remove option
+          // Remove option (deselect)
           const updated = { ...current };
           delete updated[option.id!];
           return { ...prev, [group.id!]: updated };
@@ -284,7 +289,8 @@ export default function Item() {
 
         <ScrollView
           keyboardShouldPersistTaps="always"
-          contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: 180 }}
+          className="flex-1"
         >
           {/* Instructions */}
           <Text className="text-base mb-2">Special instructions:</Text>
@@ -411,35 +417,35 @@ export default function Item() {
               onChange={setSpecialFlag}
             />
           )}
+        </ScrollView>
 
-          {/* Footer now inside scroll view */}
-          <View className="mt-6 border-t border-gray-200 pt-4">
-            <View className="flex-row justify-center items-center mb-4">
-              <TouchableOpacity
-                className="w-14 h-14 rounded-full bg-gray-200 justify-center items-center"
-                onPress={() => setQuantity((q) => Math.max(1, q - 1))}
-              >
-                <Text className="text-2xl font-bold">−</Text>
-              </TouchableOpacity>
-              <Text className="mx-6 text-2xl font-semibold">{quantity}</Text>
-              <TouchableOpacity
-                className="w-14 h-14 rounded-full bg-gray-200 justify-center items-center"
-                onPress={() => setQuantity((q) => q + 1)}
-              >
-                <Text className="text-2xl font-bold">＋</Text>
-              </TouchableOpacity>
-            </View>
-
+        {/* Fixed footer at bottom */}
+        <View className="absolute bottom-4 left-0 right-0 bg-white border-t border-gray-200 px-4 pt-4 pb-4 shadow-lg">
+          <View className="flex-row justify-center items-center mb-4">
             <TouchableOpacity
-              className="bg-gray-800 py-4 rounded-lg items-center"
-              onPress={handleSubmit}
+              className="w-14 h-14 rounded-full bg-gray-200 justify-center items-center"
+              onPress={() => setQuantity((q) => Math.max(1, q - 1))}
             >
-              <Text className="text-white font-bold text-lg">
-                {isEditMode ? "Update Item" : "Add to Order"}
-              </Text>
+              <Text className="text-2xl font-bold">−</Text>
+            </TouchableOpacity>
+            <Text className="mx-6 text-2xl font-semibold">{quantity}</Text>
+            <TouchableOpacity
+              className="w-14 h-14 rounded-full bg-gray-200 justify-center items-center"
+              onPress={() => setQuantity((q) => q + 1)}
+            >
+              <Text className="text-2xl font-bold">＋</Text>
             </TouchableOpacity>
           </View>
-        </ScrollView>
+
+          <TouchableOpacity
+            className="bg-gray-800 py-4 rounded-lg items-center"
+            onPress={handleSubmit}
+          >
+            <Text className="text-white font-bold text-lg">
+              {isEditMode ? "Update Item" : "Add to Order"}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaViewWrapper>
     </KeyboardAvoidingView>
   );
