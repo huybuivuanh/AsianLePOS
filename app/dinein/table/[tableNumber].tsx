@@ -316,7 +316,7 @@ export default function TablePage() {
           {/* Normal Mode Buttons */}
           {!selectionMode && (
             <>
-              {/* Row 1: Take/Edit | Print All | Select Items */}
+              {/* Row 1: Take/Edit | Select Items | Print */}
               <View className="flex-row justify-between mb-3">
                 <TouchableOpacity
                   onPress={() => {
@@ -344,13 +344,27 @@ export default function TablePage() {
                 </TouchableOpacity>
 
                 <TouchableOpacity
+                  onPress={handleToggleSelectionMode}
+                  activeOpacity={0.7}
+                  disabled={!order}
+                  className={`px-3 py-3 rounded-lg items-center justify-center ${
+                    order ? "bg-purple-500" : "bg-purple-300"
+                  }`}
+                  style={{ flex: 1, marginHorizontal: 4 }}
+                >
+                  <Text className="text-white text-sm font-semibold text-center">
+                    Select Items
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
                   onPress={handlePrint}
                   activeOpacity={0.7}
                   disabled={!order}
                   className={`px-3 py-3 rounded-lg items-center justify-center ${
                     order ? "bg-blue-500" : "bg-blue-300"
                   }`}
-                  style={{ flex: 1, marginHorizontal: 4 }}
+                  style={{ flex: 1, marginLeft: 4 }}
                 >
                   <View className="flex-row items-center justify-center">
                     <Text className="text-white text-sm font-semibold">
@@ -364,20 +378,6 @@ export default function TablePage() {
                       />
                     )}
                   </View>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={handleToggleSelectionMode}
-                  activeOpacity={0.7}
-                  disabled={!order}
-                  className={`px-3 py-3 rounded-lg items-center justify-center ${
-                    order ? "bg-purple-500" : "bg-purple-300"
-                  }`}
-                  style={{ flex: 1, marginLeft: 4 }}
-                >
-                  <Text className="text-white text-sm font-semibold text-center">
-                    Select Items
-                  </Text>
                 </TouchableOpacity>
               </View>
 
@@ -405,7 +405,7 @@ export default function TablePage() {
                     order?.paid
                       ? "bg-gray-500"
                       : order
-                        ? "bg-purple-500"
+                        ? "bg-pink-500"
                         : "bg-gray-300"
                   }`}
                   style={{ flex: 1, marginHorizontal: 4 }}

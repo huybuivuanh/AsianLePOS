@@ -31,9 +31,11 @@ export default function OrderHistory() {
 
   const renderOrder = ({ item }: { item: Order }) => {
     // Use taxBreakDown from order, or calculate it if missing
-    const taxBreakDown = item.taxBreakDown || (item.total !== undefined
-      ? calculateTaxBreakdown(item.total)
-      : undefined);
+    const taxBreakDown =
+      item.taxBreakDown ||
+      (item.total !== undefined
+        ? calculateTaxBreakdown(item.total)
+        : undefined);
     const expanded = expandedOrderId === item.id;
 
     return (
@@ -134,11 +136,9 @@ export default function OrderHistory() {
                     {orderItem.options && orderItem.options.length > 0 && (
                       <View className="mt-1 space-y-1">
                         {orderItem.options.map((option, index) => (
-                          <Text
-                            key={index}
-                            className="text-base text-gray-600"
-                          >
-                            • {option.quantity > 1 ? `${option.quantity}x ` : ""}
+                          <Text key={index} className="text-base text-gray-600">
+                            •{" "}
+                            {option.quantity > 1 ? `${option.quantity}x ` : ""}
                             {option.name}
                             {option.price > 0 &&
                               ` - $${(option.price * option.quantity).toFixed(2)}`}

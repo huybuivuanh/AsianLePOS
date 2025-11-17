@@ -15,28 +15,42 @@ export const formatDate = (timestamp: Timestamp) => {
 };
 
 // Convert Firestore Timestamp to JavaScript Date
-export const timestampToDate = (timestamp: Timestamp | Date | undefined): Date | undefined => {
+export const timestampToDate = (
+  timestamp: Timestamp | Date | undefined
+): Date | undefined => {
   if (!timestamp) return undefined;
   if (timestamp instanceof Date) return timestamp;
   if (timestamp.toDate) return timestamp.toDate();
   // Fallback for plain objects with seconds/nanoseconds
-  if (typeof timestamp === 'object' && 'seconds' in timestamp) {
-    return new Date((timestamp as any).seconds * 1000 + ((timestamp as any).nanoseconds || 0) / 1_000_000);
+  if (typeof timestamp === "object" && "seconds" in timestamp) {
+    return new Date(
+      (timestamp as any).seconds * 1000 +
+        ((timestamp as any).nanoseconds || 0) / 1_000_000
+    );
   }
   return undefined;
 };
 
 // Convert order's Firestore Timestamps to JavaScript Dates
-export const convertOrderTimestamps = (order: Partial<Order>): Partial<Order> => {
+export const convertOrderTimestamps = (
+  order: Partial<Order>
+): Partial<Order> => {
   // Calculate taxBreakDown if missing (for backward compatibility)
   let taxBreakDown = order.taxBreakDown;
   if (!taxBreakDown && order.total !== undefined) {
     taxBreakDown = calculateTaxBreakdown(order.total);
   }
 
+  // Convert preorderTime only if it exists
+  const convertedPreorderTime = order.preorderTime
+    ? timestampToDate(order.preorderTime as any)
+    : undefined;
+
   return {
     ...order,
-    preorderTime: timestampToDate(order.preorderTime as any),
+    ...(convertedPreorderTime !== undefined && {
+      preorderTime: convertedPreorderTime,
+    }),
     createdAt: order.createdAt, // Keep as Timestamp for display purposes
     taxBreakDown,
   };

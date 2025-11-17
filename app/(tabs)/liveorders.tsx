@@ -385,11 +385,11 @@ export default function LiveOrders() {
                 {/* Row 1: Print All | Select Items | Edit */}
                 <View className="flex-row justify-between mt-3">
                   <TouchableOpacity
-                    className="bg-blue-500 px-3 py-3 rounded-full flex-1 mr-2"
-                    onPress={() => handlePrint(item)}
+                    className="bg-orange-500 px-3 py-3 rounded-full flex-1 mr-2"
+                    onPress={() => handleEditOrder(item)}
                   >
                     <Text className="text-white font-semibold text-center text-sm">
-                      Print
+                      Edit
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -400,12 +400,13 @@ export default function LiveOrders() {
                       Select Items
                     </Text>
                   </TouchableOpacity>
+
                   <TouchableOpacity
-                    className="bg-orange-500 px-3 py-3 rounded-full flex-1 ml-2"
-                    onPress={() => handleEditOrder(item)}
+                    className="bg-blue-500 px-3 py-3 rounded-full flex-1 ml-2"
+                    onPress={() => handlePrint(item)}
                   >
                     <Text className="text-white font-semibold text-center text-sm">
-                      Edit
+                      Print
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -423,7 +424,7 @@ export default function LiveOrders() {
 
                   <TouchableOpacity
                     className={`px-3 py-3 rounded-full flex-1 mx-1 ${
-                      item.paid ? "bg-gray-500" : "bg-green-500"
+                      item.paid ? "bg-gray-500" : "bg-pink-500"
                     }`}
                     onPress={() => handleMarkAsPaid(item, !item.paid)}
                   >
