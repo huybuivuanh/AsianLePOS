@@ -133,7 +133,7 @@ export default function EditTableForm({
               submitting ? "opacity-50" : ""
             }`}
           >
-            <Text className="text-white font-semibold text-base">Cancel</Text>
+            <Text className="text-white font-semibold text-base">Hide</Text>
           </TouchableOpacity>
         )}
       </View>

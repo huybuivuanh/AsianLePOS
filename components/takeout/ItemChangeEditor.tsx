@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Keyboard,
   Text,
@@ -14,121 +14,172 @@ export default function ItemChangeEditor({
   changes: ItemChange[];
   onChange: (updated: ItemChange[]) => void;
 }) {
-  const [newChange, setNewChange] = useState({ from: "", to: "", price: "" });
+  // Track if we're updating from props to prevent infinite loops
+  const isUpdatingFromProps = useRef(false);
+  const prevChangesRef = useRef<string>("");
 
-  const handleAdd = () => {
-    if (newChange.from.trim() === "" && newChange.to.trim() === "") return;
-    const price = parseFloat(newChange.price) || 0;
+  // Initialize drafts from existing changes (price stored as string for TextInput)
+  const [drafts, setDrafts] = useState<
+    (Omit<ItemChange, "price"> & { price: string })[]
+  >(() =>
+    changes.length > 0
+      ? changes.map((c) => ({
+          from: c.from,
+          to: c.to,
+          price: c.price.toString(),
+        }))
+      : []
+  );
 
-    onChange([
-      ...changes,
-      { from: newChange.from.trim(), to: newChange.to.trim(), price },
-    ]);
+  // Sync drafts when changes change externally (e.g., when editing existing item)
+  useEffect(() => {
+    const changesStr = JSON.stringify(changes);
 
-    setNewChange({ from: "", to: "", price: "" });
+    // Only update if changes actually changed
+    if (changesStr !== prevChangesRef.current) {
+      prevChangesRef.current = changesStr;
+
+      const newDrafts =
+        changes.length > 0
+          ? changes.map((c) => ({
+              from: c.from,
+              to: c.to,
+              price: c.price.toString(),
+            }))
+          : [];
+
+      isUpdatingFromProps.current = true;
+      setDrafts((prevDrafts) => {
+        const prevDraftsStr = JSON.stringify(prevDrafts);
+        const newDraftsStr = JSON.stringify(newDrafts);
+        // Only update if different
+        if (prevDraftsStr !== newDraftsStr) {
+          return newDrafts;
+        }
+        return prevDrafts;
+      });
+
+      // Reset flag after state update
+      setTimeout(() => {
+        isUpdatingFromProps.current = false;
+      }, 0);
+    }
+  }, [changes]);
+
+  // Update parent whenever drafts change, filtering out empty changes
+  useEffect(() => {
+    // Don't call onChange if we're updating from props
+    if (isUpdatingFromProps.current) {
+      return;
+    }
+
+    const validChanges: ItemChange[] = drafts
+      .filter((d) => d.from.trim() !== "" && d.to.trim() !== "")
+      .map((d) => ({
+        from: d.from.trim(),
+        to: d.to.trim(),
+        price: parseFloat(d.price) || 0,
+      }));
+
+    // Only call onChange if the valid changes actually changed
+    const currentChangesStr = JSON.stringify(changes);
+    const newChangesStr = JSON.stringify(validChanges);
+
+    if (currentChangesStr !== newChangesStr) {
+      onChange(validChanges);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drafts]);
+
+  const handleAddDraft = () => {
+    setDrafts([...drafts, { from: "", to: "", price: "" }]);
   };
 
-  const handleRemove = (index: number) => {
-    onChange(changes.filter((_, i) => i !== index));
+  const handleUpdateDraft = (
+    index: number,
+    field: "from" | "to" | "price",
+    value: string
+  ) => {
+    setDrafts((prev) =>
+      prev.map((draft, i) =>
+        i === index ? { ...draft, [field]: value } : draft
+      )
+    );
   };
 
-  const isAddDisabled =
-    newChange.from.trim() === "" || newChange.to.trim() === "";
+  const handleRemoveDraft = (index: number) => {
+    setDrafts((prev) => prev.filter((_, i) => i !== index));
+  };
 
   return (
     <View className="mt-4 mb-6">
-      <Text className="text-xl font-semibold mb-2">Item Changes</Text>
-
-      {/* New Change Input */}
-      <View className="flex-row items-end mb-3 space-x-2">
-        <View className="flex-1">
-          <Text className="text-sm text-gray-600 mb-1">From</Text>
-          <TextInput
-            className="border border-gray-300 rounded-xl p-3"
-            placeholder="Original item"
-            value={newChange.from}
-            onChangeText={(text) =>
-              setNewChange((prev) => ({ ...prev, from: text }))
-            }
-            returnKeyLabel="Hide"
-            returnKeyType="done"
-            onSubmitEditing={() => Keyboard.dismiss()}
-          />
-        </View>
-
-        <View className="flex-1">
-          <Text className="text-sm text-gray-600 mb-1">To</Text>
-          <TextInput
-            className="border border-gray-300 rounded-xl p-3"
-            placeholder="Replacement item"
-            value={newChange.to}
-            onChangeText={(text) =>
-              setNewChange((prev) => ({ ...prev, to: text }))
-            }
-            returnKeyLabel="Hide"
-            returnKeyType="done"
-            onSubmitEditing={() => Keyboard.dismiss()}
-          />
-        </View>
-
-        <View className="w-24">
-          <Text className="text-sm text-gray-600 mb-1">Price</Text>
-          <TextInput
-            className="border border-gray-300 rounded-xl p-3 text-right"
-            placeholder="0.00"
-            keyboardType="numeric"
-            value={newChange.price}
-            onChangeText={(text) =>
-              setNewChange((prev) => ({ ...prev, price: text }))
-            }
-            returnKeyLabel="Hide"
-            returnKeyType="done"
-            onSubmitEditing={() => Keyboard.dismiss()}
-          />
-        </View>
-
+      <View className="flex-row items-center justify-between mb-3">
+        <Text className="text-xl font-semibold">Item Changes</Text>
         <TouchableOpacity
-          className={`px-4 py-3 rounded-xl ${
-            isAddDisabled ? "bg-gray-300" : "bg-blue-500"
-          }`}
-          onPress={handleAdd}
-          disabled={isAddDisabled}
+          className="bg-blue-500 px-4 py-2 rounded-xl"
+          onPress={handleAddDraft}
         >
           <Text className="text-white font-semibold">Add</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Read-only List */}
-      {changes.map((item, index) => (
-        <View
-          key={index}
-          className="flex-row items-center mb-2 border border-gray-300 rounded-xl p-3 bg-gray-50"
-        >
+      {/* Draft Changes List */}
+      {drafts.map((draft, index) => (
+        <View key={index} className="flex-row items-end mb-3 space-x-2">
           <View className="flex-1">
-            <Text className="text-sm font-semibold text-gray-700">From</Text>
-            <Text className="text-gray-800">{item.from}</Text>
+            <Text className="text-sm text-gray-600 mb-1">From</Text>
+            <TextInput
+              className="border border-gray-300 rounded-xl p-3"
+              placeholder="Original item"
+              value={draft.from}
+              onChangeText={(text) => handleUpdateDraft(index, "from", text)}
+              returnKeyLabel="Hide"
+              returnKeyType="done"
+              onSubmitEditing={() => Keyboard.dismiss()}
+            />
           </View>
 
           <View className="flex-1">
-            <Text className="text-sm font-semibold text-gray-700">To</Text>
-            <Text className="text-gray-800">{item.to}</Text>
+            <Text className="text-sm text-gray-600 mb-1">To</Text>
+            <TextInput
+              className="border border-gray-300 rounded-xl p-3"
+              placeholder="Replacement item"
+              value={draft.to}
+              onChangeText={(text) => handleUpdateDraft(index, "to", text)}
+              returnKeyLabel="Hide"
+              returnKeyType="done"
+              onSubmitEditing={() => Keyboard.dismiss()}
+            />
           </View>
 
-          <View className="w-20">
-            <Text className="text-sm font-semibold text-gray-700">Price</Text>
-            <Text className="text-gray-800 text-right">
-              ${item.price.toFixed(2)}
-            </Text>
+          <View className="w-24">
+            <Text className="text-sm text-gray-600 mb-1">Price</Text>
+            <TextInput
+              className="border border-gray-300 rounded-xl p-3 text-right"
+              placeholder="0.00"
+              keyboardType="numeric"
+              value={draft.price}
+              onChangeText={(text) => handleUpdateDraft(index, "price", text)}
+              returnKeyLabel="Hide"
+              returnKeyType="done"
+              onSubmitEditing={() => Keyboard.dismiss()}
+            />
           </View>
 
           <TouchableOpacity
-            className="bg-red-500 px-3 py-1 rounded-full ml-2"
-            onPress={() => handleRemove(index)}
+            className="bg-red-500 px-3 py-3 rounded-xl"
+            onPress={() => handleRemoveDraft(index)}
           >
             <Text className="text-white text-sm font-bold">×</Text>
           </TouchableOpacity>
         </View>
       ))}
+
+      {drafts.length === 0 && (
+        <Text className="text-gray-500 text-sm italic">
+          Press Add to create a new change
+        </Text>
+      )}
     </View>
   );
 }
