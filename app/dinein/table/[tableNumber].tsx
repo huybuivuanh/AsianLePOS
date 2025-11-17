@@ -90,6 +90,7 @@ export default function TablePage() {
       });
       setOrder(null);
       await completeOrder(order);
+      router.replace("/dinein");
     } catch (err) {
       console.error("Failed to complete order:", err);
     }
