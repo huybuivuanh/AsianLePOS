@@ -17,7 +17,7 @@ export default function CategoryList({
       keyboardShouldPersistTaps="always"
       data={categories}
       keyExtractor={(cat) => cat.id!}
-      contentContainerStyle={{ paddingBottom: 100 }}
+      contentContainerStyle={{ paddingBottom: 80 }}
       removeClippedSubviews={true}
       maxToRenderPerBatch={5}
       windowSize={10}

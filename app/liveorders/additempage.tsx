@@ -2,9 +2,9 @@ import SafeAreaViewWrapper from "@/components/SafeAreaViewWrapper";
 import Header from "@/components/ui/Header";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { X } from "lucide-react-native";
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Keyboard,
   Text,
@@ -39,6 +39,13 @@ export default function AddItemPage() {
     });
     return map;
   }, [categories, visibleItems]);
+
+  // Clear search bar when page is focused (opened or navigated to)
+  useFocusEffect(
+    useCallback(() => {
+      setQuery("");
+    }, [])
+  );
 
   if (loading) return <Text>Loading...</Text>;
   if (!categories.length) return <Text>No categories found</Text>;

@@ -22,6 +22,7 @@ export default function SearchResults({ items, query, onSelectItem }: Props) {
       keyboardShouldPersistTaps="always"
       data={filteredItems}
       keyExtractor={(item) => item.id!}
+      contentContainerStyle={{ paddingBottom: 80 }}
       removeClippedSubviews={true}
       maxToRenderPerBatch={10}
       windowSize={10}

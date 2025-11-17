@@ -3,7 +3,7 @@ import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enum";
 import { debounce } from "@/utils/memoryUtils";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { X } from "lucide-react-native";
 import React, { useCallback, useMemo, useState } from "react";
 import {
@@ -41,6 +41,14 @@ export default function TakeOut() {
     [debouncedSetQuery]
   );
 
+  // Clear search bar when page is focused (opened or navigated to)
+  useFocusEffect(
+    useCallback(() => {
+      setQuery("");
+      setDebouncedQuery("");
+    }, [])
+  );
+
   const visibleItems = useMemo(() => {
     const allowedIds = new Set<number | string>();
     categories.forEach((cat) =>
@@ -71,44 +79,48 @@ export default function TakeOut() {
   };
 
   return (
-    <SafeAreaViewWrapper className="p-4">
-      <View className="relative mb-4">
-        <TextInput
-          placeholder="Search for an item..."
-          value={query}
-          onChangeText={handleQueryChange}
-          className="border border-gray-300 rounded-lg p-3 pr-12"
-          returnKeyLabel="Hide"
-          returnKeyType="done"
-          onSubmitEditing={() => Keyboard.dismiss()}
-        />
-        <TouchableOpacity
-          onPress={() => {
-            setQuery("");
-            setDebouncedQuery("");
-          }}
-          disabled={query.length === 0}
-          className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 ${
-            query.length === 0 ? "opacity-30" : ""
-          }`}
-        >
-          <X size={20} color="#6B7280" />
-        </TouchableOpacity>
-      </View>
+    <SafeAreaViewWrapper className="flex-1">
+      <View className="flex-1 px-4 pt-4">
+        <View className="relative mb-4">
+          <TextInput
+            placeholder="Search for an item..."
+            value={query}
+            onChangeText={handleQueryChange}
+            className="border border-gray-300 rounded-lg p-3 pr-12"
+            returnKeyLabel="Hide"
+            returnKeyType="done"
+            onSubmitEditing={() => Keyboard.dismiss()}
+          />
+          <TouchableOpacity
+            onPress={() => {
+              setQuery("");
+              setDebouncedQuery("");
+            }}
+            disabled={query.length === 0}
+            className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 ${
+              query.length === 0 ? "opacity-30" : ""
+            }`}
+          >
+            <X size={20} color="#6B7280" />
+          </TouchableOpacity>
+        </View>
 
-      {debouncedQuery.trim() ? (
-        <SearchResults
-          items={visibleItems}
-          query={debouncedQuery}
-          onSelectItem={handleSelectItem}
-        />
-      ) : (
-        <CategoryList
-          categories={categories}
-          categoryItemsMap={categoryItemsMap}
-          onSelectItem={handleSelectItem}
-        />
-      )}
+        <View className="flex-1">
+          {debouncedQuery.trim() ? (
+            <SearchResults
+              items={visibleItems}
+              query={debouncedQuery}
+              onSelectItem={handleSelectItem}
+            />
+          ) : (
+            <CategoryList
+              categories={categories}
+              categoryItemsMap={categoryItemsMap}
+              onSelectItem={handleSelectItem}
+            />
+          )}
+        </View>
+      </View>
 
       <View className="absolute bottom-4 left-0 right-0 px-4">
         <TouchableOpacity
