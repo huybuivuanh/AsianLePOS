@@ -315,13 +315,21 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
     const collectionName =
       order.orderType === OrderType.DineIn ? "dineInOrders" : "takeOutOrders";
+    
+    // Use batch write to ensure atomicity - both operations must succeed together
+    const batch = writeBatch(db);
+    
+    // Update main order collection
     const orderRef = doc(db, collectionName, order.id);
-    await updateDoc(orderRef, {
+    batch.update(orderRef, {
       addedToPrintQueue: true,
     });
 
+    // Add to print queue
     const printQueueRef = doc(collection(db, "printQueue"));
-    await setDoc(printQueueRef, order);
+    batch.set(printQueueRef, order);
+    
+    await batch.commit();
   },
 
   submitSelectedItemsToPrintQueue: async (

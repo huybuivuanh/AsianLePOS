@@ -5,8 +5,8 @@ import {
   doc,
   getDocs,
   onSnapshot,
-  setDoc,
   updateDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { create } from "zustand";
 import { db } from "../lib/firebaseConfig";
@@ -44,19 +44,18 @@ export const useTableStore = create<TableStore>((set, get) => ({
     const tablesRef = collection(db, "tables");
     const snapshot = await getDocs(tablesRef);
     if (snapshot.empty) {
-      const batch: Promise<void>[] = [];
+      // Use batch write for atomic initialization - all tables created together or none
+      const batch = writeBatch(db);
       for (let i = 1; i <= 15; i++) {
         const tableDoc = doc(db, "tables", i.toString());
-        batch.push(
-          setDoc(tableDoc, {
-            tableNumber: i.toString(),
-            status: TableStatus.Open,
-            guests: 0,
-            currentOrderId: undefined,
-          })
-        );
+        batch.set(tableDoc, {
+          tableNumber: i.toString(),
+          status: TableStatus.Open,
+          guests: 0,
+          currentOrderId: undefined,
+        });
       }
-      await Promise.all(batch);
+      await batch.commit();
       console.log("✅ Initialized 15 tables in Firestore");
     }
   },
