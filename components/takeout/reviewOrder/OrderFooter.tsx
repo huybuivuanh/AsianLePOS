@@ -33,7 +33,7 @@ export default function OrderFooter({ onSubmit, submitting, disabled }: Props) {
         ) : (
           <Text className="text-white font-bold text-base">
             {editingOrder
-              ? "Submit Update"
+              ? `Submit Update - $${taxBreakDown?.grandTotal.toFixed(2) ?? "0.00"}`
               : ` Submit ${totalItems} Item(s) - $${taxBreakDown?.grandTotal.toFixed(2) ?? "0.00"}`}
           </Text>
         )}

@@ -71,26 +71,42 @@ export default function OrderHistory() {
             </View>
           )}
 
-          <View
-            className={`px-3 py-1 rounded-full ${
-              item.status === OrderStatus.InProgress
-                ? "bg-blue-100"
-                : item.status === OrderStatus.Completed
-                  ? "bg-green-100"
-                  : "bg-red-200"
-            }`}
-          >
-            <Text
-              className={`text-xs font-semibold ${
-                item.status === OrderStatus.InProgress
-                  ? "text-blue-700"
-                  : item.status === OrderStatus.Completed
-                    ? "text-green-700"
-                    : "text-red-700"
+          <View className="items-end space-y-1">
+            <View
+              className={`px-3 py-1 rounded-full ${
+                item.paid ? "bg-green-100" : "bg-gray-100"
               }`}
             >
-              {item.status}
-            </Text>
+              <Text
+                className={`text-xs font-semibold ${
+                  item.paid ? "text-green-700" : "text-gray-700"
+                }`}
+              >
+                {item.paid ? "Paid" : "Unpaid"}
+              </Text>
+            </View>
+
+            <View
+              className={`px-3 py-1 rounded-full ${
+                item.status === OrderStatus.InProgress
+                  ? "bg-blue-100"
+                  : item.status === OrderStatus.Completed
+                    ? "bg-green-100"
+                    : "bg-red-200"
+              }`}
+            >
+              <Text
+                className={`text-xs font-semibold ${
+                  item.status === OrderStatus.InProgress
+                    ? "text-blue-700"
+                    : item.status === OrderStatus.Completed
+                      ? "text-green-700"
+                      : "text-red-700"
+                }`}
+              >
+                {item.status}
+              </Text>
+            </View>
           </View>
           <TouchableOpacity
             className="bg-blue-500 px-5 py-3 rounded-full"

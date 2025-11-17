@@ -96,6 +96,7 @@ declare global {
     total: number;
     taxBreakDown: TaxBreakDown;
     status: OrderStatus;
+    paid: boolean;
     printed: boolean;
     addedToPrintQueue: boolean;
     createdAt: TimeStamp;

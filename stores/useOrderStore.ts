@@ -31,6 +31,7 @@ type OrderState = {
   updateOrderOnFirestore: (order: Partial<Order>) => Promise<void>;
   cancelOrder: (order: Partial<Order>) => Promise<void>;
   completeOrder: (order: Partial<Order>) => Promise<void>;
+  markOrderAsPaid: (order: Partial<Order>, paid: boolean) => Promise<void>;
   submitToPrintQueue: (order: Partial<Order>) => Promise<void>;
 };
 
@@ -189,6 +190,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       total,
       taxBreakDown,
       status: OrderStatus.InProgress,
+      paid: false,
       printed: false,
       createdAt: Timestamp.fromDate(new Date()),
     };
@@ -280,6 +282,26 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     batch.update(orderHistoryRef, {
       status: OrderStatus.Completed,
     });
+
+    await batch.commit();
+  },
+
+  markOrderAsPaid: async (order: Partial<Order>, paid: boolean) => {
+    if (!order.id) throw new Error("Order ID is required to mark as paid.");
+
+    const firestorecollection =
+      order.orderType === OrderType.DineIn ? "dineInOrders" : "takeOutOrders";
+
+    // Use batch write to update both collections atomically
+    const batch = writeBatch(db);
+
+    // Update main order collection
+    const orderRef = doc(db, firestorecollection, order.id);
+    batch.update(orderRef, { paid });
+
+    // Update order history
+    const historyRef = doc(db, "orderHistory", order.id);
+    batch.update(historyRef, { paid });
 
     await batch.commit();
   },

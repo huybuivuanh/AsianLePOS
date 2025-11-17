@@ -22,9 +22,10 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 export default function EditDinInOrder() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
   const router = useRouter();
-  const { setOrder, clearOrder } = useOrderStore();
+  const { setOrder, clearOrder, getTaxBreakdown } = useOrderStore();
   const { updateOrderOnFirestore } = useOrderStore();
   const order = useOrderStore((state) => state.order);
+  const taxBreakDown = getTaxBreakdown();
 
   const { user } = useAuth();
 
@@ -141,7 +142,7 @@ export default function EditDinInOrder() {
               <ActivityIndicator color="white" />
             ) : (
               <Text className="text-white font-bold text-base">
-                Submit Update
+                {`Submit Update - $${taxBreakDown?.grandTotal.toFixed(2) ?? "0.00"}`}
               </Text>
             )}
           </TouchableOpacity>

@@ -31,6 +31,7 @@ export default function TablePage() {
     setEditingOrder,
     cancelOrder,
     completeOrder,
+    markOrderAsPaid,
     updateOrder,
     submitToPrintQueue,
   } = useOrderStore();
@@ -42,9 +43,11 @@ export default function TablePage() {
   }, [dineInOrders, table]);
 
   // Use taxBreakDown from order, or calculate it if missing
-  const taxBreakDown = order?.taxBreakDown || (order?.total !== undefined 
-    ? calculateTaxBreakdown(order.total) 
-    : undefined);
+  const taxBreakDown =
+    order?.taxBreakDown ||
+    (order?.total !== undefined
+      ? calculateTaxBreakdown(order.total)
+      : undefined);
 
   // ✅ Sync order store with live data
   useEffect(() => {
@@ -98,6 +101,15 @@ export default function TablePage() {
       await submitToPrintQueue(order);
     } catch (error) {
       console.error("❌ Error submitting to print queue:", error);
+    }
+  };
+
+  const handleMarkAsPaid = async (paid: boolean) => {
+    if (!order) return;
+    try {
+      await markOrderAsPaid(order, paid);
+    } catch (error) {
+      console.error("❌ Error marking order as paid:", error);
     }
   };
 
@@ -211,6 +223,21 @@ export default function TablePage() {
                 <Text className="text-lg font-semibold text-gray-800">
                   Total
                 </Text>
+                {/* Paid Status Badge */}
+
+                <View
+                  className={`px-4 py-2 rounded-full ${
+                    order.paid ? "bg-green-100" : "bg-gray-100"
+                  }`}
+                >
+                  <Text
+                    className={`text-sm font-semibold ${
+                      order.paid ? "text-green-700" : "text-gray-700"
+                    }`}
+                  >
+                    {order.paid ? "✓ Paid" : "Unpaid"}
+                  </Text>
+                </View>
                 <Text className="text-xl font-bold text-gray-900">
                   ${(taxBreakDown?.grandTotal ?? 0).toFixed(2)}
                 </Text>
@@ -218,46 +245,8 @@ export default function TablePage() {
             </View>
           )}
 
-          {/* Row 1: Reset + Print */}
+          {/* Row 1: Take/Edit Order + Print Order */}
           <View className="flex-row justify-between mb-4">
-            <TouchableOpacity
-              onPress={handleCancelOrder}
-              activeOpacity={0.7}
-              className={`${
-                order ? "bg-red-500" : "bg-red-300"
-              } px-5 py-3 rounded-lg items-center justify-center`}
-              style={{ flex: 1, marginRight: 8 }}
-              disabled={!order}
-            >
-              <Text className="text-white text-base font-semibold">
-                Cancel Order
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handlePrint}
-              activeOpacity={0.7}
-              disabled={!order}
-              className={`px-5 py-3 rounded-lg items-center justify-center ${
-                order ? "bg-blue-500" : "bg-blue-300"
-              }`}
-              style={{ flex: 1, marginLeft: 8 }}
-            >
-              <View className="flex-row items-center space-x-1">
-                <Text className="text-white text-base font-semibold">
-                  Print Order
-                </Text>
-                {order?.printed ? (
-                  <Check size={20} color="orange" />
-                ) : (
-                  <X size={20} color="red" />
-                )}
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          {/* Row 2: Take/Edit + Complete */}
-          <View className="flex-row justify-between">
             <TouchableOpacity
               onPress={() => {
                 updateOrder({ orderType: OrderType.DineIn });
@@ -284,17 +273,71 @@ export default function TablePage() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={handleCompleteOrder}
+              onPress={handlePrint}
               activeOpacity={0.7}
               disabled={!order}
               className={`px-5 py-3 rounded-lg items-center justify-center ${
-                order ? "bg-green-500" : "bg-green-200"
+                order ? "bg-blue-500" : "bg-blue-300"
               }`}
               style={{ flex: 1, marginLeft: 8 }}
+            >
+              <View className="flex-row items-center space-x-1">
+                <Text className="text-white text-base font-semibold">
+                  Print Order
+                </Text>
+                {order?.printed ? (
+                  <Check size={20} color="orange" />
+                ) : (
+                  <X size={20} color="red" />
+                )}
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* Row 2: Complete + Mark Paid + Cancel Order */}
+          <View className="flex-row justify-between">
+            <TouchableOpacity
+              onPress={handleCompleteOrder}
+              activeOpacity={0.7}
+              disabled={!order}
+              className={`px-4 py-3 rounded-lg items-center justify-center ${
+                order ? "bg-green-500" : "bg-green-200"
+              }`}
+              style={{ flex: 1, marginRight: 4 }}
             >
               <Text className="text-white text-base font-semibold">
                 Complete
               </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => handleMarkAsPaid(!order?.paid)}
+              activeOpacity={0.7}
+              disabled={!order}
+              className={`px-4 py-3 rounded-lg items-center justify-center ${
+                order?.paid
+                  ? "bg-gray-500"
+                  : order
+                    ? "bg-purple-500"
+                    : "bg-gray-300"
+              }`}
+              style={{ flex: 1, marginHorizontal: 4 }}
+            >
+              <Text className="text-white text-base font-semibold">
+                {order?.paid ? "Unpaid" : "Paid"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleCancelOrder}
+              activeOpacity={0.7}
+              className={`${
+                order ? "bg-red-500" : "bg-red-300"
+              } px-4 py-3 rounded-lg items-center justify-center`}
+              style={{ flex: 1, marginLeft: 4 }}
+              disabled={!order}
+            >
+              <Text className="text-white text-base font-semibold">Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -32,6 +32,7 @@ export default function LiveOrders() {
     setEditingOrder,
     cancelOrder,
     completeOrder,
+    markOrderAsPaid,
     submitToPrintQueue,
   } = useOrderStore();
 
@@ -63,6 +64,14 @@ export default function LiveOrders() {
     }
   };
 
+  const handleMarkAsPaid = async (order: Order, paid: boolean) => {
+    try {
+      await markOrderAsPaid(order, paid);
+    } catch (error) {
+      console.error("❌ Error marking order as paid:", error);
+    }
+  };
+
   function handleEditOrder(order: Order) {
     setEditingOrder(true);
     // Convert Firestore Timestamps to JavaScript Dates
@@ -73,9 +82,11 @@ export default function LiveOrders() {
 
   const renderOrder = ({ item }: { item: Order }) => {
     // Use taxBreakDown from order, or calculate it if missing
-    const taxBreakDown = item.taxBreakDown || (item.total !== undefined
-      ? calculateTaxBreakdown(item.total)
-      : undefined);
+    const taxBreakDown =
+      item.taxBreakDown ||
+      (item.total !== undefined
+        ? calculateTaxBreakdown(item.total)
+        : undefined);
     const expanded = expandedOrderId === item.id;
 
     return (
@@ -101,40 +112,62 @@ export default function LiveOrders() {
             )}
           </View>
 
-          <View
-            className={`px-3 py-1 rounded-full ${
-              item.printed ? "bg-green-100" : "bg-yellow-100"
-            }`}
-          >
-            <Text
-              className={`text-xs font-semibold ${
-                item.printed ? "text-green-700" : "text-yellow-700"
-              }`}
-            >
-              {item.printed ? "Printed" : "Not Printed"}
-            </Text>
-          </View>
+          <View>
+            <View className="items-end space-y-2">
+              <View
+                className={`px-3 py-1 rounded-full ${
+                  item.printed ? "bg-green-100" : "bg-yellow-100"
+                }`}
+              >
+                <Text
+                  className={`text-xs font-semibold ${
+                    item.printed ? "text-green-700" : "text-yellow-700"
+                  }`}
+                >
+                  {item.printed ? "Printed" : "Not Printed"}
+                </Text>
+              </View>
 
-          <View
-            className={`px-3 py-1 rounded-full ${
-              item.status === OrderStatus.InProgress
-                ? "bg-blue-100"
-                : item.status === OrderStatus.Completed
-                  ? "bg-green-100"
-                  : "bg-red-200"
-            }`}
-          >
-            <Text
-              className={`text-xs font-semibold ${
-                item.status === OrderStatus.InProgress
-                  ? "text-blue-700"
-                  : item.status === OrderStatus.Completed
-                    ? "text-green-700"
-                    : "text-red-700"
-              }`}
-            >
-              {item.status}
-            </Text>
+              <View
+                className={`px-3 py-1 rounded-full ${
+                  item.paid ? "bg-green-100" : "bg-gray-100"
+                }`}
+              >
+                <Text
+                  className={`text-xs font-semibold ${
+                    item.paid ? "text-green-700" : "text-gray-700"
+                  }`}
+                >
+                  {item.paid ? "Paid" : "Unpaid"}
+                </Text>
+              </View>
+
+              <View
+                className={`px-3 py-1 rounded-full ${
+                  item.status === OrderStatus.InProgress
+                    ? "bg-blue-100"
+                    : item.status === OrderStatus.Completed
+                      ? "bg-green-100"
+                      : "bg-red-200"
+                }`}
+              >
+                <Text
+                  className={`text-xs font-semibold ${
+                    item.status === OrderStatus.InProgress
+                      ? "text-blue-700"
+                      : item.status === OrderStatus.Completed
+                        ? "text-green-700"
+                        : "text-red-700"
+                  }`}
+                >
+                  {item.status === OrderStatus.InProgress
+                    ? "In Progress"
+                    : item.status === OrderStatus.Completed
+                      ? "Completed"
+                      : "Canceled"}
+                </Text>
+              </View>
+            </View>
           </View>
         </TouchableOpacity>
 
@@ -156,11 +189,9 @@ export default function LiveOrders() {
                     {orderItem.options && orderItem.options.length > 0 && (
                       <View className="mt-1 space-y-1">
                         {orderItem.options.map((option, index) => (
-                          <Text
-                            key={index}
-                            className="text-base text-gray-600"
-                          >
-                            • {option.quantity > 1 ? `${option.quantity}x ` : ""}
+                          <Text key={index} className="text-base text-gray-600">
+                            •{" "}
+                            {option.quantity > 1 ? `${option.quantity}x ` : ""}
                             {option.name}
                             {option.price > 0 &&
                               ` - $${(option.price * option.quantity).toFixed(2)}`}
@@ -262,6 +293,17 @@ export default function LiveOrders() {
                 onPress={() => handleComplete(item)}
               >
                 <Text className="text-white font-semibold">Done</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className={`px-5 py-3 rounded-full ${
+                  item.paid ? "bg-gray-500" : "bg-purple-500"
+                }`}
+                onPress={() => handleMarkAsPaid(item, !item.paid)}
+              >
+                <Text className="text-white font-semibold">
+                  {item.paid ? "Mark Unpaid" : "Mark Paid"}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
