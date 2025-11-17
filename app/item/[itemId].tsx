@@ -41,17 +41,23 @@ export default function Item() {
   const [instructions, setInstructions] = useState(
     existingOrderItem?.instructions ?? ""
   );
+  // State: Record<groupId, Record<optionId, quantity>>
   const [selectedOptions, setSelectedOptions] = useState<
-    Record<string, string[]>
+    Record<string, Record<string, number>>
   >(() => {
     if (!existingOrderItem?.options || !optionGroups) return {};
-    const selected: Record<string, string[]> = {};
+    const selected: Record<string, Record<string, number>> = {};
     existingOrderItem.options.forEach((opt) => {
-      // Find which group this option belongs to
+      // Find which group this option belongs to by matching name and price
       optionGroups.forEach((group) => {
-        if (group.optionIds?.includes(opt.id!)) {
-          if (!selected[group.id!]) selected[group.id!] = [];
-          selected[group.id!].push(opt.id!);
+        if (group.optionIds) {
+          const matchingOption = options?.find(
+            (o) => o.name === opt.name && o.price === opt.price
+          );
+          if (matchingOption && group.optionIds.includes(matchingOption.id!)) {
+            if (!selected[group.id!]) selected[group.id!] = {};
+            selected[group.id!][matchingOption.id!] = opt.quantity || 1;
+          }
         }
       });
     });
@@ -88,22 +94,28 @@ export default function Item() {
       }
 
       // Rebuild selectedOptions from existing order item
-      if (existingOrderItem.options && optionGroups) {
-        const selected: Record<string, string[]> = {};
+      if (existingOrderItem.options && optionGroups && options) {
+        const selected: Record<string, Record<string, number>> = {};
         existingOrderItem.options.forEach((opt) => {
-          optionGroups.forEach((group) => {
-            if (group.optionIds?.includes(opt.id!)) {
-              if (!selected[group.id!]) selected[group.id!] = [];
-              selected[group.id!].push(opt.id!);
-            }
-          });
+          // Find matching option by name and price
+          const matchingOption = options.find(
+            (o) => o.name === opt.name && o.price === opt.price
+          );
+          if (matchingOption) {
+            optionGroups.forEach((group) => {
+              if (group.optionIds?.includes(matchingOption.id!)) {
+                if (!selected[group.id!]) selected[group.id!] = {};
+                selected[group.id!][matchingOption.id!] = opt.quantity || 1;
+              }
+            });
+          }
         });
         setSelectedOptions(selected);
       } else {
         setSelectedOptions({});
       }
     }
-  }, [existingOrderItem, isEditMode, optionGroups]);
+  }, [existingOrderItem, isEditMode, optionGroups, options]);
 
   if (!item)
     return (
@@ -114,22 +126,71 @@ export default function Item() {
 
   const toggleOption = (group: OptionGroup, option: ItemOption) => {
     setSelectedOptions((prev) => {
-      const current = prev[group.id!] || [];
-      let updated: string[];
+      const current = prev[group.id!] || {};
 
-      if (group.maxSelection === 1) {
-        updated = [option.id!];
-      } else {
-        if (current.includes(option.id!)) {
-          updated = current.filter((id) => id !== option.id!);
-        } else {
-          if (group.maxSelection && current.length >= group.maxSelection)
-            return prev;
-          updated = [...current, option.id!];
-        }
+      // If multipleSelection is enabled, increment quantity instead of toggling
+      if (group.multipleSelection) {
+        const currentQty = current[option.id!] || 0;
+        const newQty = currentQty > 0 ? 0 : 1; // Toggle between 0 and 1 initially
+        return {
+          ...prev,
+          [group.id!]: {
+            ...current,
+            [option.id!]: newQty,
+          },
+        };
       }
 
-      return { ...prev, [group.id!]: updated };
+      // For non-multiple selection groups
+      if (group.maxSelection === 1) {
+        return { ...prev, [group.id!]: { [option.id!]: 1 } };
+      } else {
+        const currentIds = Object.keys(current);
+        if (current[option.id!]) {
+          // Remove option
+          const updated = { ...current };
+          delete updated[option.id!];
+          return { ...prev, [group.id!]: updated };
+        } else {
+          // Add option
+          if (group.maxSelection && currentIds.length >= group.maxSelection)
+            return prev;
+          return {
+            ...prev,
+            [group.id!]: {
+              ...current,
+              [option.id!]: 1,
+            },
+          };
+        }
+      }
+    });
+  };
+
+  const updateOptionQuantity = (
+    groupId: string,
+    optionId: string,
+    delta: number
+  ) => {
+    setSelectedOptions((prev) => {
+      const current = prev[groupId] || {};
+      const currentQty = current[optionId] || 0;
+      const newQty = Math.max(0, currentQty + delta);
+
+      if (newQty === 0) {
+        // Remove option if quantity is 0
+        const updated = { ...current };
+        delete updated[optionId];
+        return { ...prev, [groupId]: updated };
+      }
+
+      return {
+        ...prev,
+        [groupId]: {
+          ...current,
+          [optionId]: newQty,
+        },
+      };
     });
   };
 
@@ -142,7 +203,9 @@ export default function Item() {
         .filter(Boolean) as OptionGroup[]) || [];
 
     for (const group of groups) {
-      const selectedCount = selectedOptions[group.id!]?.length || 0;
+      const selectedCount = Object.keys(
+        selectedOptions[group.id!] || {}
+      ).length;
       if (selectedCount < group.minSelection) {
         Alert.alert(
           "Selection required",
@@ -152,11 +215,19 @@ export default function Item() {
       }
     }
 
-    const optionsToSubmit: ItemOption[] = [];
-    Object.entries(selectedOptions).forEach(([groupId, optionIds]) => {
-      optionIds.forEach((optId) => {
-        const option = options.find((o) => o.id === optId);
-        if (option) optionsToSubmit.push(option);
+    const optionsToSubmit: OrderItemOption[] = [];
+    Object.entries(selectedOptions).forEach(([groupId, optionQuantities]) => {
+      Object.entries(optionQuantities).forEach(([optionId, quantity]) => {
+        if (quantity > 0) {
+          const option = options.find((o) => o.id === optionId);
+          if (option) {
+            optionsToSubmit.push({
+              name: option.name,
+              price: option.price,
+              quantity: quantity,
+            });
+          }
+        }
       });
     });
 
@@ -164,7 +235,7 @@ export default function Item() {
     const changesTotal = changes.reduce((sum, c) => sum + (c.price || 0), 0);
     const orderItemPrice =
       (item.price || 0) +
-      optionsToSubmit.reduce((acc, o) => acc + (o.price || 0), 0) +
+      optionsToSubmit.reduce((acc, o) => acc + (o.price * o.quantity || 0), 0) +
       extrasTotal +
       changesTotal;
 
@@ -249,25 +320,83 @@ export default function Item() {
                   const option = options.find((o) => o.id === optionId);
                   if (!option) return null;
 
-                  const isSelected = selectedOptions[group.id!]?.includes(
-                    option.id!
-                  );
+                  const optionQuantity =
+                    selectedOptions[group.id!]?.[option.id!] || 0;
+                  const isSelected = optionQuantity > 0;
 
                   return (
-                    <TouchableOpacity
+                    <View
                       key={option.id}
-                      onPress={() => toggleOption(group, option)}
                       className={`py-2 px-3 mb-2 rounded-lg border ${
                         isSelected
                           ? "border-blue-600 bg-blue-100"
                           : "border-gray-300 bg-white"
                       }`}
                     >
-                      <Text className="text-base">
-                        {option.name}{" "}
-                        {option.price > 0 && `- $${option.price.toFixed(2)}`}
-                      </Text>
-                    </TouchableOpacity>
+                      <View className="flex-row items-center justify-between">
+                        <TouchableOpacity
+                          onPress={() => toggleOption(group, option)}
+                          className="flex-1"
+                        >
+                          <Text className="text-base">
+                            {option.name}{" "}
+                            {option.price > 0 &&
+                              `- $${option.price.toFixed(2)}`}
+                          </Text>
+                        </TouchableOpacity>
+
+                        {/* Quantity Stepper for multipleSelection groups */}
+                        {group.multipleSelection && (
+                          <View className="flex-row items-center ml-3">
+                            <TouchableOpacity
+                              onPress={() =>
+                                updateOptionQuantity(group.id!, option.id!, -1)
+                              }
+                              disabled={optionQuantity === 0}
+                              className={`w-8 h-8 rounded-full bg-white justify-center items-center border ${
+                                optionQuantity === 0
+                                  ? "border-gray-200 opacity-50"
+                                  : "border-gray-300"
+                              }`}
+                            >
+                              <Text
+                                className={`text-lg font-bold ${
+                                  optionQuantity === 0
+                                    ? "text-gray-400"
+                                    : "text-gray-700"
+                                }`}
+                              >
+                                −
+                              </Text>
+                            </TouchableOpacity>
+                            <Text className="mx-3 text-base font-semibold">
+                              {optionQuantity}
+                            </Text>
+                            <TouchableOpacity
+                              onPress={() =>
+                                updateOptionQuantity(group.id!, option.id!, 1)
+                              }
+                              disabled={optionQuantity === 0}
+                              className={`w-8 h-8 rounded-full bg-white justify-center items-center border ${
+                                optionQuantity === 0
+                                  ? "border-gray-200 opacity-50"
+                                  : "border-gray-300"
+                              }`}
+                            >
+                              <Text
+                                className={`text-lg font-bold ${
+                                  optionQuantity === 0
+                                    ? "text-gray-400"
+                                    : "text-gray-700"
+                                }`}
+                              >
+                                ＋
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                        )}
+                      </View>
+                    </View>
                   );
                 })}
               </View>

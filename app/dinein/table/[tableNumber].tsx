@@ -135,10 +135,12 @@ export default function TablePage() {
                 {/* Options */}
                 {item.options && item.options.length > 0 && (
                   <View className="mt-2 space-y-1">
-                    {item.options.map((option) => (
-                      <Text key={option.id} className="text-base text-gray-600">
-                        • {option.name}
-                        {option.price > 0 && ` - $${option.price.toFixed(2)}`}
+                    {item.options.map((option, index) => (
+                      <Text key={index} className="text-base text-gray-600">
+                        • {option.quantity > 1 ? `${option.quantity}x ` : ""}
+                        {option.name}
+                        {option.price > 0 &&
+                          ` - $${(option.price * option.quantity).toFixed(2)}`}
                       </Text>
                     ))}
                   </View>

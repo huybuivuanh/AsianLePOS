@@ -117,14 +117,15 @@ export default function OrderHistory() {
                     {/* Options */}
                     {orderItem.options && orderItem.options.length > 0 && (
                       <View className="mt-1 space-y-1">
-                        {orderItem.options.map((option) => (
+                        {orderItem.options.map((option, index) => (
                           <Text
-                            key={option.id}
+                            key={index}
                             className="text-base text-gray-600"
                           >
-                            • {option.name}
+                            • {option.quantity > 1 ? `${option.quantity}x ` : ""}
+                            {option.name}
                             {option.price > 0 &&
-                              ` - $${option.price.toFixed(2)}`}
+                              ` - $${(option.price * option.quantity).toFixed(2)}`}
                           </Text>
                         ))}
                       </View>

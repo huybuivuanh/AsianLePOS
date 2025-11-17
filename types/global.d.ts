@@ -30,6 +30,7 @@ declare global {
     name: string;
     minSelection: number;
     maxSelection: number;
+    multipleSelection?: boolean;
     optionIds?: string[];
     itemIds?: string[];
     createdAt: TimeStamp;
@@ -43,12 +44,18 @@ declare global {
     createdAt: TimeStamp;
   };
 
+  type OrderItemOption = {
+    name: string;
+    price: number;
+    quantity: number;
+  };
+
   type OrderItem = {
     id?: string;
     name: string;
     price: number;
     quantity: number;
-    options?: ItemOption[];
+    options?: OrderItemOption[];
     changes?: ItemChange[];
     extras?: AddExtra[];
     togo: boolean;
