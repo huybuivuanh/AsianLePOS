@@ -33,6 +33,10 @@ type OrderState = {
   completeOrder: (order: Partial<Order>) => Promise<void>;
   markOrderAsPaid: (order: Partial<Order>, paid: boolean) => Promise<void>;
   submitToPrintQueue: (order: Partial<Order>) => Promise<void>;
+  submitSelectedItemsToPrintQueue: (
+    order: Partial<Order>,
+    selectedItemIds: string[]
+  ) => Promise<void>;
 };
 
 // Default "empty" order
@@ -318,5 +322,38 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
     const printQueueRef = doc(collection(db, "printQueue"));
     await setDoc(printQueueRef, order);
+  },
+
+  submitSelectedItemsToPrintQueue: async (
+    order: Partial<Order>,
+    selectedItemIds: string[]
+  ) => {
+    if (!order.id) throw new Error("Order ID is required to print.");
+    if (selectedItemIds.length === 0)
+      throw new Error("At least one item must be selected.");
+
+    // Filter order items to only include selected ones
+    const selectedItems =
+      order.orderItems?.filter((item) =>
+        item.id ? selectedItemIds.includes(item.id) : false
+      ) || [];
+
+    // Calculate total for selected items only
+    const selectedTotal = selectedItems.reduce(
+      (acc, i) => acc + i.price * i.quantity,
+      0
+    );
+    const selectedTaxBreakDown = calculateTaxBreakdown(selectedTotal);
+
+    // Create a partial order with only selected items
+    const partialOrder: Partial<Order> = {
+      ...order,
+      orderItems: selectedItems,
+      total: selectedTotal,
+      taxBreakDown: selectedTaxBreakDown,
+    };
+
+    const printQueueRef = doc(collection(db, "printQueue"));
+    await setDoc(printQueueRef, partialOrder);
   },
 }));
