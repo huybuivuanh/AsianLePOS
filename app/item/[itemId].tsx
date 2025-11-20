@@ -288,7 +288,7 @@ export default function Item() {
 
         <ScrollView
           keyboardShouldPersistTaps="always"
-          contentContainerStyle={{ padding: 16, paddingBottom: 180 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
           className="flex-1"
         >
           {/* Instructions */}
@@ -416,35 +416,35 @@ export default function Item() {
               onChange={setSpecialFlag}
             />
           )}
-        </ScrollView>
 
-        {/* Fixed footer at bottom */}
-        <View className="absolute bottom-4 left-0 right-0 bg-white border-t border-gray-200 px-4 pt-4 pb-4 shadow-lg">
-          <View className="flex-row justify-center items-center mb-4">
+          {/* Footer at bottom of scrollable content */}
+          <View className="mt-6 mb-4 bg-white border-t border-gray-200 pt-4">
+            <View className="flex-row justify-center items-center mb-4">
+              <TouchableOpacity
+                className="w-14 h-14 rounded-full bg-gray-200 justify-center items-center"
+                onPress={() => setQuantity((q) => Math.max(1, q - 1))}
+              >
+                <Text className="text-2xl font-bold">−</Text>
+              </TouchableOpacity>
+              <Text className="mx-6 text-2xl font-semibold">{quantity}</Text>
+              <TouchableOpacity
+                className="w-14 h-14 rounded-full bg-gray-200 justify-center items-center"
+                onPress={() => setQuantity((q) => q + 1)}
+              >
+                <Text className="text-2xl font-bold">＋</Text>
+              </TouchableOpacity>
+            </View>
+
             <TouchableOpacity
-              className="w-14 h-14 rounded-full bg-gray-200 justify-center items-center"
-              onPress={() => setQuantity((q) => Math.max(1, q - 1))}
+              className="bg-gray-800 py-4 rounded-lg items-center"
+              onPress={handleSubmit}
             >
-              <Text className="text-2xl font-bold">−</Text>
-            </TouchableOpacity>
-            <Text className="mx-6 text-2xl font-semibold">{quantity}</Text>
-            <TouchableOpacity
-              className="w-14 h-14 rounded-full bg-gray-200 justify-center items-center"
-              onPress={() => setQuantity((q) => q + 1)}
-            >
-              <Text className="text-2xl font-bold">＋</Text>
+              <Text className="text-white font-bold text-lg">
+                {isEditMode ? "Update Item" : "Add to Order"}
+              </Text>
             </TouchableOpacity>
           </View>
-
-          <TouchableOpacity
-            className="bg-gray-800 py-4 rounded-lg items-center"
-            onPress={handleSubmit}
-          >
-            <Text className="text-white font-bold text-lg">
-              {isEditMode ? "Update Item" : "Add to Order"}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        </ScrollView>
       </SafeAreaViewWrapper>
     </KeyboardAvoidingView>
   );
