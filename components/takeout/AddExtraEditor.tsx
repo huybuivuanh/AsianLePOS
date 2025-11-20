@@ -19,13 +19,14 @@ export default function AddExtraEditor({
   const prevExtrasRef = useRef<string>("");
 
   // Initialize drafts from existing extras (price stored as string for TextInput)
+  // If price is 0, show blank instead of "0"
   const [drafts, setDrafts] = useState<
     (Omit<AddExtra, "price"> & { price: string })[]
   >(() =>
     extras.length > 0
       ? extras.map((e) => ({
           description: e.description,
-          price: e.price.toString(),
+          price: e.price === 0 ? "" : e.price.toString(),
         }))
       : []
   );
@@ -42,7 +43,7 @@ export default function AddExtraEditor({
         extras.length > 0
           ? extras.map((e) => ({
               description: e.description,
-              price: e.price.toString(),
+              price: e.price === 0 ? "" : e.price.toString(),
             }))
           : [];
 
@@ -73,10 +74,15 @@ export default function AddExtraEditor({
 
     const validExtras: AddExtra[] = drafts
       .filter((d) => d.description.trim() !== "")
-      .map((d) => ({
-        description: d.description.trim(),
-        price: parseFloat(d.price) || 0,
-      }));
+      .map((d) => {
+        // If price is empty or blank, default to 0
+        const priceStr = d.price.trim();
+        const price = priceStr === "" ? 0 : parseFloat(priceStr) || 0;
+        return {
+          description: d.description.trim(),
+          price,
+        };
+      });
 
     // Only call onChange if the valid extras actually changed
     const currentExtrasStr = JSON.stringify(extras);
