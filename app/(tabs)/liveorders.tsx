@@ -126,6 +126,25 @@ export default function LiveOrders() {
         ? calculateTaxBreakdown(item.total)
         : undefined);
     const expanded = expandedOrderId === item.id;
+    const isSelectionMode = selectionMode === item.id;
+
+    // Calculate selected items total and tax breakdown when in selection mode
+    const selectedItemsTotal =
+      !isSelectionMode || !item.orderItems || selectedItemIds.size === 0
+        ? 0
+        : item.orderItems
+            .filter(
+              (orderItem) => orderItem.id && selectedItemIds.has(orderItem.id)
+            )
+            .reduce(
+              (sum, orderItem) => sum + orderItem.price * orderItem.quantity,
+              0
+            );
+
+    const selectedItemsTaxBreakDown =
+      selectedItemsTotal === 0
+        ? { pst: 0, gst: 0, grandTotal: 0 }
+        : calculateTaxBreakdown(selectedItemsTotal);
 
     return (
       <View
@@ -324,35 +343,75 @@ export default function LiveOrders() {
             {/* Tax breakdown */}
             {taxBreakDown && (
               <View className="mt-2 p-2 border-t border-gray-200">
-                <View className="flex-row justify-between mb-1">
-                  <Text className="text-base text-gray-700">Subtotal</Text>
-                  <Text className="text-base text-gray-700">
-                    ${item.total.toFixed(2)}
-                  </Text>
-                </View>
+                {isSelectionMode ? (
+                  // Selection Mode: Show selected items total
+                  <>
+                    <View className="flex-row justify-between mb-1">
+                      <Text className="text-base text-gray-700">
+                        Selected Items Subtotal
+                      </Text>
+                      <Text className="text-base text-gray-700">
+                        ${selectedItemsTotal.toFixed(2)}
+                      </Text>
+                    </View>
 
-                <View className="flex-row justify-between mb-1">
-                  <Text className="text-base text-gray-700">PST (6%)</Text>
-                  <Text className="text-base text-gray-700">
-                    ${taxBreakDown.pst.toFixed(2)}
-                  </Text>
-                </View>
+                    <View className="flex-row justify-between mb-1">
+                      <Text className="text-base text-gray-700">PST (6%)</Text>
+                      <Text className="text-base text-gray-700">
+                        ${selectedItemsTaxBreakDown.pst.toFixed(2)}
+                      </Text>
+                    </View>
 
-                <View className="flex-row justify-between mb-1">
-                  <Text className="text-base text-gray-700">GST (5%)</Text>
-                  <Text className="text-base text-gray-700">
-                    ${taxBreakDown.gst.toFixed(2)}
-                  </Text>
-                </View>
+                    <View className="flex-row justify-between mb-1">
+                      <Text className="text-base text-gray-700">GST (5%)</Text>
+                      <Text className="text-base text-gray-700">
+                        ${selectedItemsTaxBreakDown.gst.toFixed(2)}
+                      </Text>
+                    </View>
 
-                <View className="flex-row justify-between mt-1 pt-1 border-t border-gray-200">
-                  <Text className="text-base font-semibold text-gray-800">
-                    Total
-                  </Text>
-                  <Text className="text-base font-bold text-gray-900">
-                    ${taxBreakDown.grandTotal.toFixed(2)}
-                  </Text>
-                </View>
+                    <View className="flex-row justify-between mt-1 pt-1 border-t border-gray-200">
+                      <Text className="text-base font-semibold text-gray-800">
+                        Selected Total
+                      </Text>
+                      <Text className="text-base font-bold text-gray-900">
+                        ${selectedItemsTaxBreakDown.grandTotal.toFixed(2)}
+                      </Text>
+                    </View>
+                  </>
+                ) : (
+                  // Normal Mode: Show full order total
+                  <>
+                    <View className="flex-row justify-between mb-1">
+                      <Text className="text-base text-gray-700">Subtotal</Text>
+                      <Text className="text-base text-gray-700">
+                        ${item.total.toFixed(2)}
+                      </Text>
+                    </View>
+
+                    <View className="flex-row justify-between mb-1">
+                      <Text className="text-base text-gray-700">PST (6%)</Text>
+                      <Text className="text-base text-gray-700">
+                        ${taxBreakDown.pst.toFixed(2)}
+                      </Text>
+                    </View>
+
+                    <View className="flex-row justify-between mb-1">
+                      <Text className="text-base text-gray-700">GST (5%)</Text>
+                      <Text className="text-base text-gray-700">
+                        ${taxBreakDown.gst.toFixed(2)}
+                      </Text>
+                    </View>
+
+                    <View className="flex-row justify-between mt-1 pt-1 border-t border-gray-200">
+                      <Text className="text-base font-semibold text-gray-800">
+                        Total
+                      </Text>
+                      <Text className="text-base font-bold text-gray-900">
+                        ${taxBreakDown.grandTotal.toFixed(2)}
+                      </Text>
+                    </View>
+                  </>
+                )}
               </View>
             )}
 

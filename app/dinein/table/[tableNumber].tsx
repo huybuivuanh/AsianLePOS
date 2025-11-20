@@ -54,6 +54,23 @@ export default function TablePage() {
       ? calculateTaxBreakdown(order.total)
       : undefined);
 
+  // Calculate selected items total and tax breakdown when in selection mode
+  const selectedItemsTotal = useMemo(() => {
+    if (!selectionMode || !order?.orderItems || selectedItemIds.size === 0) {
+      return 0;
+    }
+    return order.orderItems
+      .filter((item) => item.id && selectedItemIds.has(item.id))
+      .reduce((sum, item) => sum + item.price * item.quantity, 0);
+  }, [selectionMode, order?.orderItems, selectedItemIds]);
+
+  const selectedItemsTaxBreakDown = useMemo(() => {
+    if (selectedItemsTotal === 0) {
+      return { pst: 0, gst: 0, grandTotal: 0 };
+    }
+    return calculateTaxBreakdown(selectedItemsTotal);
+  }, [selectedItemsTotal]);
+
   // ✅ Sync order store with live data
   useEffect(() => {
     if (currentOrder) setOrder(currentOrder);
@@ -266,50 +283,90 @@ export default function TablePage() {
         <View className="m-4">
           {order && (
             <View className="bg-white p-4 rounded-lg shadow-sm mb-4">
-              <View className="flex-row justify-between mb-1">
-                <Text className="text-base text-gray-700">Subtotal</Text>
-                <Text className="text-base text-gray-700">
-                  ${(order?.total ?? 0).toFixed(2)}
-                </Text>
-              </View>
+              {selectionMode ? (
+                // Selection Mode: Show selected items total
+                <>
+                  <View className="flex-row justify-between mb-1">
+                    <Text className="text-base text-gray-700">
+                      Selected Items Subtotal
+                    </Text>
+                    <Text className="text-base text-gray-700">
+                      ${selectedItemsTotal.toFixed(2)}
+                    </Text>
+                  </View>
 
-              <View className="flex-row justify-between mb-1">
-                <Text className="text-base text-gray-700">PST (6%)</Text>
-                <Text className="text-base text-gray-700">
-                  ${(taxBreakDown?.pst ?? 0).toFixed(2)}
-                </Text>
-              </View>
+                  <View className="flex-row justify-between mb-1">
+                    <Text className="text-base text-gray-700">PST (6%)</Text>
+                    <Text className="text-base text-gray-700">
+                      ${selectedItemsTaxBreakDown.pst.toFixed(2)}
+                    </Text>
+                  </View>
 
-              <View className="flex-row justify-between mb-2">
-                <Text className="text-base text-gray-700">GST (5%)</Text>
-                <Text className="text-base text-gray-700">
-                  ${(taxBreakDown?.gst ?? 0).toFixed(2)}
-                </Text>
-              </View>
+                  <View className="flex-row justify-between mb-2">
+                    <Text className="text-base text-gray-700">GST (5%)</Text>
+                    <Text className="text-base text-gray-700">
+                      ${selectedItemsTaxBreakDown.gst.toFixed(2)}
+                    </Text>
+                  </View>
 
-              <View className="border-t border-gray-200 mt-2 pt-2 flex-row justify-between items-center">
-                <Text className="text-lg font-semibold text-gray-800">
-                  Total
-                </Text>
-                {/* Paid Status Badge */}
+                  <View className="border-t border-gray-200 mt-2 pt-2 flex-row justify-between items-center">
+                    <Text className="text-lg font-semibold text-gray-800">
+                      Selected Total
+                    </Text>
+                    <Text className="text-xl font-bold text-gray-900">
+                      ${selectedItemsTaxBreakDown.grandTotal.toFixed(2)}
+                    </Text>
+                  </View>
+                </>
+              ) : (
+                // Normal Mode: Show full order total
+                <>
+                  <View className="flex-row justify-between mb-1">
+                    <Text className="text-base text-gray-700">Subtotal</Text>
+                    <Text className="text-base text-gray-700">
+                      ${(order?.total ?? 0).toFixed(2)}
+                    </Text>
+                  </View>
 
-                <View
-                  className={`px-4 py-2 rounded-full ${
-                    order.paid ? "bg-green-100" : "bg-gray-100"
-                  }`}
-                >
-                  <Text
-                    className={`text-sm font-semibold ${
-                      order.paid ? "text-green-700" : "text-gray-700"
-                    }`}
-                  >
-                    {order.paid ? "✓ Paid" : "Unpaid"}
-                  </Text>
-                </View>
-                <Text className="text-xl font-bold text-gray-900">
-                  ${(taxBreakDown?.grandTotal ?? 0).toFixed(2)}
-                </Text>
-              </View>
+                  <View className="flex-row justify-between mb-1">
+                    <Text className="text-base text-gray-700">PST (6%)</Text>
+                    <Text className="text-base text-gray-700">
+                      ${(taxBreakDown?.pst ?? 0).toFixed(2)}
+                    </Text>
+                  </View>
+
+                  <View className="flex-row justify-between mb-2">
+                    <Text className="text-base text-gray-700">GST (5%)</Text>
+                    <Text className="text-base text-gray-700">
+                      ${(taxBreakDown?.gst ?? 0).toFixed(2)}
+                    </Text>
+                  </View>
+
+                  <View className="border-t border-gray-200 mt-2 pt-2 flex-row justify-between items-center">
+                    <Text className="text-lg font-semibold text-gray-800">
+                      Total
+                    </Text>
+                    {/* Paid Status Badge */}
+
+                    <View
+                      className={`px-4 py-2 rounded-full ${
+                        order.paid ? "bg-green-100" : "bg-gray-100"
+                      }`}
+                    >
+                      <Text
+                        className={`text-sm font-semibold ${
+                          order.paid ? "text-green-700" : "text-gray-700"
+                        }`}
+                      >
+                        {order.paid ? "✓ Paid" : "Unpaid"}
+                      </Text>
+                    </View>
+                    <Text className="text-xl font-bold text-gray-900">
+                      ${(taxBreakDown?.grandTotal ?? 0).toFixed(2)}
+                    </Text>
+                  </View>
+                </>
+              )}
             </View>
           )}
 
