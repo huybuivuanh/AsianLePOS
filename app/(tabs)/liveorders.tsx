@@ -5,6 +5,7 @@ import {
   calculateTaxBreakdown,
   convertOrderTimestamps,
   formatDate,
+  formatPhone,
 } from "@/utils/utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -127,7 +128,9 @@ export default function LiveOrders() {
     const expanded = expandedOrderId === item.id;
 
     return (
-      <View className="bg-blue-100 p-4 mb-3 rounded-xl shadow-sm">
+      <View
+        className={`${item.isPreorder ? "bg-orange-100" : "bg-blue-100"} p-4 mb-3 rounded-xl shadow-sm`}
+      >
         <TouchableOpacity
           className="flex-row justify-between items-center"
           onPress={() => toggleExpand(item.id!)}
@@ -137,7 +140,7 @@ export default function LiveOrders() {
               Name: {item.name || ""}
             </Text>
             <Text className="font-semibold text-gray-800 text-base">
-              Phone #: {item.phoneNumber || ""}
+              Phone #: {item.phoneNumber ? formatPhone(item.phoneNumber) : ""}
             </Text>
             <Text className="font-semibold text-gray-800 text-base">
               Time: {formatDate(item.createdAt)}

@@ -2,7 +2,7 @@ import SafeAreaViewWrapper from "@/components/SafeAreaViewWrapper";
 import { useOrderHistoryStore } from "@/stores/useOrderHistoryStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderStatus, OrderType } from "@/types/enum";
-import { calculateTaxBreakdown, formatDate } from "@/utils/utils";
+import { calculateTaxBreakdown, formatDate, formatPhone } from "@/utils/utils";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -53,7 +53,7 @@ export default function OrderHistory() {
                 Name: {item.name || ""}
               </Text>
               <Text className="font-semibold text-gray-800 text-base">
-                Phone #: {item.phoneNumber || ""}
+                Phone #: {item.phoneNumber ? formatPhone(item.phoneNumber) : ""}
               </Text>
               <Text className="font-semibold text-gray-800 text-base">
                 Time: {formatDate(item.createdAt)}

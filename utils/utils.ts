@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { collection, doc, Timestamp } from "firebase/firestore";
-import { Platform, Alert } from "react-native";
+import { Alert, Platform } from "react-native";
 import { db } from "../lib/firebaseConfig";
 
 // Generate a unique ID
@@ -13,6 +13,19 @@ export const formatDate = (timestamp: Timestamp) => {
     : new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1_000_000);
 
   return dayjs(date).format("DD MMM YYYY, hh:mm A");
+};
+
+export const formatPhone = (phone: string) => {
+  phone = phone.replace(/\D/g, ""); // remove any non-digit characters
+  if (phone.length > 7) {
+    // has area code
+    return (
+      phone.slice(0, -7) + " " + phone.slice(-7, -4) + "-" + phone.slice(-4)
+    );
+  } else {
+    // no area code
+    return phone.slice(0, -4) + "-" + phone.slice(-4);
+  }
 };
 
 // Convert Firestore Timestamp to JavaScript Date
