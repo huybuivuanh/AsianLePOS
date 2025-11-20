@@ -98,7 +98,6 @@ declare global {
     status: OrderStatus;
     paid: boolean;
     printed: boolean;
-    addedToPrintQueue: boolean;
     createdAt: TimeStamp;
   };
 

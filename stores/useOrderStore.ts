@@ -6,7 +6,6 @@ import {
   doc,
   setDoc,
   Timestamp,
-  updateDoc,
   writeBatch,
 } from "firebase/firestore";
 import { create } from "zustand";
@@ -46,7 +45,6 @@ const defaultOrder: Partial<Order> = {
   orderType: OrderType.TakeOut,
   readyTime: 15,
   printed: false,
-  addedToPrintQueue: false,
   createdAt: new Date(),
 };
 
@@ -149,9 +147,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
   updateOrderItem: (itemId: string, fields: Partial<OrderItem>) =>
     set((state) => {
-      const newOrderItems = state.order.orderItems?.map((item) =>
-        item.id === itemId ? { ...item, ...fields } : item
-      ) ?? [];
+      const newOrderItems =
+        state.order.orderItems?.map((item) =>
+          item.id === itemId ? { ...item, ...fields } : item
+        ) ?? [];
       const total = newOrderItems.reduce(
         (acc, i) => acc + i.price * i.quantity,
         0
@@ -312,24 +311,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
   submitToPrintQueue: async (order: Partial<Order>) => {
     if (!order.id) throw new Error("Order ID is required to print.");
-
-    const collectionName =
-      order.orderType === OrderType.DineIn ? "dineInOrders" : "takeOutOrders";
-    
-    // Use batch write to ensure atomicity - both operations must succeed together
-    const batch = writeBatch(db);
-    
-    // Update main order collection
-    const orderRef = doc(db, collectionName, order.id);
-    batch.update(orderRef, {
-      addedToPrintQueue: true,
-    });
-
-    // Add to print queue
     const printQueueRef = doc(collection(db, "printQueue"));
-    batch.set(printQueueRef, order);
-    
-    await batch.commit();
+    await setDoc(printQueueRef, order);
   },
 
   submitSelectedItemsToPrintQueue: async (
