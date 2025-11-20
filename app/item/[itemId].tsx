@@ -237,10 +237,7 @@ export default function Item() {
         selectedOptions[group.id!] || {}
       ).length;
       if (selectedCount < group.minSelection) {
-        showAlert(
-          "Selection required",
-          `Please select at least ${group.minSelection} option(s) for "${group.name}"`
-        );
+        showAlert("Chọn Hết Item Option Chưa 😒");
         return;
       }
     }
