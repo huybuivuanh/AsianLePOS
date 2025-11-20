@@ -5,9 +5,19 @@ import { useAuth } from "@/providers/AuthProvider";
 import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
-import { convertOrderTimestamps, showAlert } from "@/utils/utils";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import {
+  calculateTaxBreakdown,
+  convertOrderTimestamps,
+  showAlert,
+} from "@/utils/utils";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -21,10 +31,8 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 export default function EditDinInOrder() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
   const router = useRouter();
-  const { setOrder, clearOrder, getTaxBreakdown } = useOrderStore();
   const { updateOrderOnFirestore } = useOrderStore();
-  const order = useOrderStore((state) => state.order);
-  const taxBreakDown = getTaxBreakdown();
+  const { setOrder, setEditingOrder } = useOrderStore();
 
   const { user } = useAuth();
 
@@ -42,23 +50,37 @@ export default function EditDinInOrder() {
     );
   }, [dineInOrders, table]);
 
-  // ✅ Sync order store with live data
+  // ✅ Use LOCAL STATE for editing - no conflicts with order store
+  const [localOrder, setLocalOrder] = useState<Partial<Order> | null>(null);
+
+  // ✅ Initialize local order from Firestore on mount
   useEffect(() => {
     if (currentOrder) {
-      // Convert Firestore Timestamps to JavaScript Dates
       const convertedOrder = convertOrderTimestamps(currentOrder);
-      setOrder(convertedOrder);
+      setLocalOrder(convertedOrder);
     } else {
-      clearOrder();
+      setLocalOrder(null);
     }
-  }, [currentOrder, table, clearOrder, setOrder]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentOrder?.id]); // Only re-init if order ID changes
 
   // Local UI states
   const [submitting, setSubmitting] = useState(false);
 
+  // Calculate tax breakdown from local order
+  const taxBreakDown = useMemo(() => {
+    if (!localOrder) return undefined;
+    if (localOrder.taxBreakDown) return localOrder.taxBreakDown;
+    const total = (localOrder.orderItems ?? []).reduce(
+      (acc, item) => acc + item.price * item.quantity,
+      0
+    );
+    return total > 0 ? calculateTaxBreakdown(total) : undefined;
+  }, [localOrder]);
+
   // Handle order submission
   const handleSubmit = async () => {
-    if (!user) {
+    if (!user || !localOrder) {
       showAlert("Error", "You must be logged in to submit an order.");
       return;
     }
@@ -70,7 +92,27 @@ export default function EditDinInOrder() {
         email: user.email || undefined,
       };
       setSubmitting(true);
-      await updateOrderOnFirestore({ ...order, staff });
+
+      // Create a clean order object with only the fields we need
+      const cleanOrder: Partial<Order> = {
+        id: localOrder.id,
+        orderType: localOrder.orderType,
+        orderItems: localOrder.orderItems,
+        total: localOrder.total,
+        taxBreakDown: localOrder.taxBreakDown,
+        status: localOrder.status,
+        paid: localOrder.paid,
+        printed: localOrder.printed,
+        tableNumber: localOrder.tableNumber,
+        guests: localOrder.guests,
+        readyTime: localOrder.readyTime,
+        isPreorder: localOrder.isPreorder,
+        preorderTime: localOrder.preorderTime,
+        createdAt: localOrder.createdAt,
+        staff,
+      };
+
+      await updateOrderOnFirestore(cleanOrder);
       router.replace({
         pathname: "/dinein/table/[tableNumber]",
         params: { tableNumber },
@@ -83,10 +125,119 @@ export default function EditDinInOrder() {
   };
 
   const handleAddItem = () => {
+    if (!localOrder) return;
+    // Temporarily set order in store for item editing, then restore local state
+    setOrder(localOrder);
+    setEditingOrder(true);
     router.push("/liveorders/additempage");
   };
 
-  const isSubmitDisabled = submitting || (order.orderItems?.length ?? 0) === 0;
+  // Sync: Keep store in sync with local order for OrderItemCard to work
+  // OrderItemCard uses the store, so we need bidirectional sync
+  const orderStoreOrder = useOrderStore((state) => state.order);
+  const isSyncingRef = useRef(false);
+  const prevLocalOrderItemsRef = useRef<string>("");
+  const prevStoreOrderItemsRef = useRef<string>("");
+
+  // Sync local to store (OrderItemCard needs store to work)
+  // This ensures store always has the latest local state
+  useEffect(() => {
+    if (localOrder && localOrder.id) {
+      const currentItemsStr = JSON.stringify(localOrder.orderItems || []);
+      // Always sync if orderItems changed or if store doesn't have this order
+      const needsSync =
+        currentItemsStr !== prevLocalOrderItemsRef.current ||
+        orderStoreOrder.id !== localOrder.id;
+
+      if (needsSync && !isSyncingRef.current) {
+        prevLocalOrderItemsRef.current = currentItemsStr;
+        isSyncingRef.current = true;
+        setOrder(localOrder);
+        setEditingOrder(true);
+        // Reset flag after a tick
+        setTimeout(() => {
+          isSyncingRef.current = false;
+        }, 0);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localOrder?.id, localOrder?.orderItems, orderStoreOrder.id]);
+
+  // Sync store back to local when store is updated (from OrderItemCard or item editing)
+  useEffect(() => {
+    if (
+      !isSyncingRef.current &&
+      orderStoreOrder.id &&
+      localOrder?.id === orderStoreOrder.id &&
+      orderStoreOrder.orderItems
+    ) {
+      const storeItemsStr = JSON.stringify(orderStoreOrder.orderItems);
+      // Only update if orderItems actually changed
+      if (storeItemsStr !== prevStoreOrderItemsRef.current) {
+        prevStoreOrderItemsRef.current = storeItemsStr;
+        const localItemsStr = JSON.stringify(localOrder.orderItems || []);
+        if (storeItemsStr !== localItemsStr) {
+          isSyncingRef.current = true;
+          // Create a clean copy of the order to avoid corruption
+          const cleanOrder: Partial<Order> = {
+            id: orderStoreOrder.id,
+            orderType: orderStoreOrder.orderType,
+            orderItems: orderStoreOrder.orderItems,
+            total: orderStoreOrder.total,
+            taxBreakDown: orderStoreOrder.taxBreakDown,
+            status: orderStoreOrder.status,
+            paid: orderStoreOrder.paid,
+            printed: orderStoreOrder.printed,
+            tableNumber: orderStoreOrder.tableNumber,
+            guests: orderStoreOrder.guests,
+            readyTime: orderStoreOrder.readyTime,
+            isPreorder: orderStoreOrder.isPreorder,
+            preorderTime: orderStoreOrder.preorderTime,
+            createdAt: orderStoreOrder.createdAt,
+            staff: orderStoreOrder.staff,
+          };
+          setLocalOrder(cleanOrder);
+          prevLocalOrderItemsRef.current = storeItemsStr;
+          setTimeout(() => {
+            isSyncingRef.current = false;
+          }, 0);
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderStoreOrder.id, orderStoreOrder.orderItems]);
+
+  // Sync store back to local when returning from item editing page
+  useFocusEffect(
+    useCallback(() => {
+      // Small delay to ensure store has been updated
+      const timeoutId = setTimeout(() => {
+        if (
+          orderStoreOrder.id &&
+          localOrder?.id === orderStoreOrder.id &&
+          orderStoreOrder.orderItems &&
+          !isSyncingRef.current
+        ) {
+          // Check if store has changes that need to be synced back
+          const storeItemsStr = JSON.stringify(orderStoreOrder.orderItems);
+          const localItemsStr = JSON.stringify(localOrder.orderItems || []);
+          if (storeItemsStr !== localItemsStr) {
+            isSyncingRef.current = true;
+            setLocalOrder(orderStoreOrder);
+            setTimeout(() => {
+              isSyncingRef.current = false;
+            }, 0);
+          }
+        }
+      }, 100);
+
+      return () => clearTimeout(timeoutId);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [orderStoreOrder.id, orderStoreOrder.orderItems?.length])
+  );
+
+  const isSubmitDisabled =
+    submitting || (localOrder?.orderItems?.length ?? 0) === 0;
 
   return (
     <SafeAreaViewWrapper className="flex-1 bg-white">
@@ -118,12 +269,12 @@ export default function EditDinInOrder() {
           className="flex-1 px-4"
           keyboardShouldPersistTaps="handled"
         >
-          {!order.orderItems || order.orderItems.length === 0 ? (
+          {!localOrder?.orderItems || localOrder.orderItems.length === 0 ? (
             <Text className="text-gray-500 text-center mt-10">
               Your order is empty.
             </Text>
           ) : (
-            order.orderItems.map((item, index) => (
+            localOrder.orderItems.map((item, index) => (
               <OrderItemCard key={`${item.id}-${index}`} item={item} />
             ))
           )}

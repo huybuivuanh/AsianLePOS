@@ -55,9 +55,18 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   setEditingOrder: (editing) => set({ editingOrder: editing }),
 
   updateOrder: (fields) =>
-    set((state) => ({
-      order: { ...state.order, ...fields },
-    })),
+    set((state) => {
+      // Remove undefined values from fields before spreading
+      const cleanFields: Partial<Order> = {};
+      Object.entries(fields).forEach(([key, value]) => {
+        if (value !== undefined) {
+          cleanFields[key as keyof Order] = value;
+        }
+      });
+      return {
+        order: { ...state.order, ...cleanFields },
+      };
+    }),
 
   addItem: (item) =>
     set((state) => {
@@ -147,10 +156,49 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
   updateOrderItem: (itemId: string, fields: Partial<OrderItem>) =>
     set((state) => {
-      const newOrderItems =
-        state.order.orderItems?.map((item) =>
-          item.id === itemId ? { ...item, ...fields } : item
-        ) ?? [];
+      // Ensure we have a valid orderItems array
+      if (!state.order.orderItems || !Array.isArray(state.order.orderItems)) {
+        return state;
+      }
+
+      // Create a new array with updated item
+      const newOrderItems = state.order.orderItems.map((item) => {
+        if (item.id === itemId) {
+          // Create a new object with updated fields
+          // Only include instructions if it has a value (not undefined or empty)
+          const updatedItem: OrderItem = {
+            id: item.id,
+            name: fields.name ?? item.name,
+            price: fields.price ?? item.price,
+            quantity: fields.quantity ?? item.quantity,
+            togo: fields.togo ?? item.togo,
+            appetizer: fields.appetizer ?? item.appetizer,
+            kitchenType: fields.kitchenType ?? item.kitchenType,
+            // Only include instructions if it exists and is not empty
+            ...(fields.instructions !== undefined
+              ? fields.instructions.trim()
+                ? { instructions: fields.instructions.trim() }
+                : {} // Omit instructions if empty string
+              : item.instructions
+                ? { instructions: item.instructions }
+                : {}), // Omit if undefined
+            // Always use the provided arrays if they exist, otherwise keep existing
+            options:
+              fields.options !== undefined
+                ? fields.options
+                : (item.options ?? []),
+            extras:
+              fields.extras !== undefined ? fields.extras : (item.extras ?? []),
+            changes:
+              fields.changes !== undefined
+                ? fields.changes
+                : (item.changes ?? []),
+          };
+          return updatedItem;
+        }
+        return item;
+      });
+
       const total = newOrderItems.reduce(
         (acc, i) => acc + i.price * i.quantity,
         0
@@ -188,14 +236,26 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
     const taxBreakDown = calculateTaxBreakdown(total);
 
+    // Build orderToSubmit with only defined values - never include undefined
     const orderToSubmit: Partial<Order> = {
-      ...order,
+      id: order.id,
+      orderType: order.orderType,
+      orderItems: order.orderItems,
       total,
       taxBreakDown,
       status: OrderStatus.InProgress,
       paid: false,
       printed: false,
       createdAt: Timestamp.fromDate(new Date()),
+      isPreorder: order.isPreorder ?? false,
+      readyTime: order.readyTime,
+      staff: order.staff,
+      // Only include optional fields if they have values
+      ...(order.name && { name: order.name }),
+      ...(order.phoneNumber && { phoneNumber: order.phoneNumber }),
+      ...(order.tableNumber && { tableNumber: order.tableNumber }),
+      ...(order.guests !== undefined && { guests: order.guests }),
+      ...(order.preorderTime && { preorderTime: order.preorderTime }),
     };
 
     // Use batch write for atomic operation and better performance
@@ -221,10 +281,48 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
     const taxBreakDown = calculateTaxBreakdown(total);
 
+    // Build updateData with only defined values - never include undefined
+    // Use conditional spreading for ALL optional fields
+    // Also ensure orderItems array doesn't contain undefined nested fields
+    const cleanOrderItems = (order.orderItems ?? []).map((item) => {
+      const cleanItem: OrderItem = {
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        togo: item.togo,
+        appetizer: item.appetizer,
+        kitchenType: item.kitchenType,
+        options: item.options ?? [],
+        extras: item.extras ?? [],
+        changes: item.changes ?? [],
+        // Only include instructions if it has a value
+        ...(item.instructions && { instructions: item.instructions }),
+      };
+      return cleanItem;
+    });
+
     const updateData: Partial<Order> = {
-      ...order,
+      id: order.id,
+      orderType: order.orderType,
+      orderItems: cleanOrderItems,
       total,
       taxBreakDown,
+      status: order.status,
+      paid: order.paid ?? false,
+      printed: order.printed ?? false,
+      isPreorder: order.isPreorder ?? false,
+      staff: order.staff,
+      // Only include optional fields if they have values (not undefined)
+      ...(order.name && { name: order.name }),
+      ...(order.phoneNumber && { phoneNumber: order.phoneNumber }),
+      ...(order.tableNumber !== undefined && {
+        tableNumber: order.tableNumber,
+      }),
+      ...(order.guests !== undefined && { guests: order.guests }),
+      ...(order.readyTime !== undefined && { readyTime: order.readyTime }),
+      ...(order.preorderTime && { preorderTime: order.preorderTime }),
+      ...(order.createdAt && { createdAt: order.createdAt }),
     };
 
     // Use batch write to update both collections atomically
@@ -284,6 +382,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const orderHistoryRef = doc(db, "orderHistory", order.id);
     batch.update(orderHistoryRef, {
       status: OrderStatus.Completed,
+      paid: true,
     });
 
     await batch.commit();

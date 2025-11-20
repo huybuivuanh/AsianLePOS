@@ -44,21 +44,29 @@ export default function Item() {
   const [selectedOptions, setSelectedOptions] = useState<
     Record<string, Record<string, number>>
   >(() => {
-    if (!existingOrderItem?.options || !optionGroups) return {};
+    if (!existingOrderItem?.options || !optionGroups || !item?.optionGroupIds)
+      return {};
     const selected: Record<string, Record<string, number>> = {};
+    // Only check groups that belong to this item
+    const itemGroups = item.optionGroupIds
+      .map((id) => optionGroups.find((g) => g.id === id))
+      .filter(Boolean) as OptionGroup[];
+
     existingOrderItem.options.forEach((opt) => {
-      // Find which group this option belongs to by matching name and price
-      optionGroups.forEach((group) => {
-        if (group.optionIds) {
-          const matchingOption = options?.find(
-            (o) => o.name === opt.name && o.price === opt.price
-          );
-          if (matchingOption && group.optionIds.includes(matchingOption.id!)) {
+      // Find matching option by name and price
+      const matchingOption = options?.find(
+        (o) => o.name === opt.name && o.price === opt.price
+      );
+      if (matchingOption) {
+        // Only check groups that belong to this item
+        for (const group of itemGroups) {
+          if (group.optionIds?.includes(matchingOption.id!)) {
             if (!selected[group.id!]) selected[group.id!] = {};
             selected[group.id!][matchingOption.id!] = opt.quantity || 1;
+            break; // Only add to the first matching group for this item
           }
         }
-      });
+      }
     });
     return selected;
   });
@@ -93,20 +101,32 @@ export default function Item() {
       }
 
       // Rebuild selectedOptions from existing order item
-      if (existingOrderItem.options && optionGroups && options) {
+      if (
+        existingOrderItem.options &&
+        optionGroups &&
+        options &&
+        item?.optionGroupIds
+      ) {
         const selected: Record<string, Record<string, number>> = {};
+        // Only check groups that belong to this item
+        const itemGroups = item.optionGroupIds
+          .map((id) => optionGroups.find((g) => g.id === id))
+          .filter(Boolean) as OptionGroup[];
+
         existingOrderItem.options.forEach((opt) => {
           // Find matching option by name and price
           const matchingOption = options.find(
             (o) => o.name === opt.name && o.price === opt.price
           );
           if (matchingOption) {
-            optionGroups.forEach((group) => {
+            // Only check groups that belong to this item
+            for (const group of itemGroups) {
               if (group.optionIds?.includes(matchingOption.id!)) {
                 if (!selected[group.id!]) selected[group.id!] = {};
                 selected[group.id!][matchingOption.id!] = opt.quantity || 1;
+                break; // Only add to the first matching group for this item
               }
-            });
+            }
           }
         });
         setSelectedOptions(selected);
@@ -114,7 +134,13 @@ export default function Item() {
         setSelectedOptions({});
       }
     }
-  }, [existingOrderItem, isEditMode, optionGroups, options]);
+  }, [
+    existingOrderItem,
+    isEditMode,
+    optionGroups,
+    options,
+    item?.optionGroupIds,
+  ]);
 
   if (!item)
     return (
@@ -245,6 +271,7 @@ export default function Item() {
 
     if (isEditMode && orderItemIdStr) {
       // Update existing order item
+      // Only include instructions if it has a value (use conditional spreading)
       const updatedItem: Partial<OrderItem> = {
         name: item.name,
         togo: specialFlag === "toGo",
@@ -252,7 +279,7 @@ export default function Item() {
         kitchenType: item.kitchenType,
         price: orderItemPrice,
         quantity,
-        instructions: instructions || undefined,
+        ...(instructions.trim() && { instructions: instructions.trim() }),
         options: optionsToSubmit,
         extras: extras,
         changes: changes,
