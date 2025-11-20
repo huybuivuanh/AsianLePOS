@@ -335,8 +335,7 @@ export default function TablePage() {
                     }
                   }}
                   activeOpacity={0.7}
-                  className="bg-orange-500 px-3 py-3 rounded-lg items-center justify-center"
-                  style={{ flex: 1, marginRight: 4 }}
+                  className="bg-orange-500 px-3 py-3 rounded-lg items-center justify-center flex-1 mr-1"
                 >
                   <Text className="text-white text-sm font-semibold text-center">
                     {order ? "Edit Order" : "Take Order"}
@@ -347,10 +346,9 @@ export default function TablePage() {
                   onPress={handleToggleSelectionMode}
                   activeOpacity={0.7}
                   disabled={!order}
-                  className={`px-3 py-3 rounded-lg items-center justify-center ${
+                  className={`px-3 py-3 rounded-lg items-center justify-center flex-1 mx-1 ${
                     order ? "bg-purple-500" : "bg-purple-300"
                   }`}
-                  style={{ flex: 1, marginHorizontal: 4 }}
                 >
                   <Text className="text-white text-sm font-semibold text-center">
                     Select Items
@@ -361,10 +359,9 @@ export default function TablePage() {
                   onPress={handlePrint}
                   activeOpacity={0.7}
                   disabled={!order}
-                  className={`px-3 py-3 rounded-lg items-center justify-center ${
+                  className={`px-3 py-3 rounded-lg items-center justify-center flex-1 ml-1 ${
                     order ? "bg-blue-500" : "bg-blue-300"
                   }`}
-                  style={{ flex: 1, marginLeft: 4 }}
                 >
                   <View className="flex-row items-center justify-center">
                     <Text className="text-white text-sm font-semibold">
@@ -381,34 +378,31 @@ export default function TablePage() {
                 </TouchableOpacity>
               </View>
 
-              {/* Row 2: Complete | Paid | Cancel */}
+              {/* Row 2: Paid | Complete */}
               <View className="flex-row justify-between mb-4">
                 <TouchableOpacity
-                  onPress={handleCompleteOrder}
+                  onPress={handleCancelOrder}
                   activeOpacity={0.7}
+                  className={`${
+                    order ? "bg-red-500" : "bg-red-300"
+                  } px-3 py-3 rounded-lg items-center justify-center flex-1 mr-1`}
                   disabled={!order}
-                  className={`px-3 py-3 rounded-lg items-center justify-center ${
-                    order ? "bg-green-500" : "bg-green-200"
-                  }`}
-                  style={{ flex: 1, marginRight: 4 }}
                 >
                   <Text className="text-white text-sm font-semibold text-center">
-                    Complete
+                    Cancel
                   </Text>
                 </TouchableOpacity>
-
                 <TouchableOpacity
                   onPress={() => handleMarkAsPaid(!order?.paid)}
                   activeOpacity={0.7}
                   disabled={!order}
-                  className={`px-3 py-3 rounded-lg items-center justify-center ${
+                  className={`px-3 py-3 rounded-lg items-center justify-center flex-1 mx-1 ${
                     order?.paid
                       ? "bg-gray-500"
                       : order
                         ? "bg-pink-500"
                         : "bg-gray-300"
                   }`}
-                  style={{ flex: 1, marginHorizontal: 4 }}
                 >
                   <Text className="text-white text-sm font-semibold text-center">
                     {order?.paid ? "Unpaid" : "Paid"}
@@ -416,16 +410,15 @@ export default function TablePage() {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  onPress={handleCancelOrder}
+                  onPress={handleCompleteOrder}
                   activeOpacity={0.7}
-                  className={`${
-                    order ? "bg-red-500" : "bg-red-300"
-                  } px-3 py-3 rounded-lg items-center justify-center`}
-                  style={{ flex: 1, marginLeft: 4 }}
                   disabled={!order}
+                  className={`px-3 py-3 rounded-lg items-center justify-center flex-1 mr-1 ${
+                    order ? "bg-green-500" : "bg-green-200"
+                  }`}
                 >
                   <Text className="text-white text-sm font-semibold text-center">
-                    Cancel
+                    Complete
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -437,12 +430,11 @@ export default function TablePage() {
             <View className="mb-4">
               <View className="flex-row justify-between mb-3">
                 <TouchableOpacity
-                  className="bg-green-500 px-4 py-3 rounded-lg items-center justify-center flex-1 mr-2"
+                  className={`bg-green-500 px-4 py-3 rounded-lg items-center justify-center flex-1 mr-2 ${
+                    selectedItemIds.size === 0 ? "opacity-50" : "opacity-100"
+                  }`}
                   onPress={handlePrintSelected}
                   disabled={selectedItemIds.size === 0}
-                  style={{
-                    opacity: selectedItemIds.size === 0 ? 0.5 : 1,
-                  }}
                 >
                   <Text className="text-white text-base font-semibold text-center">
                     Print Selected ({selectedItemIds.size})

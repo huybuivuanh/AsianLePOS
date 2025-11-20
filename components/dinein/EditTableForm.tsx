@@ -97,33 +97,6 @@ export default function EditTableForm({
 
       {/* Buttons Row */}
       <View className="flex-row mt-4">
-        {/* Submit Button */}
-        <TouchableOpacity
-          onPress={handleSubmit}
-          disabled={submitting}
-          className={`flex-1 bg-blue-500 py-3 rounded-lg items-center mr-2 ${
-            submitting ? "opacity-50" : ""
-          }`}
-        >
-          <Text className="text-white font-bold text-base">
-            {submitting ? "Saving..." : "Submit"}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Clear Table Button */}
-        <TouchableOpacity
-          onPress={handleClearTable}
-          activeOpacity={0.7}
-          disabled={submitting}
-          className={`flex-1 px-4 py-3 rounded-lg border border-gray-300 bg-gray-50 mr-2 ${
-            submitting ? "opacity-50" : ""
-          }`}
-        >
-          <Text className="text-gray-700 font-semibold text-base text-center">
-            Clear
-          </Text>
-        </TouchableOpacity>
-
         {/* Cancel Button */}
         {onClose && (
           <TouchableOpacity
@@ -136,6 +109,33 @@ export default function EditTableForm({
             <Text className="text-white font-semibold text-base">Hide</Text>
           </TouchableOpacity>
         )}
+
+        {/* Clear Table Button */}
+        <TouchableOpacity
+          onPress={handleClearTable}
+          activeOpacity={0.7}
+          disabled={submitting}
+          className={`flex-1 px-4 py-3 rounded-lg border border-gray-300 bg-gray-50 ml-2 ${
+            submitting ? "opacity-50" : ""
+          }`}
+        >
+          <Text className="text-gray-700 font-semibold text-base text-center">
+            Clear
+          </Text>
+        </TouchableOpacity>
+
+        {/* Submit Button */}
+        <TouchableOpacity
+          onPress={handleSubmit}
+          disabled={submitting}
+          className={`flex-1 bg-blue-500 py-3 rounded-lg items-center ml-2 ${
+            submitting ? "opacity-50" : ""
+          }`}
+        >
+          <Text className="text-white font-bold text-base">
+            {submitting ? "Saving..." : "Submit"}
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

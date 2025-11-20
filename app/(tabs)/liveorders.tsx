@@ -414,14 +414,13 @@ export default function LiveOrders() {
                 {/* Row 2: Done | Mark Paid | Cancel */}
                 <View className="flex-row justify-between mt-3">
                   <TouchableOpacity
-                    className="bg-green-500 px-3 py-3 rounded-full flex-1 mr-2"
-                    onPress={() => handleComplete(item)}
+                    className="bg-red-500 px-3 py-3 rounded-full flex-1 mr-2"
+                    onPress={() => handleCancel(item)}
                   >
                     <Text className="text-white font-semibold text-center text-sm">
-                      Done
+                      Cancel
                     </Text>
                   </TouchableOpacity>
-
                   <TouchableOpacity
                     className={`px-3 py-3 rounded-full flex-1 mx-1 ${
                       item.paid ? "bg-gray-500" : "bg-pink-500"
@@ -434,11 +433,11 @@ export default function LiveOrders() {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    className="bg-red-500 px-3 py-3 rounded-full flex-1 ml-2"
-                    onPress={() => handleCancel(item)}
+                    className="bg-green-500 px-3 py-3 rounded-full flex-1 ml-2"
+                    onPress={() => handleComplete(item)}
                   >
                     <Text className="text-white font-semibold text-center text-sm">
-                      Cancel
+                      Done
                     </Text>
                   </TouchableOpacity>
                 </View>
