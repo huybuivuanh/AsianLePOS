@@ -5,7 +5,7 @@ import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { OrderType, TableStatus } from "@/types/enum";
-import { calculateTaxBreakdown } from "@/utils/utils";
+import { calculateTaxBreakdown, showAlert } from "@/utils/utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Check } from "lucide-react-native";
 import React, { useEffect, useMemo, useState } from "react";
@@ -320,16 +320,25 @@ export default function TablePage() {
               <View className="flex-row justify-between mb-3">
                 <TouchableOpacity
                   onPress={() => {
-                    updateOrder({ orderType: OrderType.DineIn });
-                    if (order) {
-                      router.push({
-                        pathname: "/dinein/editdineinorder/[tableNumber]",
-                        params: { tableNumber },
+                    if (!order) {
+                      if (table.guests === 0) {
+                        showAlert("Bấm Number of Guests vào 😒");
+                        return;
+                      }
+                      updateOrder({
+                        orderType: OrderType.DineIn,
                       });
-                      setEditingOrder(true);
-                    } else {
                       router.push({
                         pathname: "/dinein/takeorder/[tableNumber]",
+                        params: { tableNumber },
+                      });
+                    } else {
+                      updateOrder({
+                        orderType: OrderType.DineIn,
+                      });
+                      setEditingOrder(true);
+                      router.push({
+                        pathname: "/dinein/editdineinorder/[tableNumber]",
                         params: { tableNumber },
                       });
                     }

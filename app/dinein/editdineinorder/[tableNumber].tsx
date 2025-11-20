@@ -5,12 +5,11 @@ import { useAuth } from "@/providers/AuthProvider";
 import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
-import { convertOrderTimestamps } from "@/utils/utils";
+import { convertOrderTimestamps, showAlert } from "@/utils/utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Text,
@@ -60,7 +59,7 @@ export default function EditDinInOrder() {
   // Handle order submission
   const handleSubmit = async () => {
     if (!user) {
-      Alert.alert("Error", "You must be logged in to submit an order.");
+      showAlert("Error", "You must be logged in to submit an order.");
       return;
     }
 
@@ -77,7 +76,7 @@ export default function EditDinInOrder() {
         params: { tableNumber },
       });
     } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to submit order.");
+      showAlert("Error", error.message || "Failed to submit order.");
     } finally {
       setSubmitting(false);
     }

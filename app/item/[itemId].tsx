@@ -6,11 +6,10 @@ import Header from "@/components/ui/Header";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enum";
-import { generateFirestoreId } from "@/utils/utils";
+import { generateFirestoreId, showAlert } from "@/utils/utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -212,7 +211,7 @@ export default function Item() {
         selectedOptions[group.id!] || {}
       ).length;
       if (selectedCount < group.minSelection) {
-        Alert.alert(
+        showAlert(
           "Selection required",
           `Please select at least ${group.minSelection} option(s) for "${group.name}"`
         );

@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import { collection, doc, Timestamp } from "firebase/firestore";
+import { Platform, Alert } from "react-native";
 import { db } from "../lib/firebaseConfig";
 
 // Generate a unique ID
@@ -85,4 +86,17 @@ export const sortOrdersByDate = (orders: Order[]): Order[] => {
 
     return timeB - timeA;
   });
+};
+
+// Cross-platform alert function
+export const showAlert = (title: string, message?: string) => {
+  if (Platform.OS === "web") {
+    window.alert(message ? `${title}\n\n${message}` : title);
+  } else {
+    if (message) {
+      Alert.alert(title, message);
+    } else {
+      Alert.alert(title);
+    }
+  }
 };

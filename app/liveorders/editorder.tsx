@@ -5,9 +5,9 @@ import Header from "@/components/ui/Header";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useRouter } from "expo-router";
+import { showAlert } from "@/utils/utils";
 import React, { useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Text,
@@ -30,7 +30,7 @@ export default function EditOrder() {
   // Handle order submission
   const handleSubmit = async () => {
     if (!user) {
-      Alert.alert("Error", "You must be logged in to submit an order.");
+      showAlert("Error", "You must be logged in to submit an order.");
       return;
     }
 
@@ -44,7 +44,7 @@ export default function EditOrder() {
       await updateOrderOnFirestore({ ...order, staff });
       router.back();
     } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to submit order.");
+      showAlert("Error", error.message || "Failed to submit order.");
     } finally {
       setSubmitting(false);
     }

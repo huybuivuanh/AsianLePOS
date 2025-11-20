@@ -9,13 +9,13 @@ import { OrderStatus, OrderType, TableStatus } from "@/types/enum";
 import {
   calculateTaxBreakdown,
   generateFirestoreId,
+  showAlert,
 } from "@/utils/utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { doc, Timestamp, writeBatch } from "firebase/firestore";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Text,
@@ -37,7 +37,7 @@ export default function ReviewDineInOrder() {
 
   const handleSubmit = async () => {
     if (!user) {
-      Alert.alert("Error", "You must be logged in to submit an order.");
+      showAlert("Error", "You must be logged in to submit an order.");
       return;
     }
 
@@ -106,7 +106,7 @@ export default function ReviewDineInOrder() {
         params: { tableNumber },
       });
     } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to submit order.");
+      showAlert("Error", error.message || "Failed to submit order.");
     } finally {
       setSubmitting(false);
     }
