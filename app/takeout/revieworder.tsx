@@ -23,7 +23,7 @@ export default function ReviewOrder() {
 
   const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
-  const [footerVisible, setFooterVisible] = useState(false);
+  const [footerVisible, setFooterVisible] = useState(true);
 
   const handleSubmit = async () => {
     if (!user) {
@@ -113,7 +113,7 @@ export default function ReviewOrder() {
         )}
 
         {/* Footer (customer info, time selectors, submit) */}
-        {footerVisible && (
+        {footerVisible && order.orderItems && order.orderItems.length > 0 && (
           <OrderFooter
             onSubmit={handleSubmit}
             submitting={submitting}
