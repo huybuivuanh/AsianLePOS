@@ -12,7 +12,7 @@ export default function CustomerInfoForm() {
         <TextInput
           placeholder="Enter name"
           value={order.name || ""}
-          onChangeText={(text) => updateOrder({ name: text })}
+          onChangeText={(text) => updateOrder({ name: text.toUpperCase() })}
           className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-base bg-white"
         />
       </View>
