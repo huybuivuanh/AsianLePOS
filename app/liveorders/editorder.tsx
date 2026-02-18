@@ -4,8 +4,8 @@ import OrderItemCard from "@/components/takeout/reviewOrder/OrderItemCard";
 import Header from "@/components/ui/Header";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrderStore } from "@/stores/useOrderStore";
-import { useRouter } from "expo-router";
 import { showAlert } from "@/utils/utils";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -57,13 +57,16 @@ export default function EditOrder() {
         // Only include optional fields if they have values (not undefined)
         ...(order.name && { name: order.name }),
         ...(order.phoneNumber && { phoneNumber: order.phoneNumber }),
-        ...(order.tableNumber !== undefined && { tableNumber: order.tableNumber }),
+        ...(order.tableNumber !== undefined && {
+          tableNumber: order.tableNumber,
+        }),
         ...(order.guests !== undefined && { guests: order.guests }),
         ...(order.readyTime !== undefined && { readyTime: order.readyTime }),
         ...(order.preorderTime && { preorderTime: order.preorderTime }),
         ...(order.createdAt && { createdAt: order.createdAt }),
       };
       await updateOrderOnFirestore(cleanOrder);
+      clearOrder();
       router.back();
     } catch (error: any) {
       showAlert("Error", error.message || "Failed to submit order.");
