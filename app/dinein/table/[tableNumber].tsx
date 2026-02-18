@@ -32,6 +32,7 @@ export default function TablePage() {
 
   const { dineInOrders, loading: ordersLoading } = useLiveOrdersStore();
   const {
+    clearOrder,
     setEditingOrder,
     cancelOrder,
     completeOrder,
@@ -382,6 +383,7 @@ export default function TablePage() {
                         showAlert("Bấm Number of Guests vào 😒");
                         return;
                       }
+                      clearOrder();
                       updateOrder({
                         orderType: OrderType.DineIn,
                       });

@@ -31,13 +31,13 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 export default function EditDinInOrder() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
   const router = useRouter();
-  const { updateOrderOnFirestore } = useOrderStore();
-  const { setOrder, setEditingOrder } = useOrderStore();
+  const { updateOrderOnFirestore, clearOrder, setOrder, setEditingOrder } =
+    useOrderStore();
 
   const { user } = useAuth();
 
   const table = useTableStore((state) =>
-    state.tables.find((t) => t.tableNumber === tableNumber)
+    state.tables.find((t) => t.tableNumber === tableNumber),
   );
 
   const { dineInOrders } = useLiveOrdersStore();
@@ -46,7 +46,7 @@ export default function EditDinInOrder() {
   const currentOrder = useMemo(() => {
     if (!table?.currentOrderId) return undefined;
     return dineInOrders.find(
-      (o) => o.id === table.currentOrderId && o.status !== "completed"
+      (o) => o.id === table.currentOrderId && o.status !== "completed",
     );
   }, [dineInOrders, table]);
 
@@ -73,7 +73,7 @@ export default function EditDinInOrder() {
     if (localOrder.taxBreakDown) return localOrder.taxBreakDown;
     const total = (localOrder.orderItems ?? []).reduce(
       (acc, item) => acc + item.price * item.quantity,
-      0
+      0,
     );
     return total > 0 ? calculateTaxBreakdown(total) : undefined;
   }, [localOrder]);
@@ -113,6 +113,8 @@ export default function EditDinInOrder() {
       };
 
       await updateOrderOnFirestore(cleanOrder);
+      clearOrder();
+      setEditingOrder(false);
       router.replace({
         pathname: "/dinein/table/[tableNumber]",
         params: { tableNumber },
@@ -233,7 +235,7 @@ export default function EditDinInOrder() {
 
       return () => clearTimeout(timeoutId);
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [orderStoreOrder.id, orderStoreOrder.orderItems?.length])
+    }, [orderStoreOrder.id, orderStoreOrder.orderItems?.length]),
   );
 
   const isSubmitDisabled =
@@ -245,6 +247,8 @@ export default function EditDinInOrder() {
       <Header
         title="Edit Order"
         onBack={() => {
+          clearOrder();
+          setEditingOrder(false);
           router.back();
         }}
       />
