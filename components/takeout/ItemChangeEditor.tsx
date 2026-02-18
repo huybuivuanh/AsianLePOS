@@ -29,7 +29,7 @@ export default function ItemChangeEditor({
           to: c.to,
           price: c.price === 0 ? "" : c.price.toString(),
         }))
-      : []
+      : [],
   );
 
   // Sync drafts when changes change externally (e.g., when editing existing item)
@@ -67,27 +67,33 @@ export default function ItemChangeEditor({
     }
   }, [changes]);
 
-  // Update parent whenever drafts change, filtering out empty changes
+  // Update parent whenever drafts change - but only when all drafts are complete
+  // (have both from and to). When user clears a field, we keep drafts locally
+  // and don't propagate, so the sync effect won't overwrite and remove the row.
   useEffect(() => {
     // Don't call onChange if we're updating from props
     if (isUpdatingFromProps.current) {
       return;
     }
 
-    const validChanges: ItemChange[] = drafts
-      .filter((d) => d.from.trim() !== "" && d.to.trim() !== "")
-      .map((d) => {
-        // If price is empty or blank, default to 0
-        const priceStr = d.price.trim();
-        const price = priceStr === "" ? 0 : parseFloat(priceStr) || 0;
-        return {
-          from: d.from.trim(),
-          to: d.to.trim(),
-          price,
-        };
-      });
+    // Don't propagate when any draft has empty required fields - user is editing
+    const hasIncomplete = drafts.some(
+      (d) => d.from.trim() === "" || d.to.trim() === ""
+    );
+    if (hasIncomplete) {
+      return;
+    }
 
-    // Only call onChange if the valid changes actually changed
+    const validChanges: ItemChange[] = drafts.map((d) => {
+      const priceStr = d.price.trim();
+      const price = priceStr === "" ? 0 : parseFloat(priceStr) || 0;
+      return {
+        from: d.from.trim(),
+        to: d.to.trim(),
+        price,
+      };
+    });
+
     const currentChangesStr = JSON.stringify(changes);
     const newChangesStr = JSON.stringify(validChanges);
 
@@ -104,12 +110,12 @@ export default function ItemChangeEditor({
   const handleUpdateDraft = (
     index: number,
     field: "from" | "to" | "price",
-    value: string
+    value: string,
   ) => {
     setDrafts((prev) =>
       prev.map((draft, i) =>
-        i === index ? { ...draft, [field]: value } : draft
-      )
+        i === index ? { ...draft, [field]: value } : draft,
+      ),
     );
   };
 

@@ -28,7 +28,7 @@ export default function AddExtraEditor({
           description: e.description,
           price: e.price === 0 ? "" : e.price.toString(),
         }))
-      : []
+      : [],
   );
 
   // Sync drafts when extras change externally (e.g., when editing existing item)
@@ -65,26 +65,30 @@ export default function AddExtraEditor({
     }
   }, [extras]);
 
-  // Update parent whenever drafts change, filtering out empty descriptions
+  // Update parent whenever drafts change - but only when all drafts are complete
+  // (have description). When user clears a field, we keep drafts locally and
+  // don't propagate, so the sync effect won't overwrite and remove the row.
   useEffect(() => {
     // Don't call onChange if we're updating from props
     if (isUpdatingFromProps.current) {
       return;
     }
 
-    const validExtras: AddExtra[] = drafts
-      .filter((d) => d.description.trim() !== "")
-      .map((d) => {
-        // If price is empty or blank, default to 0
-        const priceStr = d.price.trim();
-        const price = priceStr === "" ? 0 : parseFloat(priceStr) || 0;
-        return {
-          description: d.description.trim(),
-          price,
-        };
-      });
+    // Don't propagate when any draft has empty description - user is editing
+    const hasIncomplete = drafts.some((d) => d.description.trim() === "");
+    if (hasIncomplete) {
+      return;
+    }
 
-    // Only call onChange if the valid extras actually changed
+    const validExtras: AddExtra[] = drafts.map((d) => {
+      const priceStr = d.price.trim();
+      const price = priceStr === "" ? 0 : parseFloat(priceStr) || 0;
+      return {
+        description: d.description.trim(),
+        price,
+      };
+    });
+
     const currentExtrasStr = JSON.stringify(extras);
     const newExtrasStr = JSON.stringify(validExtras);
 
@@ -101,12 +105,12 @@ export default function AddExtraEditor({
   const handleUpdateDraft = (
     index: number,
     field: "description" | "price",
-    value: string
+    value: string,
   ) => {
     setDrafts((prev) =>
       prev.map((draft, i) =>
-        i === index ? { ...draft, [field]: value } : draft
-      )
+        i === index ? { ...draft, [field]: value } : draft,
+      ),
     );
   };
 
