@@ -1,9 +1,20 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
 import Header from "@/components/ui/Header";
+import {
+  CategoryGrid,
+  SearchResults,
+  getVisibleMenuItemsInCategoryOrder,
+} from "@/features/takeout";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enums";
-import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { debounce } from "@/utils/memory-utils";
+import {
+  useFocusEffect,
+  useLocalSearchParams,
+  useRouter,
+  type Href,
+} from "expo-router";
 import { X } from "lucide-react-native";
 import React, { useCallback, useMemo, useState } from "react";
 import {
@@ -13,39 +24,41 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { CategoryList, SearchResults } from "@/features/takeout";
 
 export default function TakeOrder() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
   const router = useRouter();
   const { categories, menuItems, loading } = useMenuStore();
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const totalItems = useOrderStore((state) => state.getTotalItems());
   const setEditingOrder = useOrderStore((state) => state.setEditingOrder);
 
-  const visibleItems = useMemo(() => {
-    const allowedIds = new Set<number | string>();
-    categories.forEach((cat) =>
-      cat.itemIds?.forEach((id) => allowedIds.add(id))
-    );
-    return menuItems.filter((item) => allowedIds.has(item.id!));
-  }, [categories, menuItems]);
+  const debouncedSetQuery = useMemo(
+    () =>
+      debounce((value: string) => {
+        setDebouncedQuery(value);
+      }, 300),
+    []
+  );
 
-  const categoryItemsMap = useMemo(() => {
-    const map = new Map<string, typeof visibleItems>();
-    categories.forEach((cat) => {
-      const items = visibleItems.filter((item) =>
-        cat.itemIds?.includes(item.id!)
-      );
-      map.set(cat.id!, items);
-    });
-    return map;
-  }, [categories, visibleItems]);
+  const handleQueryChange = useCallback(
+    (value: string) => {
+      setQuery(value);
+      debouncedSetQuery(value);
+    },
+    [debouncedSetQuery]
+  );
 
-  // Clear search bar when page is focused (opened or navigated to)
+  const searchItems = useMemo(
+    () => getVisibleMenuItemsInCategoryOrder(categories, menuItems),
+    [categories, menuItems]
+  );
+
   useFocusEffect(
     useCallback(() => {
       setQuery("");
+      setDebouncedQuery("");
     }, [])
   );
 
@@ -59,22 +72,28 @@ export default function TakeOrder() {
     });
   };
 
+  const searching = debouncedQuery.trim().length > 0;
+
   return (
     <SafeAreaViewWrapper className="flex-1 bg-white">
       <Header title="Take Order" onBack={() => router.back()} />
-      <View className="p-4">
+      <View className="flex-1 p-4">
         <View className="relative mb-4">
           <TextInput
-            placeholder="Search for an item..."
+            placeholder="Search menu items..."
             value={query}
-            onChangeText={setQuery}
+            onChangeText={handleQueryChange}
             className="border border-gray-300 rounded-lg p-3 pr-12"
             returnKeyLabel="Hide"
             returnKeyType="done"
             onSubmitEditing={() => Keyboard.dismiss()}
+            autoCorrect={false}
           />
           <TouchableOpacity
-            onPress={() => setQuery("")}
+            onPress={() => {
+              setQuery("");
+              setDebouncedQuery("");
+            }}
             disabled={query.length === 0}
             className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 ${
               query.length === 0 ? "opacity-30" : ""
@@ -84,19 +103,24 @@ export default function TakeOrder() {
           </TouchableOpacity>
         </View>
 
-        {query.trim() ? (
-          <SearchResults
-            items={visibleItems}
-            query={query}
-            onSelectItem={handleSelectItem}
-          />
-        ) : (
-          <CategoryList
-            categories={categories}
-            categoryItemsMap={categoryItemsMap}
-            onSelectItem={handleSelectItem}
-          />
-        )}
+        <View className="flex-1 -mx-4">
+          {searching ? (
+            <SearchResults
+              items={searchItems}
+              query={debouncedQuery}
+              onSelectItem={handleSelectItem}
+            />
+          ) : (
+            <CategoryGrid
+              categories={categories}
+              onSelectCategory={(cat) =>
+                router.push(
+                  `/dinein/take-order/${tableNumber}/category/${cat.id!}` as Href
+                )
+              }
+            />
+          )}
+        </View>
       </View>
 
       <View className="absolute bottom-10 left-0 right-0 px-4">

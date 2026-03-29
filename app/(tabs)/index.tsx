@@ -1,9 +1,14 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
+import {
+  CategoryGrid,
+  SearchResults,
+  getVisibleMenuItemsInCategoryOrder,
+} from "@/features/takeout";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enums";
 import { debounce } from "@/utils/memory-utils";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useRouter, type Href } from "expo-router";
 import { X } from "lucide-react-native";
 import React, { useCallback, useMemo, useState } from "react";
 import {
@@ -13,7 +18,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { CategoryList, SearchResults } from "@/features/takeout";
 
 export default function TakeOut() {
   const router = useRouter();
@@ -23,13 +27,12 @@ export default function TakeOut() {
   const totalItems = useOrderStore((state) => state.getTotalItems());
   const setEditingOrder = useOrderStore((state) => state.setEditingOrder);
 
-  // Debounce search input to prevent excessive re-renders
   const debouncedSetQuery = useMemo(
     () =>
       debounce((value: string) => {
         setDebouncedQuery(value);
       }, 300),
-    []
+    [],
   );
 
   const handleQueryChange = useCallback(
@@ -37,35 +40,20 @@ export default function TakeOut() {
       setQuery(value);
       debouncedSetQuery(value);
     },
-    [debouncedSetQuery]
+    [debouncedSetQuery],
   );
 
-  // Clear search bar when page is focused (opened or navigated to)
   useFocusEffect(
     useCallback(() => {
       setQuery("");
       setDebouncedQuery("");
-    }, [])
+    }, []),
   );
 
-  const visibleItems = useMemo(() => {
-    const allowedIds = new Set<number | string>();
-    categories.forEach((cat) =>
-      cat.itemIds?.forEach((id) => allowedIds.add(id))
-    );
-    return menuItems.filter((item) => allowedIds.has(item.id!));
-  }, [categories, menuItems]);
-
-  const categoryItemsMap = useMemo(() => {
-    const map = new Map<string, typeof visibleItems>();
-    categories.forEach((cat) => {
-      const items = visibleItems.filter((item) =>
-        cat.itemIds?.includes(item.id!)
-      );
-      map.set(cat.id!, items);
-    });
-    return map;
-  }, [categories, visibleItems]);
+  const searchItems = useMemo(
+    () => getVisibleMenuItemsInCategoryOrder(categories, menuItems),
+    [categories, menuItems]
+  );
 
   if (loading) return <Text>Loading...</Text>;
   if (!categories.length) return <Text>No categories found</Text>;
@@ -77,18 +65,21 @@ export default function TakeOut() {
     });
   };
 
+  const searching = debouncedQuery.trim().length > 0;
+
   return (
     <SafeAreaViewWrapper className="flex-1">
       <View className="flex-1 px-4 pt-4">
         <View className="relative mb-4">
           <TextInput
-            placeholder="Search for an item..."
+            placeholder="Search menu items..."
             value={query}
             onChangeText={handleQueryChange}
             className="border border-gray-300 rounded-lg p-3 pr-12"
             returnKeyLabel="Hide"
             returnKeyType="done"
             onSubmitEditing={() => Keyboard.dismiss()}
+            autoCorrect={false}
           />
           <TouchableOpacity
             onPress={() => {
@@ -104,18 +95,19 @@ export default function TakeOut() {
           </TouchableOpacity>
         </View>
 
-        <View className="flex-1">
-          {debouncedQuery.trim() ? (
+        <View className="flex-1 -mx-4">
+          {searching ? (
             <SearchResults
-              items={visibleItems}
+              items={searchItems}
               query={debouncedQuery}
               onSelectItem={handleSelectItem}
             />
           ) : (
-            <CategoryList
+            <CategoryGrid
               categories={categories}
-              categoryItemsMap={categoryItemsMap}
-              onSelectItem={handleSelectItem}
+              onSelectCategory={(cat) =>
+                router.push(`/takeout/category/${cat.id!}` as Href)
+              }
             />
           )}
         </View>
