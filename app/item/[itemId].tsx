@@ -1,7 +1,9 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
-import AddExtraEditor from "@/components/takeout/AddExtraEditor";
-import ItemChangeEditor from "@/components/takeout/ItemChangeEditor";
-import SpecialFlagsSelector from "@/components/takeout/SpecialFlagsSelector";
+import {
+  AddExtraEditor,
+  ItemChangeEditor,
+  SpecialFlagsSelector,
+} from "@/features/order";
 import Header from "@/components/ui/Header";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";

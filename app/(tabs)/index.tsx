@@ -13,8 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import CategoryList from "@/components/takeout/CategoryList";
-import SearchResults from "@/components/takeout/SearchResults";
+import { CategoryList, SearchResults } from "@/features/takeout";
 
 export default function TakeOut() {
   const router = useRouter();

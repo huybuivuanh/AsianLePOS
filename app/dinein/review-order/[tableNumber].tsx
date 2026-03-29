@@ -1,5 +1,5 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
-import OrderItemCard from "@/components/takeout/review-order/OrderItemCard";
+import { OrderItemCard } from "@/features/order";
 import Header from "@/components/ui/Header";
 import { db } from "@/lib/firebaseConfig";
 import { useAuth } from "@/providers/AuthProvider";

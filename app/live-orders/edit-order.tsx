@@ -1,6 +1,6 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
-import OrderFooter from "@/components/takeout/review-order/OrderFooter";
-import OrderItemCard from "@/components/takeout/review-order/OrderItemCard";
+import { OrderItemCard } from "@/features/order";
+import { OrderFooter } from "@/features/takeout";
 import Header from "@/components/ui/Header";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrderStore } from "@/stores/useOrderStore";

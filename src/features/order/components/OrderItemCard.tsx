@@ -1,4 +1,4 @@
-import SpecialFlagsSelector from "@/components/takeout/SpecialFlagsSelector";
+import SpecialFlagsSelector from "./SpecialFlagsSelector";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enums";

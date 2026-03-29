@@ -1,5 +1,5 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
-import OrderItemCard from "@/components/takeout/review-order/OrderItemCard";
+import { OrderItemCard } from "@/features/order";
 import Header from "@/components/ui/Header";
 import { useAuth } from "@/providers/AuthProvider";
 import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
