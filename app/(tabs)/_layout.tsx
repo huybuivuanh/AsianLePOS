@@ -8,7 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
 import { useEffect } from "react";
 import { Text, View } from "react-native";
-import { useAuth } from "../../providers/AuthProvider";
+import { useAuth } from "@/providers/AuthProvider";
 
 export default function TabsLayout() {
   const { user, loading: authLoading } = useAuth();

@@ -1,4 +1,4 @@
-import SafeAreaViewWrapper from "@/components/SafeAreaViewWrapper";
+import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enum";
@@ -13,8 +13,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import CategoryList from "../../components/takeout/CategoryList";
-import SearchResults from "../../components/takeout/SearchResults";
+import CategoryList from "@/components/takeout/CategoryList";
+import SearchResults from "@/components/takeout/SearchResults";
 
 export default function TakeOut() {
   const router = useRouter();

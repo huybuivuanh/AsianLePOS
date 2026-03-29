@@ -1,4 +1,4 @@
-import SafeAreaViewWrapper from "@/components/SafeAreaViewWrapper";
+import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
 import AddExtraEditor from "@/components/takeout/AddExtraEditor";
 import ItemChangeEditor from "@/components/takeout/ItemChangeEditor";
 import SpecialFlagsSelector from "@/components/takeout/SpecialFlagsSelector";

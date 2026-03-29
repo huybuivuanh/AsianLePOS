@@ -1,4 +1,4 @@
-// components/SafeAreaViewWrapper.tsx
+// src/components/layout/SafeAreaViewWrapper.tsx
 import React, { ReactNode } from "react";
 import { View, ViewProps } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

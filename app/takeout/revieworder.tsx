@@ -1,4 +1,4 @@
-import SafeAreaViewWrapper from "@/components/SafeAreaViewWrapper";
+import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
 import OrderFooter from "@/components/takeout/reviewOrder/OrderFooter";
 import OrderItemCard from "@/components/takeout/reviewOrder/OrderItemCard";
 import Header from "@/components/ui/Header";

@@ -1,5 +1,5 @@
 import TableInfoCard from "@/components/dinein/TableInfoCard";
-import SafeAreaViewWrapper from "@/components/SafeAreaViewWrapper";
+import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
 import Header from "@/components/ui/Header";
 import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";

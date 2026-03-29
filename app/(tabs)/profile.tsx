@@ -1,5 +1,5 @@
-import SafeAreaViewWrapper from "@/components/SafeAreaViewWrapper";
-import { useAuth } from "@/providers/AuthProvider"; // adjust path
+import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
+import { useAuth } from "@/providers/AuthProvider";
 import { useRouter } from "expo-router";
 import React from "react";
 import { Pressable, Text, View } from "react-native";

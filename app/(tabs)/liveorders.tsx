@@ -1,3 +1,4 @@
+import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
 import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderStatus } from "@/types/enum";
@@ -16,7 +17,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import SafeAreaViewWrapper from "../../components/SafeAreaViewWrapper";
 
 export default function LiveOrders() {
   const { takeOutOrders, loading } = useLiveOrdersStore();
