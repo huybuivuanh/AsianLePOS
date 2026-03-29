@@ -2,7 +2,16 @@ import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
 import { useOrderHistoryStore } from "@/stores/useOrderHistoryStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderStatus, OrderType } from "@/types/enums";
-import { calculateTaxBreakdown, formatDate, formatPhone } from "@/utils/helpers";
+import {
+  formatDate,
+  formatPhone,
+  isDineInOrder,
+  isTakeOutOrder,
+  orderSubtotal,
+  resolveTaxBreakdown,
+  takeoutFulfillmentIsScheduled,
+  takeoutScheduledAt,
+} from "@/utils/helpers";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -35,7 +44,7 @@ export default function OrderHistory() {
   }, []);
 
   const handlePrint = useCallback(
-    async (order: Order) => {
+    async (order: AnyOrder) => {
       try {
         await submitToPrintQueue(order);
       } catch (error) {
@@ -46,28 +55,24 @@ export default function OrderHistory() {
   );
 
   const renderOrder = useCallback(
-    ({ item }: { item: Order }) => {
+    ({ item }: { item: AnyOrder }) => {
       // Use taxBreakDown from order, or calculate it if missing
-      const taxBreakDown =
-        item.taxBreakDown ||
-        (item.total !== undefined
-          ? calculateTaxBreakdown(item.total)
-          : undefined);
+      const taxBreakDown = resolveTaxBreakdown(item);
       const expanded = expandedOrderId === item.id;
 
       return (
         <View
-          className={`${item.orderType === OrderType.TakeOut ? (item.isPreorder ? "bg-orange-100" : "bg-blue-100") : "bg-yellow-100"} p-4 mb-3 rounded-xl shadow-sm`}
+          className={`${item.orderType === OrderType.TakeOut ? (takeoutFulfillmentIsScheduled(item) ? "bg-orange-100" : "bg-blue-100") : "bg-yellow-100"} p-4 mb-3 rounded-xl shadow-sm`}
         >
           <View></View>
           <TouchableOpacity
             className="flex-row justify-between items-center"
             onPress={() => toggleExpand(item.id!)}
           >
-            {item.orderType === OrderType.TakeOut ? (
+            {isTakeOutOrder(item) ? (
               <View>
                 <Text className="font-semibold text-gray-800 text-base">
-                  Name: {item.name || ""}
+                  Name: {item.customerName || ""}
                 </Text>
                 <Text className="font-semibold text-gray-800 text-base">
                   Phone #:{" "}
@@ -76,13 +81,13 @@ export default function OrderHistory() {
                 <Text className="font-semibold text-gray-800 text-base">
                   Time: {formatDate(item.createdAt)}
                 </Text>
-                {item.isPreorder && (
+                {takeoutFulfillmentIsScheduled(item) && (
                   <Text className="font-semibold text-gray-800 text-base">
-                    Preorder: {formatDate(item.preorderTime)}
+                    Preorder: {formatDate(takeoutScheduledAt(item)!)}
                   </Text>
                 )}
               </View>
-            ) : (
+            ) : isDineInOrder(item) ? (
               <View>
                 <Text className="font-semibold text-gray-800 text-base">
                   Table Number: {item.tableNumber}
@@ -94,7 +99,7 @@ export default function OrderHistory() {
                   Time: {formatDate(item.createdAt)}
                 </Text>
               </View>
-            )}
+            ) : null}
 
             <View className="items-end space-y-1">
               <View
@@ -222,7 +227,7 @@ export default function OrderHistory() {
                   <View className="flex-row justify-between mb-1">
                     <Text className="text-base text-gray-700">Subtotal</Text>
                     <Text className="text-base text-gray-700">
-                      ${item.total.toFixed(2)}
+                      ${orderSubtotal(item).toFixed(2)}
                     </Text>
                   </View>
 
@@ -245,7 +250,7 @@ export default function OrderHistory() {
                       Total
                     </Text>
                     <Text className="text-base font-bold text-gray-900">
-                      ${taxBreakDown.grandTotal.toFixed(2)}
+                      ${taxBreakDown.total.toFixed(2)}
                     </Text>
                   </View>
                 </View>

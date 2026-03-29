@@ -27,7 +27,11 @@ export enum AlertType {
 export enum OrderType {
   DineIn = "Dine In",
   TakeOut = "Take Out",
-  Delivery = "Delivery",
+}
+
+export enum TakeOutFulfillmentKind {
+  Immediate = "immediate",
+  Scheduled = "scheduled",
 }
 
 export enum TableStatus {

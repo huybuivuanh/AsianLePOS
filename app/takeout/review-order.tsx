@@ -62,7 +62,7 @@ export default function ReviewOrder() {
   const isSubmitDisabled =
     submitting ||
     (order.orderItems?.length ?? 0) === 0 ||
-    (!order.name && !order.phoneNumber);
+    (!order.customerName?.trim() && !order.phoneNumber?.trim());
 
   return (
     <SafeAreaViewWrapper className="flex-1 bg-white">

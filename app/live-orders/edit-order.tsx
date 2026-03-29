@@ -43,29 +43,7 @@ export default function EditOrder() {
       setSubmitting(true);
       // Create a clean order object with only defined values
       // Use conditional spreading for ALL optional fields to avoid undefined values
-      const cleanOrder: Partial<Order> = {
-        id: order.id,
-        orderType: order.orderType,
-        orderItems: order.orderItems,
-        total: order.total,
-        taxBreakDown: order.taxBreakDown,
-        status: order.status,
-        paid: order.paid ?? false,
-        printed: order.printed ?? false,
-        isPreorder: order.isPreorder ?? false,
-        staff,
-        // Only include optional fields if they have values (not undefined)
-        ...(order.name && { name: order.name }),
-        ...(order.phoneNumber && { phoneNumber: order.phoneNumber }),
-        ...(order.tableNumber !== undefined && {
-          tableNumber: order.tableNumber,
-        }),
-        ...(order.guests !== undefined && { guests: order.guests }),
-        ...(order.readyTime !== undefined && { readyTime: order.readyTime }),
-        ...(order.preorderTime && { preorderTime: order.preorderTime }),
-        ...(order.createdAt && { createdAt: order.createdAt }),
-      };
-      await updateOrderOnFirestore(cleanOrder);
+      await updateOrderOnFirestore({ ...order, staff });
       clearOrder();
       router.back();
     } catch (error: any) {
@@ -82,7 +60,7 @@ export default function EditOrder() {
   const isSubmitDisabled =
     submitting ||
     (order.orderItems?.length ?? 0) === 0 ||
-    (!order.name && !order.phoneNumber);
+    (!order.customerName?.trim() && !order.phoneNumber?.trim());
 
   return (
     <SafeAreaViewWrapper className="flex-1 bg-white">

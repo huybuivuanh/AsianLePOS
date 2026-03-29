@@ -52,15 +52,6 @@ export default function ReviewDineInOrder() {
 
       const orderId = generateFirestoreId();
 
-      const newOrder = {
-        ...order,
-        id: orderId,
-        staff: staff,
-        orderType: OrderType.DineIn,
-        tableNumber: tableNumber,
-        guests: getTable(tableNumber)?.guests || 0,
-      };
-
       // Use batch write for all operations to improve performance
       const batch = writeBatch(db);
 
@@ -71,18 +62,20 @@ export default function ReviewDineInOrder() {
         status: TableStatus.Occupied,
       });
 
-      // Calculate total
-      const total = (newOrder.orderItems ?? []).reduce(
+      const subtotal = (order.orderItems ?? []).reduce(
         (acc, i) => acc + i.price * i.quantity,
         0
       );
-
-      const taxBreakDown = calculateTaxBreakdown(total);
+      const computedTax = calculateTaxBreakdown(subtotal);
 
       const orderToSubmit = {
-        ...newOrder,
-        total,
-        taxBreakDown,
+        id: orderId,
+        staff,
+        orderType: OrderType.DineIn,
+        tableNumber,
+        guests: getTable(tableNumber)?.guests || 0,
+        orderItems: order.orderItems,
+        taxBreakDown: computedTax,
         status: OrderStatus.InProgress,
         paid: false,
         printed: false,
@@ -164,7 +157,7 @@ export default function ReviewDineInOrder() {
                 <ActivityIndicator color="white" />
               ) : (
                 <Text className="text-white font-bold text-base">
-                  {`Submit ${getTotalItems()} Item(s) - $${taxBreakDown?.grandTotal.toFixed(2) ?? "0.00"}`}
+                  {`Submit ${getTotalItems()} Item(s) - $${taxBreakDown?.total.toFixed(2) ?? "0.00"}`}
                 </Text>
               )}
             </TouchableOpacity>

@@ -1,6 +1,6 @@
 import { db } from "@/lib/firebaseConfig";
-import { OrderStatus, OrderType } from "@/types/enums";
-import { calculateTaxBreakdown } from "@/utils/helpers";
+import { OrderStatus, OrderType, TakeOutFulfillmentKind } from "@/types/enums";
+import { calculateTaxBreakdown, orderItemsSubtotal } from "@/utils/helpers";
 import {
   collection,
   doc,
@@ -10,14 +10,23 @@ import {
 } from "firebase/firestore";
 import { create } from "zustand";
 
-// Types
+/**
+ * In-memory cart / Firestore write payload. Wider than `AnyOrder` because drafts are partial.
+ */
+type OrderDraft = Partial<Order> & {
+  customerName?: string;
+  phoneNumber?: string;
+  fulfillment?: TakeOutFulfillment;
+  tableNumber?: string;
+  guests?: number;
+};
+
 type OrderState = {
-  order: Partial<Order>;
+  order: OrderDraft;
   editingOrder: boolean;
 
-  // actions
   setEditingOrder: (editing: boolean) => void;
-  updateOrder: (fields: Partial<Order>) => void;
+  updateOrder: (fields: OrderDraft) => void;
   addItem: (item: OrderItem) => void;
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
@@ -25,85 +34,99 @@ type OrderState = {
   getTotalItems: () => number;
   getTaxBreakdown: () => TaxBreakDown | undefined;
   updateOrderItem: (itemId: string, fields: Partial<OrderItem>) => void;
-  setOrder: (order: Partial<Order>) => void;
-  submitOrder: (order: Partial<Order>) => Promise<void>;
-  updateOrderOnFirestore: (order: Partial<Order>) => Promise<void>;
-  cancelOrder: (order: Partial<Order>) => Promise<void>;
-  completeOrder: (order: Partial<Order>) => Promise<void>;
-  markOrderAsPaid: (order: Partial<Order>, paid: boolean) => Promise<void>;
-  submitToPrintQueue: (order: Partial<Order>) => Promise<void>;
+  setOrder: (order: OrderDraft) => void;
+  submitOrder: (order: OrderDraft) => Promise<void>;
+  updateOrderOnFirestore: (order: OrderDraft) => Promise<void>;
+  cancelOrder: (order: OrderDraft) => Promise<void>;
+  completeOrder: (order: OrderDraft) => Promise<void>;
+  markOrderAsPaid: (order: OrderDraft, paid: boolean) => Promise<void>;
+  submitToPrintQueue: (order: OrderDraft) => Promise<void>;
   submitSelectedItemsToPrintQueue: (
-    order: Partial<Order>,
+    order: OrderDraft,
     selectedItemIds: string[]
   ) => Promise<void>;
 };
 
-// Default "empty" order
-const defaultOrder: Partial<Order> = {
+const defaultTakeOutDraft: OrderDraft = {
   orderItems: [],
-  isPreorder: false,
   orderType: OrderType.TakeOut,
-  readyTime: 15,
   printed: false,
-  createdAt: new Date(),
+  fulfillment: {
+    kind: TakeOutFulfillmentKind.Immediate,
+    readyTimeMinutes: 15,
+  },
 };
 
+function withRecalculatedTax(order: OrderDraft): OrderDraft {
+  const subtotal = orderItemsSubtotal(order.orderItems);
+  const taxBreakDown =
+    subtotal > 0 ? calculateTaxBreakdown(subtotal) : undefined;
+  return {
+    ...order,
+    taxBreakDown,
+  };
+}
+
+function mergeOrderDraft(
+  prev: OrderDraft,
+  fields: OrderDraft
+): OrderDraft {
+  const cleanFields: OrderDraft = {};
+  Object.entries(fields).forEach(([key, value]) => {
+    if (value !== undefined) {
+      (cleanFields as Record<string, unknown>)[key] = value;
+    }
+  });
+  let merged: OrderDraft = { ...prev, ...cleanFields };
+
+  if (cleanFields.orderType === OrderType.DineIn) {
+    const m = { ...merged } as Record<string, unknown>;
+    delete m.fulfillment;
+    delete m.customerName;
+    delete m.phoneNumber;
+    merged = m as OrderDraft;
+  }
+  if (cleanFields.orderType === OrderType.TakeOut) {
+    const m = { ...merged } as Record<string, unknown>;
+    delete m.tableNumber;
+    delete m.guests;
+    merged = m as OrderDraft;
+    if (!merged.fulfillment) {
+      merged.fulfillment = {
+        kind: TakeOutFulfillmentKind.Immediate,
+        readyTimeMinutes: 15,
+      };
+    }
+  }
+
+  return withRecalculatedTax(merged);
+}
+
 export const useOrderStore = create<OrderState>((set, get) => ({
-  order: { ...defaultOrder },
+  order: { ...defaultTakeOutDraft },
   editingOrder: false,
 
   setEditingOrder: (editing) => set({ editingOrder: editing }),
 
   updateOrder: (fields) =>
-    set((state) => {
-      // Remove undefined values from fields before spreading
-      const cleanFields: Partial<Order> = {};
-      Object.entries(fields).forEach(([key, value]) => {
-        if (value !== undefined) {
-          cleanFields[key as keyof Order] = value;
-        }
-      });
-      return {
-        order: { ...state.order, ...cleanFields },
-      };
-    }),
+    set((state) => ({
+      order: mergeOrderDraft(state.order, fields),
+    })),
 
   addItem: (item) =>
-    set((state) => {
-      const newOrderItems = [...(state.order.orderItems ?? []), item];
-      const total = newOrderItems.reduce(
-        (acc, i) => acc + i.price * i.quantity,
-        0
-      );
-      const taxBreakDown = calculateTaxBreakdown(total);
-      return {
-        order: {
-          ...state.order,
-          orderItems: newOrderItems,
-          total,
-          taxBreakDown,
-        },
-      };
-    }),
+    set((state) => ({
+      order: mergeOrderDraft(state.order, {
+        orderItems: [...(state.order.orderItems ?? []), item],
+      }),
+    })),
 
   removeItem: (itemId) =>
-    set((state) => {
-      const newOrderItems =
-        state.order.orderItems?.filter((i) => i.id !== itemId) ?? [];
-      const total = newOrderItems.reduce(
-        (acc, i) => acc + i.price * i.quantity,
-        0
-      );
-      const taxBreakDown = calculateTaxBreakdown(total);
-      return {
-        order: {
-          ...state.order,
-          orderItems: newOrderItems,
-          total,
-          taxBreakDown,
-        },
-      };
-    }),
+    set((state) => ({
+      order: mergeOrderDraft(state.order, {
+        orderItems:
+          state.order.orderItems?.filter((i) => i.id !== itemId) ?? [],
+      }),
+    })),
 
   updateQuantity: (itemId, quantity) => {
     const items = get().order.orderItems ?? [];
@@ -111,28 +134,17 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       get().removeItem(itemId);
       return;
     }
-    set((state) => {
-      const newOrderItems = items.map((i) =>
-        i.id === itemId ? { ...i, quantity } : i
-      );
-      const total = newOrderItems.reduce(
-        (acc, i) => acc + i.price * i.quantity,
-        0
-      );
-      const taxBreakDown = calculateTaxBreakdown(total);
-      return {
-        order: {
-          ...state.order,
-          orderItems: newOrderItems,
-          total,
-          taxBreakDown,
-        },
-      };
-    });
+    set((state) => ({
+      order: mergeOrderDraft(state.order, {
+        orderItems: items.map((i) =>
+          i.id === itemId ? { ...i, quantity } : i
+        ),
+      }),
+    }));
   },
 
   clearOrder: () => {
-    set({ order: defaultOrder });
+    set({ order: { ...defaultTakeOutDraft } });
   },
 
   getTotalItems: () => {
@@ -144,28 +156,19 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
   getTaxBreakdown: () => {
     const order = get().order;
-    if (order.taxBreakDown) {
-      return order.taxBreakDown;
-    }
-    const total = (order.orderItems ?? []).reduce(
-      (acc, item) => acc + item.price * item.quantity,
-      0
-    );
-    return total > 0 ? calculateTaxBreakdown(total) : undefined;
+    if (order.taxBreakDown) return order.taxBreakDown;
+    const sub = orderItemsSubtotal(order.orderItems);
+    return sub > 0 ? calculateTaxBreakdown(sub) : undefined;
   },
 
   updateOrderItem: (itemId: string, fields: Partial<OrderItem>) =>
     set((state) => {
-      // Ensure we have a valid orderItems array
       if (!state.order.orderItems || !Array.isArray(state.order.orderItems)) {
         return state;
       }
 
-      // Create a new array with updated item
       const newOrderItems = state.order.orderItems.map((item) => {
         if (item.id === itemId) {
-          // Create a new object with updated fields
-          // Only include instructions if it has a value (not undefined or empty)
           const updatedItem: OrderItem = {
             id: item.id,
             name: fields.name ?? item.name,
@@ -174,15 +177,13 @@ export const useOrderStore = create<OrderState>((set, get) => ({
             togo: fields.togo ?? item.togo,
             appetizer: fields.appetizer ?? item.appetizer,
             kitchenType: fields.kitchenType ?? item.kitchenType,
-            // Only include instructions if it exists and is not empty
             ...(fields.instructions !== undefined
               ? fields.instructions.trim()
                 ? { instructions: fields.instructions.trim() }
-                : {} // Omit instructions if empty string
+                : {}
               : item.instructions
                 ? { instructions: item.instructions }
-                : {}), // Omit if undefined
-            // Always use the provided arrays if they exist, otherwise keep existing
+                : {}),
             options:
               fields.options !== undefined
                 ? fields.options
@@ -199,69 +200,78 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         return item;
       });
 
-      const total = newOrderItems.reduce(
-        (acc, i) => acc + i.price * i.quantity,
-        0
-      );
-      const taxBreakDown = calculateTaxBreakdown(total);
       return {
-        order: {
-          ...state.order,
-          orderItems: newOrderItems,
-          total,
-          taxBreakDown,
-        },
+        order: mergeOrderDraft(state.order, { orderItems: newOrderItems }),
       };
     }),
 
-  setOrder: (order) => set({ order }),
+  setOrder: (order) => {
+    const o: OrderDraft = { ...order };
+    if (o.orderType === OrderType.TakeOut && !o.fulfillment) {
+      o.fulfillment = {
+        kind: TakeOutFulfillmentKind.Immediate,
+        readyTimeMinutes: 15,
+      };
+    }
+    set({ order: withRecalculatedTax(o) });
+  },
 
   submitOrder: async (order) => {
     if (!order.id) throw new Error("Cannot submit order without ID.");
 
     let firestorecollection = "takeOutOrders";
-    if (order.orderType !== OrderType.DineIn) {
-      if (!order.orderItems || order.orderItems.length === 0)
-        throw new Error("Cannot submit empty order.");
-      if (!order.name && !order.phoneNumber)
-        throw new Error("Missing customer info.");
-    } else {
+    if (order.orderType === OrderType.DineIn) {
       firestorecollection = "dineInOrders";
+      if (!order.orderItems || order.orderItems.length === 0) {
+        throw new Error("Cannot submit empty order.");
+      }
+    } else {
+      if (!order.orderItems || order.orderItems.length === 0) {
+        throw new Error("Cannot submit empty order.");
+      }
+      if (!order.customerName?.trim() && !order.phoneNumber?.trim()) {
+        throw new Error("Missing customer info.");
+      }
+      if (!order.fulfillment) {
+        throw new Error("Missing fulfillment.");
+      }
     }
 
-    const total = (order.orderItems ?? []).reduce(
-      (acc, i) => acc + i.price * i.quantity,
-      0
-    );
+    const subtotal = orderItemsSubtotal(order.orderItems);
+    const taxBreakDown = calculateTaxBreakdown(subtotal);
 
-    const taxBreakDown = calculateTaxBreakdown(total);
-
-    // Build orderToSubmit with only defined values - never include undefined
-    const orderToSubmit: Partial<Order> = {
+    const base = {
       id: order.id,
       orderType: order.orderType,
       orderItems: order.orderItems,
-      total,
       taxBreakDown,
       status: OrderStatus.InProgress,
       paid: false,
       printed: false,
       createdAt: Timestamp.fromDate(new Date()),
-      isPreorder: order.isPreorder ?? false,
-      readyTime: order.readyTime,
       staff: order.staff,
-      // Only include optional fields if they have values
-      ...(order.name && { name: order.name }),
-      ...(order.phoneNumber && { phoneNumber: order.phoneNumber }),
-      ...(order.tableNumber && { tableNumber: order.tableNumber }),
-      ...(order.guests !== undefined && { guests: order.guests }),
-      ...(order.preorderTime && { preorderTime: order.preorderTime }),
     };
 
-    // Use batch write for atomic operation and better performance
+    const orderToSubmit: Record<string, unknown> = { ...base };
+
+    if (order.orderType === OrderType.TakeOut) {
+      orderToSubmit.customerName = order.customerName ?? null;
+      orderToSubmit.phoneNumber = order.phoneNumber ?? null;
+      orderToSubmit.fulfillment = order.fulfillment;
+    } else {
+      orderToSubmit.tableNumber = order.tableNumber;
+      orderToSubmit.guests = order.guests;
+    }
+
     const batch = writeBatch(db);
-    batch.set(doc(db, firestorecollection, order.id!), orderToSubmit);
-    batch.set(doc(db, "orderHistory", order.id!), orderToSubmit);
+    batch.set(
+      doc(db, firestorecollection, order.id!),
+      orderToSubmit as Record<string, unknown>
+    );
+    batch.set(
+      doc(db, "orderHistory", order.id!),
+      orderToSubmit as Record<string, unknown>
+    );
     await batch.commit();
 
     get().clearOrder();
@@ -273,17 +283,9 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const firestorecollection =
       order.orderType === OrderType.DineIn ? "dineInOrders" : "takeOutOrders";
 
-    // Calculate total
-    const total = (order.orderItems ?? []).reduce(
-      (acc, i) => acc + i.price * i.quantity,
-      0
-    );
+    const subtotal = orderItemsSubtotal(order.orderItems);
+    const taxBreakDown = calculateTaxBreakdown(subtotal);
 
-    const taxBreakDown = calculateTaxBreakdown(total);
-
-    // Build updateData with only defined values - never include undefined
-    // Use conditional spreading for ALL optional fields
-    // Also ensure orderItems array doesn't contain undefined nested fields
     const cleanOrderItems = (order.orderItems ?? []).map((item) => {
       const cleanItem: OrderItem = {
         id: item.id,
@@ -296,50 +298,43 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         options: item.options ?? [],
         extras: item.extras ?? [],
         changes: item.changes ?? [],
-        // Only include instructions if it has a value
         ...(item.instructions && { instructions: item.instructions }),
       };
       return cleanItem;
     });
 
-    const updateData: Partial<Order> = {
+    const updateData: Record<string, unknown> = {
       id: order.id,
       orderType: order.orderType,
       orderItems: cleanOrderItems,
-      total,
       taxBreakDown,
       status: order.status,
       paid: order.paid ?? false,
       printed: order.printed ?? false,
-      isPreorder: order.isPreorder ?? false,
       staff: order.staff,
-      // Only include optional fields if they have values (not undefined)
-      ...(order.name && { name: order.name }),
-      ...(order.phoneNumber && { phoneNumber: order.phoneNumber }),
-      ...(order.tableNumber !== undefined && {
-        tableNumber: order.tableNumber,
-      }),
-      ...(order.guests !== undefined && { guests: order.guests }),
-      ...(order.readyTime !== undefined && { readyTime: order.readyTime }),
-      ...(order.preorderTime && { preorderTime: order.preorderTime }),
       ...(order.createdAt && { createdAt: order.createdAt }),
     };
 
-    // Use batch write to update both collections atomically
-    const batch = writeBatch(db);
+    if (order.orderType === OrderType.TakeOut) {
+      if (order.customerName) updateData.customerName = order.customerName;
+      if (order.phoneNumber) updateData.phoneNumber = order.phoneNumber;
+      if (order.fulfillment) updateData.fulfillment = order.fulfillment;
+    } else {
+      if (order.tableNumber !== undefined) {
+        updateData.tableNumber = order.tableNumber;
+      }
+      if (order.guests !== undefined) updateData.guests = order.guests;
+    }
 
-    // Update main order collection
+    const batch = writeBatch(db);
     const orderRef = doc(db, firestorecollection, order.id);
     batch.update(orderRef, updateData);
-
-    // Update order history
     const historyRef = doc(db, "orderHistory", order.id);
     batch.update(historyRef, updateData);
-
     await batch.commit();
   },
 
-  cancelOrder: async (order: Partial<Order>) => {
+  cancelOrder: async (order: OrderDraft) => {
     if (!order.id) throw new Error("Order ID is required to cancel.");
 
     let firestorecollection = "takeOutOrders";
@@ -347,23 +342,17 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       firestorecollection = "dineInOrders";
     }
 
-    // Use batch write for atomic operation
     const batch = writeBatch(db);
-
-    // Delete from main collection
     const orderRef = doc(db, firestorecollection, order.id);
     batch.delete(orderRef);
-
-    // Update order history with canceled status
     const orderHistoryRef = doc(db, "orderHistory", order.id);
     batch.update(orderHistoryRef, {
       status: OrderStatus.Canceled,
     });
-
     await batch.commit();
   },
 
-  completeOrder: async (order: Partial<Order>) => {
+  completeOrder: async (order: OrderDraft) => {
     if (!order.id) throw new Error("Order ID is required to complete.");
 
     let firestorecollection = "takeOutOrders";
@@ -371,79 +360,64 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       firestorecollection = "dineInOrders";
     }
 
-    // Use batch write for atomic operation
     const batch = writeBatch(db);
-
-    // Delete from main collection
     const orderRef = doc(db, firestorecollection, order.id);
     batch.delete(orderRef);
-
-    // Update order history with completed status
     const orderHistoryRef = doc(db, "orderHistory", order.id);
     batch.update(orderHistoryRef, {
       status: OrderStatus.Completed,
       paid: true,
     });
-
     await batch.commit();
   },
 
-  markOrderAsPaid: async (order: Partial<Order>, paid: boolean) => {
+  markOrderAsPaid: async (order: OrderDraft, paid: boolean) => {
     if (!order.id) throw new Error("Order ID is required to mark as paid.");
 
     const firestorecollection =
       order.orderType === OrderType.DineIn ? "dineInOrders" : "takeOutOrders";
 
-    // Use batch write to update both collections atomically
     const batch = writeBatch(db);
-
-    // Update main order collection
     const orderRef = doc(db, firestorecollection, order.id);
     batch.update(orderRef, { paid });
-
-    // Update order history
     const historyRef = doc(db, "orderHistory", order.id);
     batch.update(historyRef, { paid });
-
     await batch.commit();
   },
 
-  submitToPrintQueue: async (order: Partial<Order>) => {
+  submitToPrintQueue: async (order: OrderDraft) => {
     if (!order.id) throw new Error("Order ID is required to print.");
     const printQueueRef = doc(collection(db, "printQueue"));
-    await setDoc(printQueueRef, order);
+    await setDoc(printQueueRef, order as Record<string, unknown>);
   },
 
   submitSelectedItemsToPrintQueue: async (
-    order: Partial<Order>,
+    order: OrderDraft,
     selectedItemIds: string[]
   ) => {
     if (!order.id) throw new Error("Order ID is required to print.");
-    if (selectedItemIds.length === 0)
+    if (selectedItemIds.length === 0) {
       throw new Error("At least one item must be selected.");
+    }
 
-    // Filter order items to only include selected ones
     const selectedItems =
       order.orderItems?.filter((item) =>
         item.id ? selectedItemIds.includes(item.id) : false
       ) || [];
 
-    // Calculate total for selected items only
-    const selectedTotal = selectedItems.reduce(
+    const selectedSubtotal = selectedItems.reduce(
       (acc, i) => acc + i.price * i.quantity,
       0
     );
-    const selectedTaxBreakDown = calculateTaxBreakdown(selectedTotal);
+    const selectedTaxBreakDown = calculateTaxBreakdown(selectedSubtotal);
 
-    // Create a partial order with only selected items
-    const partialOrder: Partial<Order> = {
+    const partialOrder: OrderDraft = {
       ...order,
       orderItems: selectedItems,
-      total: selectedTotal,
       taxBreakDown: selectedTaxBreakDown,
     };
 
     const printQueueRef = doc(collection(db, "printQueue"));
-    await setDoc(printQueueRef, partialOrder);
+    await setDoc(printQueueRef, partialOrder as Record<string, unknown>);
   },
 }));

@@ -1,9 +1,8 @@
 import dayjs from "dayjs";
 import { collection, doc, Timestamp } from "firebase/firestore";
 import { Alert, Platform } from "react-native";
+import { OrderType, TakeOutFulfillmentKind } from "@/types/enums";
 import { db } from "../lib/firebaseConfig";
-
-// Generate a unique ID
 
 export const formatDate = (timestamp: Timestamp) => {
   if (!timestamp) return "";
@@ -45,40 +44,68 @@ export const timestampToDate = (
   return undefined;
 };
 
-// Convert order's Firestore Timestamps to JavaScript Dates
-export const convertOrderTimestamps = (
-  order: Partial<Order>
-): Partial<Order> => {
-  // Calculate taxBreakDown if missing (for backward compatibility)
-  let taxBreakDown = order.taxBreakDown;
-  if (!taxBreakDown && order.total !== undefined) {
-    taxBreakDown = calculateTaxBreakdown(order.total);
+export const orderItemsSubtotal = (
+  items: OrderItem[] | undefined
+): number => {
+  return (items ?? []).reduce((acc, i) => acc + i.price * i.quantity, 0);
+};
+
+/** Subtotal from line items, or taxBreakDown.subTotal when present. */
+export const orderSubtotal = (order: Partial<Order>): number => {
+  if (order.taxBreakDown?.subTotal != null) {
+    return order.taxBreakDown.subTotal;
   }
+  return orderItemsSubtotal(order.orderItems);
+};
 
-  // Convert preorderTime only if it exists
-  const convertedPreorderTime = order.preorderTime
-    ? timestampToDate(order.preorderTime as any)
-    : undefined;
+export const resolveTaxBreakdown = (
+  order: Partial<Order>
+): TaxBreakDown | undefined => {
+  if (order.taxBreakDown) return order.taxBreakDown;
+  const sub = orderItemsSubtotal(order.orderItems);
+  return sub > 0 ? calculateTaxBreakdown(sub) : undefined;
+};
 
+export const takeoutFulfillmentIsScheduled = (order: {
+  orderType?: OrderType;
+  fulfillment?: TakeOutFulfillment;
+}): boolean => {
+  if (order.orderType !== OrderType.TakeOut) return false;
+  return order.fulfillment?.kind === TakeOutFulfillmentKind.Scheduled;
+};
+
+export const takeoutScheduledAt = (order: {
+  orderType?: OrderType;
+  fulfillment?: TakeOutFulfillment;
+}): Timestamp | undefined => {
+  if (order.orderType !== OrderType.TakeOut) return undefined;
+  const f = order.fulfillment;
+  if (f?.kind === TakeOutFulfillmentKind.Scheduled) return f.scheduledAt;
+  return undefined;
+};
+
+// Convert order timestamps for UI (keeps fulfillment.scheduledAt as Timestamp)
+export const convertOrderTimestamps = (
+  order: Partial<AnyOrder>
+): Partial<AnyOrder> => {
+  const taxBreakDown = resolveTaxBreakdown(order);
   return {
     ...order,
-    ...(convertedPreorderTime !== undefined && {
-      preorderTime: convertedPreorderTime,
-    }),
-    createdAt: order.createdAt, // Keep as Timestamp for display purposes
     taxBreakDown,
+    createdAt: order.createdAt,
   };
 };
 
-// Calculate tax breakdown for an order
+// Calculate tax breakdown for an order (subtotal = pre-tax line total)
 export const calculateTaxBreakdown = (subtotal: number): TaxBreakDown => {
   const pst = subtotal * 0.06;
   const gst = subtotal * 0.05;
-  const grandTotal = subtotal + pst + gst;
+  const total = subtotal + pst + gst;
   return {
+    subTotal: subtotal,
     pst,
     gst,
-    grandTotal,
+    total,
   };
 };
 
@@ -92,7 +119,13 @@ export const sortTables = (tables: Table[]): Table[] => {
   );
 };
 
-export const sortOrdersByDate = (orders: Order[]): Order[] => {
+export const isTakeOutOrder = (o: AnyOrder): o is TakeOutOrder =>
+  o.orderType === OrderType.TakeOut;
+
+export const isDineInOrder = (o: AnyOrder): o is DineInOrder =>
+  o.orderType === OrderType.DineIn;
+
+export const sortOrdersByDate = <T extends Order>(orders: T[]): T[] => {
   return [...orders].sort((a, b) => {
     const timeA = a.createdAt?.toMillis?.() ?? 0;
     const timeB = b.createdAt?.toMillis?.() ?? 0;

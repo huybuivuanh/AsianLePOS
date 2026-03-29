@@ -51,7 +51,9 @@ export default function EditDinInOrder() {
   }, [dineInOrders, table]);
 
   // ✅ Use LOCAL STATE for editing - no conflicts with order store
-  const [localOrder, setLocalOrder] = useState<Partial<Order> | null>(null);
+  const [localOrder, setLocalOrder] = useState<Partial<DineInOrder> | null>(
+    null
+  );
 
   // ✅ Initialize local order from Firestore on mount
   useEffect(() => {
@@ -94,21 +96,8 @@ export default function EditDinInOrder() {
       setSubmitting(true);
 
       // Create a clean order object with only the fields we need
-      const cleanOrder: Partial<Order> = {
-        id: localOrder.id,
-        orderType: localOrder.orderType,
-        orderItems: localOrder.orderItems,
-        total: localOrder.total,
-        taxBreakDown: localOrder.taxBreakDown,
-        status: localOrder.status,
-        paid: localOrder.paid,
-        printed: localOrder.printed,
-        tableNumber: localOrder.tableNumber,
-        guests: localOrder.guests,
-        readyTime: localOrder.readyTime,
-        isPreorder: localOrder.isPreorder,
-        preorderTime: localOrder.preorderTime,
-        createdAt: localOrder.createdAt,
+      const cleanOrder = {
+        ...localOrder,
         staff,
       };
 
@@ -181,22 +170,8 @@ export default function EditDinInOrder() {
         if (storeItemsStr !== localItemsStr) {
           isSyncingRef.current = true;
           // Create a clean copy of the order to avoid corruption
-          const cleanOrder: Partial<Order> = {
-            id: orderStoreOrder.id,
-            orderType: orderStoreOrder.orderType,
-            orderItems: orderStoreOrder.orderItems,
-            total: orderStoreOrder.total,
-            taxBreakDown: orderStoreOrder.taxBreakDown,
-            status: orderStoreOrder.status,
-            paid: orderStoreOrder.paid,
-            printed: orderStoreOrder.printed,
-            tableNumber: orderStoreOrder.tableNumber,
-            guests: orderStoreOrder.guests,
-            readyTime: orderStoreOrder.readyTime,
-            isPreorder: orderStoreOrder.isPreorder,
-            preorderTime: orderStoreOrder.preorderTime,
-            createdAt: orderStoreOrder.createdAt,
-            staff: orderStoreOrder.staff,
+          const cleanOrder = {
+            ...orderStoreOrder,
           };
           setLocalOrder(cleanOrder);
           prevLocalOrderItemsRef.current = storeItemsStr;
@@ -296,7 +271,7 @@ export default function EditDinInOrder() {
               <ActivityIndicator color="white" />
             ) : (
               <Text className="text-white font-bold text-base">
-                {`Submit Update - $${taxBreakDown?.grandTotal.toFixed(2) ?? "0.00"}`}
+                {`Submit Update - $${taxBreakDown?.total.toFixed(2) ?? "0.00"}`}
               </Text>
             )}
           </TouchableOpacity>

@@ -5,8 +5,8 @@ import { create } from "zustand";
 import { db } from "../lib/firebaseConfig";
 
 type LiveOrdersState = {
-  dineInOrders: Order[];
-  takeOutOrders: Order[];
+  dineInOrders: DineInOrder[];
+  takeOutOrders: TakeOutOrder[];
   loading: boolean;
   subscribeToLiveOrders: () => () => void;
   clearData: () => void;
@@ -25,7 +25,7 @@ export const useLiveOrdersStore = create<LiveOrdersState>((set) => ({
     const unsubscribeDineIn = onSnapshot(dineInRef, (snapshot) => {
       const dineInData = snapshot.docs.map((doc) => ({
         id: doc.id,
-        ...(doc.data() as Order),
+        ...(doc.data() as DineInOrder),
       }));
       const sortedData = sortOrdersByDate(dineInData);
       set({ dineInOrders: sortedData, loading: false });
@@ -36,7 +36,7 @@ export const useLiveOrdersStore = create<LiveOrdersState>((set) => ({
     const unsubscribeTakeOut = onSnapshot(takeOutRef, (snapshot) => {
       const takeOutData = snapshot.docs.map((doc) => ({
         id: doc.id,
-        ...(doc.data() as Order),
+        ...(doc.data() as TakeOutOrder),
       }));
       const sortedData = sortOrdersByDate(takeOutData);
       set({ takeOutOrders: sortedData, loading: false });

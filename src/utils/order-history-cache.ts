@@ -6,14 +6,16 @@ const ORDER_HISTORY_CACHE_TIMESTAMP_KEY = "@orderHistory:cacheTimestamp";
 const CACHE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
 
 export interface CachedOrderHistory {
-  orders: Order[];
+  orders: AnyOrder[];
   timestamp: number;
 }
 
 /**
  * Save order history to AsyncStorage cache
  */
-export async function saveOrderHistoryToCache(orders: Order[]): Promise<void> {
+export async function saveOrderHistoryToCache(
+  orders: AnyOrder[]
+): Promise<void> {
   try {
     const cacheData: CachedOrderHistory = {
       orders,
@@ -33,7 +35,7 @@ export async function saveOrderHistoryToCache(orders: Order[]): Promise<void> {
  * Returns the cached data and whether it's expired
  */
 export async function loadOrderHistoryFromCache(): Promise<{
-  orders: Order[] | null;
+  orders: AnyOrder[] | null;
   isExpired: boolean;
 }> {
   try {

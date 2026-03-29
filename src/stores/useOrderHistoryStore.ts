@@ -9,7 +9,7 @@ import {
 } from "../utils/order-history-cache";
 
 type OrderHistoryState = {
-  orderHistory: Order[];
+  orderHistory: AnyOrder[];
   loading: boolean;
   loadingMore: boolean;
   hasMore: boolean;
@@ -112,7 +112,7 @@ export const useOrderHistoryStore = create<OrderHistoryState>((set, get) => ({
       const snapshot = await getDocs(q);
       const orderHistoryData = snapshot.docs.map((doc) => ({
         id: doc.id,
-        ...(doc.data() as Order),
+        ...(doc.data() as AnyOrder),
       }));
 
       // Save full dataset to cache

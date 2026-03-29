@@ -11,9 +11,12 @@ export default function CustomerInfoForm() {
         <Text className="w-32 text-gray-700 font-medium">Customer Name</Text>
         <TextInput
           placeholder="Enter name"
-          value={order.name || ""}
-          onChangeText={(text) => updateOrder({ name: text.toUpperCase() })}
-          className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-base bg-white"
+          value={order.customerName || ""}
+          onChangeText={(text) =>
+            updateOrder({ customerName: text.toUpperCase() })
+          }
+          onSubmitEditing={() => Keyboard.dismiss()}
+          className="flex-1 border border-gray-300 rounded-lg px-3 py-2"
         />
       </View>
 
@@ -21,13 +24,11 @@ export default function CustomerInfoForm() {
         <Text className="w-32 text-gray-700 font-medium">Phone Number</Text>
         <TextInput
           placeholder="Enter phone"
+          keyboardType="phone-pad"
           value={order.phoneNumber || ""}
           onChangeText={(text) => updateOrder({ phoneNumber: text })}
-          keyboardType="phone-pad"
-          className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-base bg-white"
-          returnKeyLabel="Hide"
-          returnKeyType="done"
           onSubmitEditing={() => Keyboard.dismiss()}
+          className="flex-1 border border-gray-300 rounded-lg px-3 py-2"
         />
       </View>
     </View>

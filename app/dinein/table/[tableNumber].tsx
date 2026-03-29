@@ -5,7 +5,12 @@ import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { OrderType, TableStatus } from "@/types/enums";
-import { calculateTaxBreakdown, showAlert } from "@/utils/helpers";
+import {
+  calculateTaxBreakdown,
+  orderSubtotal,
+  resolveTaxBreakdown,
+  showAlert,
+} from "@/utils/helpers";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Check } from "lucide-react-native";
 import React, { useEffect, useMemo, useState } from "react";
@@ -24,7 +29,7 @@ export default function TablePage() {
   const table = useTableStore((state) =>
     state.tables.find((t) => t.tableNumber === tableNumber)
   );
-  const [order, setOrder] = useState<Partial<Order> | null>(null);
+  const [order, setOrder] = useState<Partial<DineInOrder> | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(
     new Set()
@@ -49,11 +54,7 @@ export default function TablePage() {
   }, [dineInOrders, table]);
 
   // Use taxBreakDown from order, or calculate it if missing
-  const taxBreakDown =
-    order?.taxBreakDown ||
-    (order?.total !== undefined
-      ? calculateTaxBreakdown(order.total)
-      : undefined);
+  const taxBreakDown = order ? resolveTaxBreakdown(order) : undefined;
 
   // Calculate selected items total and tax breakdown when in selection mode
   const selectedItemsTotal = useMemo(() => {
@@ -67,7 +68,7 @@ export default function TablePage() {
 
   const selectedItemsTaxBreakDown = useMemo(() => {
     if (selectedItemsTotal === 0) {
-      return { pst: 0, gst: 0, grandTotal: 0 };
+      return { subTotal: 0, pst: 0, gst: 0, total: 0 };
     }
     return calculateTaxBreakdown(selectedItemsTotal);
   }, [selectedItemsTotal]);
@@ -315,7 +316,7 @@ export default function TablePage() {
                       Selected Total
                     </Text>
                     <Text className="text-xl font-bold text-gray-900">
-                      ${selectedItemsTaxBreakDown.grandTotal.toFixed(2)}
+                      ${selectedItemsTaxBreakDown.total.toFixed(2)}
                     </Text>
                   </View>
                 </>
@@ -325,7 +326,7 @@ export default function TablePage() {
                   <View className="flex-row justify-between mb-1">
                     <Text className="text-base text-gray-700">Subtotal</Text>
                     <Text className="text-base text-gray-700">
-                      ${(order?.total ?? 0).toFixed(2)}
+                      ${(order ? orderSubtotal(order) : 0).toFixed(2)}
                     </Text>
                   </View>
 
@@ -363,7 +364,7 @@ export default function TablePage() {
                       </Text>
                     </View>
                     <Text className="text-xl font-bold text-gray-900">
-                      ${(taxBreakDown?.grandTotal ?? 0).toFixed(2)}
+                      ${(taxBreakDown?.total ?? 0).toFixed(2)}
                     </Text>
                   </View>
                 </>

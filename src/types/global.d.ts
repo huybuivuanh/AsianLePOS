@@ -1,21 +1,23 @@
+import { TakeOutFulfillmentKind } from "./enums";
+
 export {};
 
 declare global {
-  type User = {
+  interface User {
     id: string;
     name: string;
     email?: string;
-  };
+  }
 
-  type FoodCategory = {
+  interface FoodCategory {
     id?: string;
     name: string;
     itemIds?: string[];
     order: number;
     createdAt: TimeStamp;
-  };
+  }
 
-  type MenuItem = {
+  interface MenuItem {
     id?: string;
     name: string;
     price: number;
@@ -23,9 +25,9 @@ declare global {
     categoryIds?: string[];
     kitchenType: KitchenType;
     createdAt: TimeStamp;
-  };
+  }
 
-  type OptionGroup = {
+  interface OptionGroup {
     id?: string;
     name: string;
     minSelection: number;
@@ -34,23 +36,23 @@ declare global {
     optionIds?: string[];
     itemIds?: string[];
     createdAt: TimeStamp;
-  };
+  }
 
-  type ItemOption = {
+  interface ItemOption {
     id?: string;
     name: string;
     price: number;
     groupIds?: string[];
     createdAt: TimeStamp;
-  };
+  }
 
-  type OrderItemOption = {
+  interface OrderItemOption {
     name: string;
     price: number;
     quantity: number;
-  };
+  }
 
-  type OrderItem = {
+  interface OrderItem {
     id?: string;
     name: string;
     price: number;
@@ -62,49 +64,67 @@ declare global {
     appetizer: boolean;
     kitchenType: KitchenType;
     instructions?: string;
-  };
+  }
 
-  type ItemChange = {
+  interface ItemChange {
     from: string;
     to: string;
     price: number;
-  };
+  }
 
-  type AddExtra = {
+  interface AddExtra {
     description: string;
     price: number;
-  };
+  }
 
-  type TaxBreakDown = {
+  interface TaxBreakDown {
+    subTotal: number;
     pst: number;
     gst: number;
-    grandTotal: number;
-  };
+    total: number;
+  }
 
-  type Order = {
+  type TakeOutFulfillment =
+    | {
+        kind: TakeOutFulfillmentKind.Immediate;
+        readyTimeMinutes?: number;
+      }
+    | {
+        kind: TakeOutFulfillmentKind.Scheduled;
+        scheduledAt: TimeStamp;
+      };
+
+  interface Order {
     id?: string;
-    name?: string;
-    phoneNumber?: string;
     staff: User;
-    readyTime?: number;
-    isPreorder: boolean;
-    preorderTime?: TimeStamp;
-    tableNumber?: string;
-    guests?: number;
     orderType: OrderType;
     orderItems: OrderItem[];
-    total: number;
     taxBreakDown: TaxBreakDown;
     status: OrderStatus;
     paid: boolean;
     printed: boolean;
     createdAt: TimeStamp;
-  };
+  }
 
-  type Table = {
+  interface TakeOutOrder extends Order {
+    orderType: OrderType.TakeOut;
+    customerName?: string;
+    phoneNumber?: string;
+    fulfillment: TakeOutFulfillment;
+  }
+
+  interface DineInOrder extends Order {
+    orderType: OrderType.DineIn;
+    tableNumber: string;
+    guests: number;
+  }
+
+  type AnyOrder = TakeOutOrder | DineInOrder;
+
+  interface Table {
     tableNumber: string;
     status: TableStatus;
     guests: number;
     currentOrderId: string | null;
-  };
+  }
 }

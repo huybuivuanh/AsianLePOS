@@ -7,6 +7,10 @@ import {
   convertOrderTimestamps,
   formatDate,
   formatPhone,
+  orderSubtotal,
+  resolveTaxBreakdown,
+  takeoutFulfillmentIsScheduled,
+  takeoutScheduledAt,
 } from "@/utils/helpers";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -46,7 +50,7 @@ export default function LiveOrders() {
     setExpandedOrderId((prev) => (prev === id ? null : id));
   };
 
-  const handleComplete = async (order: Order) => {
+  const handleComplete = async (order: TakeOutOrder) => {
     try {
       await completeOrder(order);
     } catch (error) {
@@ -54,7 +58,7 @@ export default function LiveOrders() {
     }
   };
 
-  const handleCancel = async (order: Order) => {
+  const handleCancel = async (order: TakeOutOrder) => {
     try {
       await cancelOrder(order);
     } catch (error) {
@@ -62,7 +66,7 @@ export default function LiveOrders() {
     }
   };
 
-  const handlePrint = async (order: Order) => {
+  const handlePrint = async (order: TakeOutOrder) => {
     try {
       await submitToPrintQueue(order);
     } catch (error) {
@@ -92,7 +96,7 @@ export default function LiveOrders() {
     });
   };
 
-  const handlePrintSelected = async (order: Order) => {
+  const handlePrintSelected = async (order: TakeOutOrder) => {
     try {
       await submitSelectedItemsToPrintQueue(order, Array.from(selectedItemIds));
       setSelectionMode(null);
@@ -102,7 +106,7 @@ export default function LiveOrders() {
     }
   };
 
-  const handleMarkAsPaid = async (order: Order, paid: boolean) => {
+  const handleMarkAsPaid = async (order: TakeOutOrder, paid: boolean) => {
     try {
       await markOrderAsPaid(order, paid);
     } catch (error) {
@@ -110,7 +114,7 @@ export default function LiveOrders() {
     }
   };
 
-  function handleEditOrder(order: Order) {
+  function handleEditOrder(order: TakeOutOrder) {
     setEditingOrder(true);
     // Convert Firestore Timestamps to JavaScript Dates
     const convertedOrder = convertOrderTimestamps(order);
@@ -118,13 +122,9 @@ export default function LiveOrders() {
     router.push("/live-orders/edit-order");
   }
 
-  const renderOrder = ({ item }: { item: Order }) => {
+  const renderOrder = ({ item }: { item: TakeOutOrder }) => {
     // Use taxBreakDown from order, or calculate it if missing
-    const taxBreakDown =
-      item.taxBreakDown ||
-      (item.total !== undefined
-        ? calculateTaxBreakdown(item.total)
-        : undefined);
+    const taxBreakDown = resolveTaxBreakdown(item);
     const expanded = expandedOrderId === item.id;
     const isSelectionMode = selectionMode === item.id;
 
@@ -143,12 +143,14 @@ export default function LiveOrders() {
 
     const selectedItemsTaxBreakDown =
       selectedItemsTotal === 0
-        ? { pst: 0, gst: 0, grandTotal: 0 }
+        ? { subTotal: 0, pst: 0, gst: 0, total: 0 }
         : calculateTaxBreakdown(selectedItemsTotal);
 
     return (
       <View
-        className={`${item.isPreorder ? "bg-orange-100" : "bg-blue-100"} p-4 mb-3 rounded-xl shadow-sm`}
+        className={`${
+          takeoutFulfillmentIsScheduled(item) ? "bg-orange-100" : "bg-blue-100"
+        } p-4 mb-3 rounded-xl shadow-sm`}
       >
         <TouchableOpacity
           className="flex-row justify-between items-center"
@@ -156,7 +158,7 @@ export default function LiveOrders() {
         >
           <View>
             <Text className="font-semibold text-gray-800 text-base">
-              Name: {item.name || ""}
+              Name: {item.customerName || ""}
             </Text>
             <Text className="font-semibold text-gray-800 text-base">
               Phone #: {item.phoneNumber ? formatPhone(item.phoneNumber) : ""}
@@ -164,9 +166,10 @@ export default function LiveOrders() {
             <Text className="font-semibold text-gray-800 text-base">
               Time: {formatDate(item.createdAt)}
             </Text>
-            {item.isPreorder && (
+            {takeoutFulfillmentIsScheduled(item) && (
               <Text className="font-semibold text-gray-800 text-base">
-                Preorder: {formatDate(item.preorderTime)}
+                Preorder:{" "}
+                {formatDate(takeoutScheduledAt(item)!)}
               </Text>
             )}
           </View>
@@ -374,7 +377,7 @@ export default function LiveOrders() {
                         Selected Total
                       </Text>
                       <Text className="text-base font-bold text-gray-900">
-                        ${selectedItemsTaxBreakDown.grandTotal.toFixed(2)}
+                        ${selectedItemsTaxBreakDown.total.toFixed(2)}
                       </Text>
                     </View>
                   </>
@@ -384,7 +387,7 @@ export default function LiveOrders() {
                     <View className="flex-row justify-between mb-1">
                       <Text className="text-base text-gray-700">Subtotal</Text>
                       <Text className="text-base text-gray-700">
-                        ${item.total.toFixed(2)}
+                        ${orderSubtotal(item).toFixed(2)}
                       </Text>
                     </View>
 
@@ -407,7 +410,7 @@ export default function LiveOrders() {
                         Total
                       </Text>
                       <Text className="text-base font-bold text-gray-900">
-                        ${taxBreakDown.grandTotal.toFixed(2)}
+                        ${taxBreakDown.total.toFixed(2)}
                       </Text>
                     </View>
                   </>
