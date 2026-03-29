@@ -1,4 +1,4 @@
-import { FlatList, Text, TouchableOpacity } from "react-native";
+import { FlatList, Text, TouchableOpacity, View } from "react-native";
 
 type Props = {
   items: MenuItem[];
@@ -9,9 +9,7 @@ type Props = {
 export default function SearchResults({ items, query, onSelectItem }: Props) {
   const q = query.trim();
   const displayItems = q
-    ? items.filter((item) =>
-        item.name.toLowerCase().includes(q.toLowerCase())
-      )
+    ? items.filter((item) => item.name.toLowerCase().includes(q.toLowerCase()))
     : items;
 
   if (!items.length) {
@@ -27,25 +25,29 @@ export default function SearchResults({ items, query, onSelectItem }: Props) {
   }
 
   return (
-    <FlatList
-      keyboardShouldPersistTaps="always"
-      data={displayItems}
-      keyExtractor={(item) => item.id!}
-      contentContainerStyle={{ paddingBottom: 80 }}
-      removeClippedSubviews={true}
-      maxToRenderPerBatch={10}
-      windowSize={10}
-      initialNumToRender={12}
-      updateCellsBatchingPeriod={50}
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          className="mb-3 p-3 bg-gray-100 rounded-lg"
-          onPress={() => onSelectItem(item)}
-        >
-          <Text className="text-lg font-medium text-gray-800">{item.name}</Text>
-          <Text className="text-gray-600">${item.price.toFixed(2)}</Text>
-        </TouchableOpacity>
-      )}
-    />
+    <View className="pl-4 pr-4">
+      <FlatList
+        keyboardShouldPersistTaps="always"
+        data={displayItems}
+        keyExtractor={(item) => item.id!}
+        contentContainerStyle={{ paddingBottom: 80 }}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+        initialNumToRender={12}
+        updateCellsBatchingPeriod={50}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            className="mb-3 p-3 bg-gray-100 rounded-lg"
+            onPress={() => onSelectItem(item)}
+          >
+            <Text className="text-lg font-medium text-gray-800">
+              {item.name}
+            </Text>
+            <Text className="text-gray-600">${item.price.toFixed(2)}</Text>
+          </TouchableOpacity>
+        )}
+      />
+    </View>
   );
 }

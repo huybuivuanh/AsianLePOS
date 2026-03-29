@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   useWindowDimensions,
 } from "react-native";
-import { sortCategoriesByOrder } from "../menuOrdering";
+import { sortCategoriesByOrder } from "../../../utils/menuOrdering";
 
 type Props = {
   categories: FoodCategory[];
@@ -15,10 +15,7 @@ type Props = {
 const GAP = 12;
 const H_PADDING = 16;
 
-export default function CategoryGrid({
-  categories,
-  onSelectCategory,
-}: Props) {
+export default function CategoryGrid({ categories, onSelectCategory }: Props) {
   const { width } = useWindowDimensions();
 
   const numColumns = useMemo(() => {
@@ -28,10 +25,7 @@ export default function CategoryGrid({
     return 5;
   }, [width]);
 
-  const sorted = useMemo(
-    () => sortCategoriesByOrder(categories),
-    [categories]
-  );
+  const sorted = useMemo(() => sortCategoriesByOrder(categories), [categories]);
 
   const itemWidth = useMemo(() => {
     const totalGap = GAP * (numColumns - 1);
@@ -64,7 +58,7 @@ export default function CategoryGrid({
         <TouchableOpacity
           onPress={() => onSelectCategory(item)}
           style={{ width: itemWidth }}
-          className="min-h-[88px] p-3 bg-gray-100 rounded-xl justify-center"
+          className="min-h-[88px] p-3 bg-gray-100 rounded-xl justify-center bg-sky-300"
           activeOpacity={0.7}
         >
           <Text

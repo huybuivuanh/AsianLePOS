@@ -20,12 +20,8 @@ export default function CategoryItemsView({
   return (
     <SafeAreaViewWrapper className="flex-1 bg-white">
       <Header title={title} onBack={onBack} />
-      <View className="flex-1 px-4 pt-2">
-        <SearchResults
-          items={items}
-          query=""
-          onSelectItem={onSelectItem}
-        />
+      <View className="flex-1 pt-2">
+        <SearchResults items={items} query="" onSelectItem={onSelectItem} />
       </View>
     </SafeAreaViewWrapper>
   );
