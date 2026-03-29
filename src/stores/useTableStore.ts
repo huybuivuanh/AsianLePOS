@@ -1,5 +1,5 @@
-import { TableStatus } from "@/types/enum";
-import { sortTables } from "@/utils/utils";
+import { TableStatus } from "@/types/enums";
+import { sortTables } from "@/utils/helpers";
 import {
   collection,
   doc,

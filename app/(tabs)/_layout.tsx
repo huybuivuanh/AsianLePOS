@@ -1,4 +1,4 @@
-// app/(tabs)/layout.tsx
+// app/(tabs)/_layout.tsx
 import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { loadCachedMenu, useMenuStore } from "@/stores/useMenuStore";
 import { useOrderHistoryStore } from "@/stores/useOrderHistoryStore";
@@ -129,7 +129,7 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="dinein"
+        name="dine-in"
         options={{
           title: "Dine In",
           tabBarIcon: ({ color, size }) => (
@@ -138,7 +138,7 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="liveorders"
+        name="live-orders"
         options={{
           title: "Live Orders",
           tabBarIcon: ({ color, size }) => (
@@ -147,7 +147,7 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="orderhistory"
+        name="order-history"
         options={{
           title: "History",
           tabBarIcon: ({ color, size }) => (

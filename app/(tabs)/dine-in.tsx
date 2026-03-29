@@ -1,7 +1,7 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
-import { TableStatus } from "@/types/enum";
+import { TableStatus } from "@/types/enums";
 import { useRouter } from "expo-router";
 import { Check, X } from "lucide-react-native";
 import React, { useEffect } from "react";

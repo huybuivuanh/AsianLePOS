@@ -1,5 +1,5 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
-import OrderItemCard from "@/components/takeout/reviewOrder/OrderItemCard";
+import OrderItemCard from "@/components/takeout/review-order/OrderItemCard";
 import Header from "@/components/ui/Header";
 import { useAuth } from "@/providers/AuthProvider";
 import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
@@ -9,7 +9,7 @@ import {
   calculateTaxBreakdown,
   convertOrderTimestamps,
   showAlert,
-} from "@/utils/utils";
+} from "@/utils/helpers";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, {
   useCallback,
@@ -131,7 +131,7 @@ export default function EditDinInOrder() {
     // Temporarily set order in store for item editing, then restore local state
     setOrder(localOrder);
     setEditingOrder(true);
-    router.push("/liveorders/additempage");
+    router.push("/live-orders/add-item");
   };
 
   // Sync: Keep store in sync with local order for OrderItemCard to work

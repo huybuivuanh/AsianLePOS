@@ -1,4 +1,4 @@
-// components/ui/Header.tsx
+// src/components/ui/Header.tsx
 import { Ionicons } from "@expo/vector-icons";
 import { ArrowLeft } from "lucide-react-native";
 import { Platform, Text, TouchableOpacity, View } from "react-native";

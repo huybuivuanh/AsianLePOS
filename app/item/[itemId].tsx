@@ -5,8 +5,8 @@ import SpecialFlagsSelector from "@/components/takeout/SpecialFlagsSelector";
 import Header from "@/components/ui/Header";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
-import { OrderType } from "@/types/enum";
-import { generateFirestoreId, showAlert } from "@/utils/utils";
+import { OrderType } from "@/types/enums";
+import { generateFirestoreId, showAlert } from "@/utils/helpers";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {

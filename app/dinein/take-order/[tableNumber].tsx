@@ -2,7 +2,7 @@ import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
 import Header from "@/components/ui/Header";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
-import { OrderType } from "@/types/enum";
+import { OrderType } from "@/types/enums";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { X } from "lucide-react-native";
 import React, { useCallback, useMemo, useState } from "react";
@@ -106,7 +106,7 @@ export default function TakeOrder() {
           onPress={() => {
             setEditingOrder(false);
             router.push({
-              pathname: "/dinein/reviewdineinorder/[tableNumber]",
+              pathname: "/dinein/review-order/[tableNumber]",
               params: { tableNumber },
             });
           }}

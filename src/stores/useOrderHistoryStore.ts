@@ -1,4 +1,4 @@
-// app/stores/useOrderHistoryStore.ts
+// src/stores/useOrderHistoryStore.ts
 import { collection, getDocs, limit, orderBy, query } from "firebase/firestore";
 import { create } from "zustand";
 import { db } from "../lib/firebaseConfig";
@@ -6,7 +6,7 @@ import {
   clearOrderHistoryCache,
   loadOrderHistoryFromCache,
   saveOrderHistoryToCache,
-} from "../utils/orderHistoryCache";
+} from "../utils/order-history-cache";
 
 type OrderHistoryState = {
   orderHistory: Order[];

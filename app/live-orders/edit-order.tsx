@@ -1,10 +1,10 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
-import OrderFooter from "@/components/takeout/reviewOrder/OrderFooter";
-import OrderItemCard from "@/components/takeout/reviewOrder/OrderItemCard";
+import OrderFooter from "@/components/takeout/review-order/OrderFooter";
+import OrderItemCard from "@/components/takeout/review-order/OrderItemCard";
 import Header from "@/components/ui/Header";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrderStore } from "@/stores/useOrderStore";
-import { showAlert } from "@/utils/utils";
+import { showAlert } from "@/utils/helpers";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -76,7 +76,7 @@ export default function EditOrder() {
   };
 
   const handleAddItem = () => {
-    router.push("/liveorders/additempage");
+    router.push("/live-orders/add-item");
   };
 
   const isSubmitDisabled =

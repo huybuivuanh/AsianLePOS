@@ -1,6 +1,6 @@
 import EditTableForm from "./EditTableForm";
 import { useTableStore } from "@/stores/useTableStore";
-import { TableStatus } from "@/types/enum";
+import { TableStatus } from "@/types/enums";
 import React, { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 

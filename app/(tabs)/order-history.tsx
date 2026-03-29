@@ -1,8 +1,8 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
 import { useOrderHistoryStore } from "@/stores/useOrderHistoryStore";
 import { useOrderStore } from "@/stores/useOrderStore";
-import { OrderStatus, OrderType } from "@/types/enum";
-import { calculateTaxBreakdown, formatDate, formatPhone } from "@/utils/utils";
+import { OrderStatus, OrderType } from "@/types/enums";
+import { calculateTaxBreakdown, formatDate, formatPhone } from "@/utils/helpers";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,

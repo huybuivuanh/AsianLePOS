@@ -1,7 +1,7 @@
 import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
-import { TableStatus } from "@/types/enum";
+import { TableStatus } from "@/types/enums";
 import React, { useEffect, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 

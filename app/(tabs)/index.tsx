@@ -1,8 +1,8 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
-import { OrderType } from "@/types/enum";
-import { debounce } from "@/utils/memoryUtils";
+import { OrderType } from "@/types/enums";
+import { debounce } from "@/utils/memory-utils";
 import { useFocusEffect, useRouter } from "expo-router";
 import { X } from "lucide-react-native";
 import React, { useCallback, useMemo, useState } from "react";
@@ -127,7 +127,7 @@ export default function TakeOut() {
           className="bg-gray-800 py-3 rounded-lg items-center"
           onPress={() => {
             setEditingOrder(false);
-            router.push("/takeout/revieworder");
+            router.push("/takeout/review-order");
           }}
         >
           <Text className="text-white font-bold text-lg">

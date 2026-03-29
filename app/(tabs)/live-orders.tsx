@@ -1,13 +1,13 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
 import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
-import { OrderStatus } from "@/types/enum";
+import { OrderStatus } from "@/types/enums";
 import {
   calculateTaxBreakdown,
   convertOrderTimestamps,
   formatDate,
   formatPhone,
-} from "@/utils/utils";
+} from "@/utils/helpers";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -115,7 +115,7 @@ export default function LiveOrders() {
     // Convert Firestore Timestamps to JavaScript Dates
     const convertedOrder = convertOrderTimestamps(order);
     setOrder(convertedOrder);
-    router.push("/liveorders/editorder");
+    router.push("/live-orders/edit-order");
   }
 
   const renderOrder = ({ item }: { item: Order }) => {

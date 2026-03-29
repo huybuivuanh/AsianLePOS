@@ -1,7 +1,7 @@
 import SpecialFlagsSelector from "@/components/takeout/SpecialFlagsSelector";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
-import { OrderType } from "@/types/enum";
+import { OrderType } from "@/types/enums";
 import { useRouter } from "expo-router";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";

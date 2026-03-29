@@ -1,4 +1,4 @@
-// app/stores/useMenuStore.ts
+// src/stores/useMenuStore.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { collection, doc, getDocs, onSnapshot } from "firebase/firestore";
 import { create } from "zustand";

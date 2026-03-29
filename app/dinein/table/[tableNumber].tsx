@@ -4,8 +4,8 @@ import Header from "@/components/ui/Header";
 import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
-import { OrderType, TableStatus } from "@/types/enum";
-import { calculateTaxBreakdown, showAlert } from "@/utils/utils";
+import { OrderType, TableStatus } from "@/types/enums";
+import { calculateTaxBreakdown, showAlert } from "@/utils/helpers";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Check } from "lucide-react-native";
 import React, { useEffect, useMemo, useState } from "react";
@@ -113,7 +113,7 @@ export default function TablePage() {
       });
       setOrder(null);
       await completeOrder(order);
-      router.replace("/dinein");
+      router.replace("/dine-in");
     } catch (err) {
       console.error("Failed to complete order:", err);
     }
@@ -170,7 +170,7 @@ export default function TablePage() {
       <Header
         title={`Table ${tableNumber}`}
         onBack={() => {
-          router.replace("/dinein");
+          router.replace("/dine-in");
         }}
       />
 
@@ -388,7 +388,7 @@ export default function TablePage() {
                         orderType: OrderType.DineIn,
                       });
                       router.push({
-                        pathname: "/dinein/takeorder/[tableNumber]",
+                        pathname: "/dinein/take-order/[tableNumber]",
                         params: { tableNumber },
                       });
                     } else {
@@ -397,7 +397,7 @@ export default function TablePage() {
                       });
                       setEditingOrder(true);
                       router.push({
-                        pathname: "/dinein/editdineinorder/[tableNumber]",
+                        pathname: "/dinein/edit-order/[tableNumber]",
                         params: { tableNumber },
                       });
                     }

@@ -1,6 +1,6 @@
 import { db } from "@/lib/firebaseConfig";
-import { OrderStatus, OrderType } from "@/types/enum";
-import { calculateTaxBreakdown } from "@/utils/utils";
+import { OrderStatus, OrderType } from "@/types/enums";
+import { calculateTaxBreakdown } from "@/utils/helpers";
 import {
   collection,
   doc,

@@ -1,16 +1,16 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
-import OrderItemCard from "@/components/takeout/reviewOrder/OrderItemCard";
+import OrderItemCard from "@/components/takeout/review-order/OrderItemCard";
 import Header from "@/components/ui/Header";
 import { db } from "@/lib/firebaseConfig";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
-import { OrderStatus, OrderType, TableStatus } from "@/types/enum";
+import { OrderStatus, OrderType, TableStatus } from "@/types/enums";
 import {
   calculateTaxBreakdown,
   generateFirestoreId,
   showAlert,
-} from "@/utils/utils";
+} from "@/utils/helpers";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { doc, Timestamp, writeBatch } from "firebase/firestore";
 import React, { useState } from "react";

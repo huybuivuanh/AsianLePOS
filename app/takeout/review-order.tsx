@@ -1,10 +1,10 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
-import OrderFooter from "@/components/takeout/reviewOrder/OrderFooter";
-import OrderItemCard from "@/components/takeout/reviewOrder/OrderItemCard";
+import OrderFooter from "@/components/takeout/review-order/OrderFooter";
+import OrderItemCard from "@/components/takeout/review-order/OrderItemCard";
 import Header from "@/components/ui/Header";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrderStore } from "@/stores/useOrderStore";
-import { generateFirestoreId, showAlert } from "@/utils/utils";
+import { generateFirestoreId, showAlert } from "@/utils/helpers";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -49,7 +49,7 @@ export default function ReviewOrder() {
       setSubmitting(true);
       await submitOrder(newOrder);
       router.push({
-        pathname: "/liveorders",
+        pathname: "/live-orders",
         params: { orderId: orderId },
       });
     } catch (error: any) {
