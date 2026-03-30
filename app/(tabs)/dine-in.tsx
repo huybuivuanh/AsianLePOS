@@ -1,4 +1,5 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
+import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { TableStatus } from "@/types/enums";
@@ -11,6 +12,7 @@ export default function DineIn() {
   const { tables } = useTableStore();
   const router = useRouter();
   const { clearOrder } = useOrderStore();
+  const { dineInOrders } = useLiveOrdersStore();
 
   useEffect(() => {
     clearOrder();
@@ -24,6 +26,11 @@ export default function DineIn() {
       pathname: "/dinein/table/[tableNumber]",
       params: { tableNumber },
     });
+  };
+
+  const getPrintedStatus = (orderId: string) => {
+    const order = dineInOrders.find((o) => o.id === orderId);
+    return order?.printed ?? false;
   };
 
   const renderItem: ListRenderItem<(typeof tables)[0]> = ({ item }) => {
@@ -48,6 +55,16 @@ export default function DineIn() {
               <Check size={16} color="green" />
             ) : (
               <X size={16} color="red" />
+            )}
+            {item.currentOrderId && (
+              <View className="flex-row items-center space-x-1">
+                <Text className="text-sm">Printed:</Text>
+                {getPrintedStatus(item.currentOrderId) ? (
+                  <Check size={16} color="green" />
+                ) : (
+                  <X size={16} color="red" />
+                )}
+              </View>
             )}
           </View>
         </View>
