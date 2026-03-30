@@ -1,7 +1,7 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
+import Header from "@/components/ui/Header";
 import { OrderItemCard } from "@/features/order";
 import { OrderFooter } from "@/features/takeout";
-import Header from "@/components/ui/Header";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { showAlert } from "@/utils/helpers";
@@ -35,15 +35,10 @@ export default function EditOrder() {
     }
 
     try {
-      const staff: User = {
-        id: user.uid,
-        name: user.displayName || "Unknown",
-        email: user.email || undefined,
-      };
       setSubmitting(true);
       // Create a clean order object with only defined values
       // Use conditional spreading for ALL optional fields to avoid undefined values
-      await updateOrderOnFirestore({ ...order, staff });
+      await updateOrderOnFirestore({ ...order });
       clearOrder();
       router.back();
     } catch (error: any) {

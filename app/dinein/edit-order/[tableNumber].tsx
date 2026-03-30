@@ -1,6 +1,6 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
-import { OrderItemCard } from "@/features/order";
 import Header from "@/components/ui/Header";
+import { OrderItemCard } from "@/features/order";
 import { useAuth } from "@/providers/AuthProvider";
 import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
@@ -52,7 +52,7 @@ export default function EditDinInOrder() {
 
   // ✅ Use LOCAL STATE for editing - no conflicts with order store
   const [localOrder, setLocalOrder] = useState<Partial<DineInOrder> | null>(
-    null
+    null,
   );
 
   // ✅ Initialize local order from Firestore on mount
@@ -88,17 +88,11 @@ export default function EditDinInOrder() {
     }
 
     try {
-      const staff: User = {
-        id: user.uid,
-        name: user.displayName || "Unknown",
-        email: user.email || undefined,
-      };
       setSubmitting(true);
 
       // Create a clean order object with only the fields we need
       const cleanOrder = {
         ...localOrder,
-        staff,
       };
 
       await updateOrderOnFirestore(cleanOrder);
