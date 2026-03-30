@@ -1,6 +1,11 @@
-import { CategoryItemsView, getMenuItemsForCategory } from "@/features/takeout";
+import {
+  CategoryItemsView,
+  buildItemScreenParams,
+  getMenuItemsForCategory,
+} from "@/features/takeout";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
+import { OrderType } from "@/types/enums";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import { Text } from "react-native";
@@ -32,11 +37,10 @@ export default function LiveOrdersCategoryItems() {
       onSelectItem={(item) =>
         router.push({
           pathname: "/item/[itemId]",
-          params: {
-            itemId: item.id!,
-            orderType: order.orderType,
+          params: buildItemScreenParams(item, {
+            orderType: order.orderType ?? OrderType.TakeOut,
             menuEntry: "category",
-          },
+          }),
         })
       }
     />

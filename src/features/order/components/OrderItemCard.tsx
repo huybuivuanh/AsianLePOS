@@ -1,3 +1,4 @@
+import { buildItemScreenParams } from "@/features/takeout";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enums";
@@ -128,11 +129,10 @@ export default function OrderItemCard({ item }: Props) {
               if (menuItem?.id) {
                 router.push({
                   pathname: "/item/[itemId]",
-                  params: {
-                    itemId: menuItem.id,
-                    orderType: order.orderType,
+                  params: buildItemScreenParams(menuItem, {
+                    orderType: order.orderType ?? OrderType.TakeOut,
                     orderItemId: item.id,
-                  },
+                  }),
                 });
               }
             }

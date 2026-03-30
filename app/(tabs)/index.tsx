@@ -1,115 +1,61 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
 import {
-  CategoryGrid,
-  SearchResults,
+  MenuPickerBody,
+  buildItemScreenParams,
   getVisibleMenuItemsInCategoryOrder,
+  useDebouncedMenuSearch,
 } from "@/features/takeout";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enums";
-import { debounce } from "@/utils/memory-utils";
-import { useFocusEffect, useRouter, type Href } from "expo-router";
-import { X } from "lucide-react-native";
-import React, { useCallback, useMemo, useState } from "react";
-import {
-  Keyboard,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { useRouter, type Href } from "expo-router";
+import React, { useMemo } from "react";
+import { Text, TouchableOpacity, View } from "react-native";
 
 export default function TakeOut() {
   const router = useRouter();
   const { categories, menuItems, loading } = useMenuStore();
-  const [query, setQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
   const totalItems = useOrderStore((state) => state.getTotalItems());
 
-  const debouncedSetQuery = useMemo(
-    () =>
-      debounce((value: string) => {
-        setDebouncedQuery(value);
-      }, 300),
-    [],
-  );
-
-  const handleQueryChange = useCallback(
-    (value: string) => {
-      setQuery(value);
-      debouncedSetQuery(value);
-    },
-    [debouncedSetQuery],
-  );
-
-  useFocusEffect(
-    useCallback(() => {
-      setQuery("");
-      setDebouncedQuery("");
-    }, []),
-  );
+  const {
+    query,
+    debouncedQuery,
+    handleQueryChange,
+    clearSearch,
+    searching,
+  } = useDebouncedMenuSearch();
 
   const searchItems = useMemo(
     () => getVisibleMenuItemsInCategoryOrder(categories, menuItems),
-    [categories, menuItems],
+    [categories, menuItems]
   );
 
   if (loading) return <Text>Loading...</Text>;
   if (!categories.length) return <Text>No categories found</Text>;
 
-  const handleSelectItem = (item: MenuItem) => {
-    router.push({
-      pathname: "/item/[itemId]",
-      params: { itemId: item.id!, orderType: OrderType.TakeOut },
-    });
-  };
-
-  const searching = debouncedQuery.trim().length > 0;
-
   return (
     <SafeAreaViewWrapper className="flex-1">
       <View className="flex-1 px-4 pt-4">
-        <View className="relative mb-4">
-          <TextInput
-            placeholder="Search menu items..."
-            value={query}
-            onChangeText={handleQueryChange}
-            className="border border-gray-300 rounded-lg p-3 pr-12"
-            returnKeyLabel="Hide"
-            returnKeyType="done"
-            onSubmitEditing={() => Keyboard.dismiss()}
-            autoCorrect={false}
-          />
-          <TouchableOpacity
-            onPress={() => {
-              setQuery("");
-              setDebouncedQuery("");
-            }}
-            disabled={query.length === 0}
-            className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 ${
-              query.length === 0 ? "opacity-30" : ""
-            }`}
-          >
-            <X size={20} color="#6B7280" />
-          </TouchableOpacity>
-        </View>
-
-        <View className="flex-1 -mx-4">
-          {searching ? (
-            <SearchResults
-              items={searchItems}
-              query={debouncedQuery}
-              onSelectItem={handleSelectItem}
-            />
-          ) : (
-            <CategoryGrid
-              categories={categories}
-              onSelectCategory={(cat) =>
-                router.push(`/takeout/category/${cat.id!}` as Href)
-              }
-            />
-          )}
-        </View>
+        <MenuPickerBody
+          query={query}
+          debouncedQuery={debouncedQuery}
+          searching={searching}
+          onQueryChange={handleQueryChange}
+          onClearSearch={clearSearch}
+          searchItems={searchItems}
+          onSelectSearchItem={(item) =>
+            router.push({
+              pathname: "/item/[itemId]",
+              params: buildItemScreenParams(item, {
+                orderType: OrderType.TakeOut,
+              }),
+            })
+          }
+          categories={categories}
+          onSelectCategory={(cat) =>
+            router.push(`/takeout/category/${cat.id!}` as Href)
+          }
+        />
       </View>
 
       <View className="absolute bottom-4 left-0 right-0 px-4">

@@ -1,4 +1,8 @@
-import { CategoryItemsView, getMenuItemsForCategory } from "@/features/takeout";
+import {
+  CategoryItemsView,
+  buildItemScreenParams,
+  getMenuItemsForCategory,
+} from "@/features/takeout";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { OrderType } from "@/types/enums";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -31,7 +35,9 @@ export default function TakeOutCategoryItems() {
       onSelectItem={(item) =>
         router.push({
           pathname: "/item/[itemId]",
-          params: { itemId: item.id!, orderType: OrderType.TakeOut },
+          params: buildItemScreenParams(item, {
+            orderType: OrderType.TakeOut,
+          }),
         })
       }
     />

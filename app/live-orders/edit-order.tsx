@@ -1,6 +1,6 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
 import Header from "@/components/ui/Header";
-import { OrderItemCard } from "@/features/order";
+import { OrderLinesList } from "@/features/order";
 import { OrderFooter } from "@/features/takeout";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrderStore } from "@/stores/useOrderStore";
@@ -88,15 +88,7 @@ export default function EditOrder() {
           className="flex-1 px-4"
           keyboardShouldPersistTaps="handled"
         >
-          {!order.orderItems || order.orderItems.length === 0 ? (
-            <Text className="text-gray-500 text-center mt-10">
-              Your order is empty.
-            </Text>
-          ) : (
-            order.orderItems.map((item, index) => (
-              <OrderItemCard key={`${item.id}-${index}`} item={item} />
-            ))
-          )}
+          <OrderLinesList orderItems={order.orderItems} />
         </KeyboardAwareScrollView>
 
         {/* Toggle Footer */}
