@@ -1,5 +1,12 @@
 // src/stores/useOrderHistoryStore.ts
-import { collection, getDocs, limit, orderBy, query } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+} from "firebase/firestore";
 import { create } from "zustand";
 import { db } from "../lib/firebaseConfig";
 import {
@@ -9,7 +16,9 @@ import {
 } from "../utils/order-history-cache";
 
 type OrderHistoryState = {
+  fullOrderHistory: AnyOrder[];
   orderHistory: AnyOrder[];
+  visibleLimit: number;
   loading: boolean;
   loadingMore: boolean;
   hasMore: boolean;
@@ -17,142 +26,156 @@ type OrderHistoryState = {
   loadOrderHistory: () => Promise<void>;
   loadMoreOrders: () => Promise<void>;
   refreshOrderHistory: () => Promise<void>;
-  subscribeToOrderHistory: () => () => void; // Backward compatibility
+  subscribeToOrderHistory: () => () => void;
   clearData: () => void;
 };
 
-// Initial display: show first 50 orders
-// Load more in batches of 25 as user scrolls
-// Full cache stored in AsyncStorage
 const INITIAL_DISPLAY_LIMIT = 50;
 const LOAD_MORE_BATCH_SIZE = 25;
 const CACHE_LIMIT = 200;
 
-export const useOrderHistoryStore = create<OrderHistoryState>((set, get) => ({
-  orderHistory: [],
-  loading: true,
-  loadingMore: false,
-  hasMore: false,
-  lastFetchTime: null,
+function historyQuery() {
+  return query(
+    collection(db, "orderHistory"),
+    orderBy("createdAt", "desc"),
+    limit(CACHE_LIMIT),
+  );
+}
 
-  loadOrderHistory: async () => {
-    set({ loading: true });
+export const useOrderHistoryStore = create<OrderHistoryState>((set, get) => {
+  const applyFullList = (full: AnyOrder[]) => {
+    const capped = full.slice(0, CACHE_LIMIT);
+    const { visibleLimit } = get();
+    const displayed = capped.slice(0, Math.min(visibleLimit, capped.length));
+    const hasMore = capped.length > displayed.length;
+    set({
+      fullOrderHistory: capped,
+      orderHistory: displayed,
+      hasMore,
+      loading: false,
+      lastFetchTime: Date.now(),
+    });
+  };
 
-    try {
-      // Try to load from cache first (instant display)
-      const { orders: cachedOrders, isExpired } =
-        await loadOrderHistoryFromCache();
-      if (cachedOrders && cachedOrders.length > 0) {
-        // Display initial batch
-        const initialOrders = cachedOrders.slice(0, INITIAL_DISPLAY_LIMIT);
-        const hasMore = cachedOrders.length > INITIAL_DISPLAY_LIMIT;
-        set({
-          orderHistory: initialOrders,
-          hasMore,
-          loading: false,
-          lastFetchTime: Date.now(),
-        });
+  return {
+    fullOrderHistory: [],
+    orderHistory: [],
+    visibleLimit: INITIAL_DISPLAY_LIMIT,
+    loading: true,
+    loadingMore: false,
+    hasMore: false,
+    lastFetchTime: null,
+
+    loadOrderHistory: async () => {
+      try {
+        if (get().fullOrderHistory.length > 0) {
+          set({ loading: false });
+          return;
+        }
+
+        set({ loading: true });
+
+        const { orders: cachedOrders } = await loadOrderHistoryFromCache();
+        if (cachedOrders && cachedOrders.length > 0) {
+          applyFullList(cachedOrders.slice(0, CACHE_LIMIT));
+        }
+        // Live data arrives via subscribeToOrderHistory onSnapshot
+      } catch (error) {
+        console.error("❌ Error loading order history:", error);
+        set({ loading: false });
+      }
+    },
+
+    loadMoreOrders: async () => {
+      const state = get();
+      if (state.loadingMore || !state.hasMore) {
+        return;
       }
 
-      // Only fetch fresh data if cache is expired or doesn't exist
-      // This saves network requests and battery when cache is still fresh
-      if (isExpired || !cachedOrders || cachedOrders.length === 0) {
-        await get().refreshOrderHistory();
-      }
-    } catch (error) {
-      console.error("❌ Error loading order history:", error);
-      set({ loading: false });
-    }
-  },
+      set({ loadingMore: true });
 
-  loadMoreOrders: async () => {
-    const state = get();
-    if (state.loadingMore || !state.hasMore) {
-      return;
-    }
+      try {
+        const { fullOrderHistory, visibleLimit } = state;
+        if (fullOrderHistory.length === 0) {
+          set({ loadingMore: false, hasMore: false });
+          return;
+        }
 
-    set({ loadingMore: true });
-
-    try {
-      // Load more from cache
-      const { orders: cachedOrders } = await loadOrderHistoryFromCache();
-      if (cachedOrders && cachedOrders.length > 0) {
-        const currentCount = state.orderHistory.length;
-        const nextBatch = cachedOrders.slice(
-          currentCount,
-          currentCount + LOAD_MORE_BATCH_SIZE
+        const nextLimit = visibleLimit + LOAD_MORE_BATCH_SIZE;
+        const displayed = fullOrderHistory.slice(
+          0,
+          Math.min(nextLimit, fullOrderHistory.length),
         );
-        const hasMore =
-          cachedOrders.length > currentCount + LOAD_MORE_BATCH_SIZE;
+        const hasMore = displayed.length < fullOrderHistory.length;
 
         set({
-          orderHistory: [...state.orderHistory, ...nextBatch],
+          visibleLimit: nextLimit,
+          orderHistory: displayed,
           hasMore,
           loadingMore: false,
         });
-      } else {
-        set({ loadingMore: false, hasMore: false });
+      } catch (error) {
+        console.error("❌ Error loading more orders:", error);
+        set({ loadingMore: false });
       }
-    } catch (error) {
-      console.error("❌ Error loading more orders:", error);
-      set({ loadingMore: false });
-    }
-  },
+    },
 
-  refreshOrderHistory: async () => {
-    try {
-      const orderHistoryRef = collection(db, "orderHistory");
-      // Query to fetch only the latest orders, ordered by createdAt descending
-      const q = query(
-        orderHistoryRef,
-        orderBy("createdAt", "desc"),
-        limit(CACHE_LIMIT)
+    refreshOrderHistory: async () => {
+      try {
+        const snapshot = await getDocs(historyQuery());
+        const orderHistoryData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...(doc.data() as AnyOrder),
+        }));
+
+        await saveOrderHistoryToCache(orderHistoryData);
+        applyFullList(orderHistoryData);
+      } catch (error) {
+        console.error("❌ Error refreshing order history:", error);
+        set({ loading: false });
+      }
+    },
+
+    subscribeToOrderHistory: () => {
+      set({ loading: true });
+
+      void loadOrderHistoryFromCache().then(({ orders: cachedOrders }) => {
+        if (cachedOrders?.length && get().fullOrderHistory.length === 0) {
+          applyFullList(cachedOrders.slice(0, CACHE_LIMIT));
+        }
+      });
+
+      const q = historyQuery();
+      const unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          const orderHistoryData = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...(doc.data() as AnyOrder),
+          }));
+          void saveOrderHistoryToCache(orderHistoryData);
+          applyFullList(orderHistoryData);
+        },
+        (error) => {
+          console.error("❌ Order history snapshot error:", error);
+          set({ loading: false });
+        },
       );
 
-      const snapshot = await getDocs(q);
-      const orderHistoryData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as AnyOrder),
-      }));
+      return () => unsubscribe();
+    },
 
-      // Save full dataset to cache
-      await saveOrderHistoryToCache(orderHistoryData);
-
-      // Display initial batch, allow loading more
-      const initialOrders = orderHistoryData.slice(0, INITIAL_DISPLAY_LIMIT);
-      const hasMore = orderHistoryData.length > INITIAL_DISPLAY_LIMIT;
-
+    clearData: async () => {
+      await clearOrderHistoryCache();
       set({
-        orderHistory: initialOrders,
-        hasMore,
-        loading: false,
-        lastFetchTime: Date.now(),
+        fullOrderHistory: [],
+        orderHistory: [],
+        visibleLimit: INITIAL_DISPLAY_LIMIT,
+        loading: true,
+        loadingMore: false,
+        hasMore: false,
+        lastFetchTime: null,
       });
-    } catch (error) {
-      console.error("❌ Error refreshing order history:", error);
-      set({ loading: false });
-    }
-  },
-
-  // Backward compatibility: subscribeToOrderHistory now just loads data once
-  // (History doesn't need real-time updates like live orders)
-  subscribeToOrderHistory: () => {
-    // Load data immediately
-    get().loadOrderHistory();
-    // Return a no-op cleanup function for compatibility
-    return () => {
-      // No-op: we're not using real-time subscriptions anymore
-    };
-  },
-
-  clearData: async () => {
-    await clearOrderHistoryCache();
-    set({
-      orderHistory: [],
-      loading: true,
-      loadingMore: false,
-      hasMore: false,
-      lastFetchTime: null,
-    });
-  },
-}));
+    },
+  };
+});
