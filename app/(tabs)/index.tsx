@@ -25,7 +25,6 @@ export default function TakeOut() {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const totalItems = useOrderStore((state) => state.getTotalItems());
-  const setEditingOrder = useOrderStore((state) => state.setEditingOrder);
 
   const debouncedSetQuery = useMemo(
     () =>
@@ -117,7 +116,6 @@ export default function TakeOut() {
         <TouchableOpacity
           className="bg-gray-800 py-3 rounded-lg items-center"
           onPress={() => {
-            setEditingOrder(false);
             router.push("/takeout/review-order");
           }}
         >

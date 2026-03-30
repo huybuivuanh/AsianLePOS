@@ -25,7 +25,6 @@ export default function EditDinInOrder() {
   const updateOrderOnFirestore = useOrderStore((s) => s.updateOrderOnFirestore);
   const clearOrder = useOrderStore((s) => s.clearOrder);
   const setOrder = useOrderStore((s) => s.setOrder);
-  const setEditingOrder = useOrderStore((s) => s.setEditingOrder);
 
   const { user } = useAuth();
 
@@ -45,7 +44,6 @@ export default function EditDinInOrder() {
   useEffect(() => {
     if (!currentOrder?.id) return;
     setOrder(convertOrderTimestamps(currentOrder));
-    setEditingOrder(true);
     // Only re-hydrate when this table’s order id changes — not on every live snapshot
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentOrder?.id]);
@@ -64,7 +62,6 @@ export default function EditDinInOrder() {
       setSubmitting(true);
       await updateOrderOnFirestore(order);
       clearOrder();
-      setEditingOrder(false);
       router.replace({
         pathname: "/dinein/table/[tableNumber]",
         params: { tableNumber },
@@ -80,7 +77,6 @@ export default function EditDinInOrder() {
 
   const handleAddItem = () => {
     if (!order.id) return;
-    setEditingOrder(true);
     router.push("/live-orders/add-item");
   };
 
@@ -93,7 +89,6 @@ export default function EditDinInOrder() {
         title="Edit Order"
         onBack={() => {
           clearOrder();
-          setEditingOrder(false);
           router.back();
         }}
       />

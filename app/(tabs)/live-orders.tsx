@@ -38,7 +38,6 @@ export default function LiveOrders() {
   const router = useRouter();
   const {
     setOrder,
-    setEditingOrder,
     cancelOrder,
     completeOrder,
     markOrderAsPaid,
@@ -115,7 +114,6 @@ export default function LiveOrders() {
   };
 
   function handleEditOrder(order: TakeOutOrder) {
-    setEditingOrder(true);
     // Convert Firestore Timestamps to JavaScript Dates
     const convertedOrder = convertOrderTimestamps(order);
     setOrder(convertedOrder);

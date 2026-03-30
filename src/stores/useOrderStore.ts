@@ -23,9 +23,7 @@ type OrderDraft = Partial<Order> & {
 
 type OrderState = {
   order: OrderDraft;
-  editingOrder: boolean;
 
-  setEditingOrder: (editing: boolean) => void;
   updateOrder: (fields: OrderDraft) => void;
   addItem: (item: OrderItem) => void;
   removeItem: (itemId: string) => void;
@@ -104,9 +102,6 @@ function mergeOrderDraft(
 
 export const useOrderStore = create<OrderState>((set, get) => ({
   order: { ...defaultTakeOutDraft },
-  editingOrder: false,
-
-  setEditingOrder: (editing) => set({ editingOrder: editing }),
 
   updateOrder: (fields) =>
     set((state) => ({

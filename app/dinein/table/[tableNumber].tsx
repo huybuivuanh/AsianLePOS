@@ -38,7 +38,6 @@ export default function TablePage() {
   const { dineInOrders, loading: ordersLoading } = useLiveOrdersStore();
   const {
     clearOrder,
-    setEditingOrder,
     cancelOrder,
     completeOrder,
     markOrderAsPaid,
@@ -396,7 +395,6 @@ export default function TablePage() {
                       updateOrder({
                         orderType: OrderType.DineIn,
                       });
-                      setEditingOrder(true);
                       router.push({
                         pathname: "/dinein/edit-order/[tableNumber]",
                         params: { tableNumber },
