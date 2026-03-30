@@ -13,13 +13,12 @@ export default function LiveOrdersCategoryItems() {
 
   const category = useMemo(
     () => categories.find((c) => c.id === categoryId),
-    [categories, categoryId]
+    [categories, categoryId],
   );
 
   const items = useMemo(
-    () =>
-      category ? getMenuItemsForCategory(category, menuItems) : [],
-    [category, menuItems]
+    () => (category ? getMenuItemsForCategory(category, menuItems) : []),
+    [category, menuItems],
   );
 
   if (loading) return <Text>Loading...</Text>;
@@ -33,7 +32,11 @@ export default function LiveOrdersCategoryItems() {
       onSelectItem={(item) =>
         router.push({
           pathname: "/item/[itemId]",
-          params: { itemId: item.id!, orderType: order.orderType },
+          params: {
+            itemId: item.id!,
+            orderType: order.orderType,
+            menuEntry: "category",
+          },
         })
       }
     />

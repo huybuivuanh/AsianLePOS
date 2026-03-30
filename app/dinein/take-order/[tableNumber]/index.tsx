@@ -38,7 +38,7 @@ export default function TakeOrder() {
       debounce((value: string) => {
         setDebouncedQuery(value);
       }, 300),
-    []
+    [],
   );
 
   const handleQueryChange = useCallback(
@@ -46,19 +46,19 @@ export default function TakeOrder() {
       setQuery(value);
       debouncedSetQuery(value);
     },
-    [debouncedSetQuery]
+    [debouncedSetQuery],
   );
 
   const searchItems = useMemo(
     () => getVisibleMenuItemsInCategoryOrder(categories, menuItems),
-    [categories, menuItems]
+    [categories, menuItems],
   );
 
   useFocusEffect(
     useCallback(() => {
       setQuery("");
       setDebouncedQuery("");
-    }, [])
+    }, []),
   );
 
   if (loading) return <Text>Loading...</Text>;
@@ -67,7 +67,11 @@ export default function TakeOrder() {
   const handleSelectItem = (item: MenuItem) => {
     router.push({
       pathname: "/item/[itemId]",
-      params: { itemId: item.id!, orderType: OrderType.DineIn },
+      params: {
+        itemId: item.id!,
+        orderType: OrderType.DineIn,
+        menuEntry: "search",
+      },
     });
   };
 
@@ -114,7 +118,7 @@ export default function TakeOrder() {
               categories={categories}
               onSelectCategory={(cat) =>
                 router.push(
-                  `/dinein/take-order/${tableNumber}/category/${cat.id!}` as Href
+                  `/dinein/take-order/${tableNumber}/category/${cat.id!}` as Href,
                 )
               }
             />

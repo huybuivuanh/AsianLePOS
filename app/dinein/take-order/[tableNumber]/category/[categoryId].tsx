@@ -15,13 +15,12 @@ export default function DineInCategoryItems() {
 
   const category = useMemo(
     () => categories.find((c) => c.id === categoryId),
-    [categories, categoryId]
+    [categories, categoryId],
   );
 
   const items = useMemo(
-    () =>
-      category ? getMenuItemsForCategory(category, menuItems) : [],
-    [category, menuItems]
+    () => (category ? getMenuItemsForCategory(category, menuItems) : []),
+    [category, menuItems],
   );
 
   if (loading) return <Text>Loading...</Text>;
@@ -35,7 +34,11 @@ export default function DineInCategoryItems() {
       onSelectItem={(item) =>
         router.push({
           pathname: "/item/[itemId]",
-          params: { itemId: item.id!, orderType: OrderType.DineIn },
+          params: {
+            itemId: item.id!,
+            orderType: OrderType.DineIn,
+            menuEntry: "category",
+          },
         })
       }
     />

@@ -1,10 +1,10 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
+import Header from "@/components/ui/Header";
 import {
   AddExtraEditor,
   ItemChangeEditor,
   SpecialFlagsSelector,
 } from "@/features/order";
-import Header from "@/components/ui/Header";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enums";
@@ -24,10 +24,15 @@ import {
 
 export default function Item() {
   const router = useRouter();
-  const { itemId, orderType, orderItemId } = useLocalSearchParams();
+  const { itemId, orderType, orderItemId, menuEntry } = useLocalSearchParams();
   const { menuItems, optionGroups, options } = useMenuStore();
   const { addItem, updateOrderItem, order } = useOrderStore();
-  const item = menuItems.find((i) => i.id === itemId);
+
+  const itemIdStr = Array.isArray(itemId) ? itemId[0] : itemId;
+  const orderTypeStr = Array.isArray(orderType) ? orderType[0] : orderType;
+  const menuEntryStr = Array.isArray(menuEntry) ? menuEntry[0] : menuEntry;
+
+  const item = menuItems.find((i) => i.id === itemIdStr);
   const orderItemIdStr = Array.isArray(orderItemId)
     ? orderItemId[0]
     : orderItemId;
@@ -40,7 +45,7 @@ export default function Item() {
 
   const [quantity, setQuantity] = useState(existingOrderItem?.quantity ?? 1);
   const [instructions, setInstructions] = useState(
-    existingOrderItem?.instructions ?? ""
+    existingOrderItem?.instructions ?? "",
   );
   // State: Record<groupId, Record<optionId, quantity>>
   const [selectedOptions, setSelectedOptions] = useState<
@@ -57,7 +62,7 @@ export default function Item() {
     existingOrderItem.options.forEach((opt) => {
       // Find matching option by name and price
       const matchingOption = options?.find(
-        (o) => o.name === opt.name && o.price === opt.price
+        (o) => o.name === opt.name && o.price === opt.price,
       );
       if (matchingOption) {
         // Only check groups that belong to this item
@@ -73,17 +78,17 @@ export default function Item() {
     return selected;
   });
   const [extras, setExtras] = useState<AddExtra[]>(
-    existingOrderItem?.extras ?? []
+    existingOrderItem?.extras ?? [],
   );
   const [changes, setChanges] = useState<ItemChange[]>(
-    existingOrderItem?.changes ?? []
+    existingOrderItem?.changes ?? [],
   );
   const [specialFlag, setSpecialFlag] = useState<"appetizer" | "toGo" | null>(
     () => {
       if (existingOrderItem?.togo) return "toGo";
       if (existingOrderItem?.appetizer) return "appetizer";
       return null;
-    }
+    },
   );
 
   // Sync form state when existingOrderItem changes (for edit mode)
@@ -118,7 +123,7 @@ export default function Item() {
         existingOrderItem.options.forEach((opt) => {
           // Find matching option by name and price
           const matchingOption = options.find(
-            (o) => o.name === opt.name && o.price === opt.price
+            (o) => o.name === opt.name && o.price === opt.price,
           );
           if (matchingOption) {
             // Only check groups that belong to this item
@@ -202,7 +207,7 @@ export default function Item() {
   const updateOptionQuantity = (
     groupId: string,
     optionId: string,
-    delta: number
+    delta: number,
   ) => {
     setSelectedOptions((prev) => {
       const current = prev[groupId] || {};
@@ -236,7 +241,7 @@ export default function Item() {
 
     for (const group of groups) {
       const selectedCount = Object.keys(
-        selectedOptions[group.id!] || {}
+        selectedOptions[group.id!] || {},
       ).length;
       if (selectedCount < group.minSelection) {
         showAlert("Chọn Hết Item Option Chưa 😒");
@@ -301,7 +306,17 @@ export default function Item() {
       };
       addItem(cleanItem);
     }
-    router.back();
+
+    if (orderTypeStr === OrderType.DineIn) {
+      router.back();
+      // From category list → item: stack is [take-order, category, item] — pop twice to grid.
+      // From search: stack is [take-order, item] — only one back.
+      if (!isEditMode && menuEntryStr === "category") {
+        queueMicrotask(() => router.back());
+      }
+    } else {
+      router.push("/(tabs)");
+    }
   };
 
   return (
@@ -436,7 +451,7 @@ export default function Item() {
 
           <AddExtraEditor extras={extras} onChange={setExtras} />
           <ItemChangeEditor changes={changes} onChange={setChanges} />
-          {orderType === OrderType.DineIn && (
+          {orderTypeStr === OrderType.DineIn && (
             <SpecialFlagsSelector
               selected={specialFlag}
               onChange={setSpecialFlag}

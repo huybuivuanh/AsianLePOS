@@ -12,13 +12,12 @@ export default function TakeOutCategoryItems() {
 
   const category = useMemo(
     () => categories.find((c) => c.id === categoryId),
-    [categories, categoryId]
+    [categories, categoryId],
   );
 
   const items = useMemo(
-    () =>
-      category ? getMenuItemsForCategory(category, menuItems) : [],
-    [category, menuItems]
+    () => (category ? getMenuItemsForCategory(category, menuItems) : []),
+    [category, menuItems],
   );
 
   if (loading) return <Text>Loading...</Text>;

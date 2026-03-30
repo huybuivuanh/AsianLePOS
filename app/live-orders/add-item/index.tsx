@@ -7,6 +7,7 @@ import {
 } from "@/features/takeout";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
+import { OrderType } from "@/types/enums";
 import { debounce } from "@/utils/memory-utils";
 import { useFocusEffect, useRouter, type Href } from "expo-router";
 import { X } from "lucide-react-native";
@@ -31,7 +32,7 @@ export default function AddItemPage() {
       debounce((value: string) => {
         setDebouncedQuery(value);
       }, 300),
-    []
+    [],
   );
 
   const handleQueryChange = useCallback(
@@ -39,19 +40,19 @@ export default function AddItemPage() {
       setQuery(value);
       debouncedSetQuery(value);
     },
-    [debouncedSetQuery]
+    [debouncedSetQuery],
   );
 
   const searchItems = useMemo(
     () => getVisibleMenuItemsInCategoryOrder(categories, menuItems),
-    [categories, menuItems]
+    [categories, menuItems],
   );
 
   useFocusEffect(
     useCallback(() => {
       setQuery("");
       setDebouncedQuery("");
-    }, [])
+    }, []),
   );
 
   if (loading) return <Text>Loading...</Text>;
@@ -60,7 +61,13 @@ export default function AddItemPage() {
   const handleSelectItem = (item: MenuItem) => {
     router.push({
       pathname: "/item/[itemId]",
-      params: { itemId: item.id!, orderType: order.orderType },
+      params: {
+        itemId: item.id!,
+        orderType: order.orderType,
+        ...(order.orderType === OrderType.DineIn && {
+          menuEntry: "search",
+        }),
+      },
     });
   };
 
@@ -106,9 +113,7 @@ export default function AddItemPage() {
             <CategoryGrid
               categories={categories}
               onSelectCategory={(cat) =>
-                router.push(
-                  `/live-orders/add-item/category/${cat.id!}` as Href
-                )
+                router.push(`/live-orders/add-item/category/${cat.id!}` as Href)
               }
             />
           )}

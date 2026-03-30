@@ -1,4 +1,5 @@
 // app/layout.tsx (Expo)
+import { AuthProvider } from "@/providers/AuthProvider";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { Stack } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -7,7 +8,6 @@ import {
   initialWindowMetrics,
 } from "react-native-safe-area-context";
 import "../global.css";
-import { AuthProvider } from "@/providers/AuthProvider";
 
 export default function RootLayout({
   children,

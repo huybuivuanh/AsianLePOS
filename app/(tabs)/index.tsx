@@ -51,7 +51,7 @@ export default function TakeOut() {
 
   const searchItems = useMemo(
     () => getVisibleMenuItemsInCategoryOrder(categories, menuItems),
-    [categories, menuItems]
+    [categories, menuItems],
   );
 
   if (loading) return <Text>Loading...</Text>;
