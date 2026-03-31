@@ -4,12 +4,11 @@ import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderStatus } from "@/types/enums";
 import {
   calculateTaxBreakdown,
-  convertOrderTimestamps,
   formatDate,
   orderSubtotal,
   resolveTaxBreakdown,
 } from "@/utils/helpers";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -34,17 +33,14 @@ export default function DineInOrdersTab() {
     ? params.orderId[0]
     : params.orderId;
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(
-    orderIdParam || null
+    orderIdParam || null,
   );
   const [selectionMode, setSelectionMode] = useState<string | null>(null);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
-  const router = useRouter();
+
   const {
-    setOrder,
-    cancelOrder,
-    completeOrder,
     markOrderAsPaid,
     submitToPrintQueue,
     submitSelectedItemsToPrintQueue,
@@ -56,22 +52,6 @@ export default function DineInOrdersTab() {
 
   const toggleExpand = (id: string) => {
     setExpandedOrderId((prev) => (prev === id ? null : id));
-  };
-
-  const handleComplete = async (order: DineInOrder) => {
-    try {
-      await completeOrder(order);
-    } catch (error) {
-      console.error("❌ Error completing order:", error);
-    }
-  };
-
-  const handleCancel = async (order: DineInOrder) => {
-    try {
-      await cancelOrder(order);
-    } catch (error) {
-      console.error("❌ Error canceling order:", error);
-    }
   };
 
   const handlePrint = async (order: DineInOrder) => {
@@ -121,16 +101,6 @@ export default function DineInOrdersTab() {
       console.error("❌ Error marking order as paid:", error);
     }
   };
-
-  function handleEditOrder(order: DineInOrder) {
-    const convertedOrder = convertOrderTimestamps(order);
-    setOrder(convertedOrder);
-    router.push({
-      pathname: "/dinein/edit-order/[tableNumber]",
-      params: { tableNumber: order.tableNumber! },
-    });
-  }
-
   const renderOrder = ({ item }: { item: DineInOrder }) => {
     // Use taxBreakDown from order, or calculate it if missing
     const taxBreakDown = resolveTaxBreakdown(item);
@@ -143,11 +113,11 @@ export default function DineInOrdersTab() {
         ? 0
         : item.orderItems
             .filter(
-              (orderItem) => orderItem.id && selectedItemIds.has(orderItem.id)
+              (orderItem) => orderItem.id && selectedItemIds.has(orderItem.id),
             )
             .reduce(
               (sum, orderItem) => sum + orderItem.price * orderItem.quantity,
-              0
+              0,
             );
 
     const selectedItemsTaxBreakDown =
@@ -446,14 +416,16 @@ export default function DineInOrdersTab() {
               </View>
             ) : (
               <>
-                {/* Row 1: Print All | Select Items | Edit */}
+                {/* Row 1: Paid | Select Items | Print */}
                 <View className="flex-row justify-between mt-3">
                   <TouchableOpacity
-                    className="bg-orange-500 px-3 py-3 rounded-full flex-1 mr-2"
-                    onPress={() => handleEditOrder(item)}
+                    className={`px-3 py-3 rounded-full flex-1 mx-1 ${
+                      item.paid ? "bg-gray-500" : "bg-pink-500"
+                    }`}
+                    onPress={() => handleMarkAsPaid(item, !item.paid)}
                   >
                     <Text className="text-white font-semibold text-center text-sm">
-                      Edit
+                      {item.paid ? "Unpaid" : "Paid"}
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -471,37 +443,6 @@ export default function DineInOrdersTab() {
                   >
                     <Text className="text-white font-semibold text-center text-sm">
                       Print
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Row 2: Done | Mark Paid | Cancel */}
-                <View className="flex-row justify-between mt-3">
-                  <TouchableOpacity
-                    className="bg-red-500 px-3 py-3 rounded-full flex-1 mr-2"
-                    onPress={() => handleCancel(item)}
-                  >
-                    <Text className="text-white font-semibold text-center text-sm">
-                      Cancel
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    className={`px-3 py-3 rounded-full flex-1 mx-1 ${
-                      item.paid ? "bg-gray-500" : "bg-pink-500"
-                    }`}
-                    onPress={() => handleMarkAsPaid(item, !item.paid)}
-                  >
-                    <Text className="text-white font-semibold text-center text-sm">
-                      {item.paid ? "Unpaid" : "Paid"}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    className="bg-green-500 px-3 py-3 rounded-full flex-1 ml-2"
-                    onPress={() => handleComplete(item)}
-                  >
-                    <Text className="text-white font-semibold text-center text-sm">
-                      Done
                     </Text>
                   </TouchableOpacity>
                 </View>
