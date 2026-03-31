@@ -244,7 +244,7 @@ export default function Item() {
         selectedOptions[group.id!] || {},
       ).length;
       if (selectedCount < group.minSelection) {
-        showAlert("Chọn Hết Item Option Chưa 😒");
+        showAlert("Please Select Required Options");
         return;
       }
     }

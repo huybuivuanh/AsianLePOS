@@ -26,12 +26,12 @@ export default function TablePage() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
   const router = useRouter();
   const table = useTableStore((state) =>
-    state.tables.find((t) => t.tableNumber === tableNumber)
+    state.tables.find((t) => t.tableNumber === tableNumber),
   );
   const [order, setOrder] = useState<Partial<DineInOrder> | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
 
   const { activeDineInOrders, loading: ordersLoading } =
@@ -370,7 +370,7 @@ export default function TablePage() {
                   onPress={() => {
                     if (!order) {
                       if (table.guests === 0) {
-                        showAlert("Bấm Number of Guests vào 😒");
+                        showAlert("Please Enter Number of Guests");
                         return;
                       }
                       clearOrder();
