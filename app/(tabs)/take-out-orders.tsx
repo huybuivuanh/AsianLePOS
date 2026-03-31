@@ -161,10 +161,10 @@ export default function TakeOutOrdersTab() {
     return (
       <View
         className={`${
-          takeoutFulfillmentIsScheduled(item)
-            ? "bg-orange-100 border-orange-200"
-            : item.status === OrderStatus.Completed
-              ? "bg-green-100 border-green-200"
+          item.status === OrderStatus.Completed
+            ? "bg-green-100 border-green-200"
+            : takeoutFulfillmentIsScheduled(item)
+              ? "bg-orange-100 border-orange-200"
               : "bg-blue-100 border-blue-200"
         } p-4 mb-3 rounded-xl shadow-sm border `}
       >
@@ -173,12 +173,18 @@ export default function TakeOutOrdersTab() {
           onPress={() => toggleExpand(item.id!)}
         >
           <View>
-            <Text className="font-semibold text-gray-800 text-base">
-              Name: {item.customerName || ""}
-            </Text>
-            <Text className="font-semibold text-gray-800 text-base">
-              Phone #: {item.phoneNumber ? formatPhone(item.phoneNumber) : ""}
-            </Text>
+            {item.customerName ? (
+              <>
+                <Text className="font-semibold text-gray-800 text-base">
+                  Name: {item.customerName}
+                </Text>
+              </>
+            ) : null}
+            {item.phoneNumber ? (
+              <Text className="font-semibold text-gray-800 text-base">
+                Phone #: {formatPhone(item.phoneNumber)}
+              </Text>
+            ) : null}
             <Text className="font-semibold text-gray-800 text-base">
               Staff: {`${item.staff.name}`}
             </Text>
