@@ -140,7 +140,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="take-out-orders"
         options={{
-          title: "Take Out Orders",
+          title: "Out Orders",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="bag-handle-outline" color={color} size={size} />
           ),
@@ -158,7 +158,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="dine-in-orders"
         options={{
-          title: "Dine In Orders",
+          title: "In Orders",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="receipt-outline" color={color} size={size} />
           ),
