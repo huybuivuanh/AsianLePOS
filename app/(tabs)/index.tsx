@@ -1,10 +1,10 @@
-import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
 import {
   MenuPickerBody,
   buildItemScreenParams,
   getVisibleMenuItemsInCategoryOrder,
   useDebouncedMenuSearch,
 } from "@/features/takeout";
+import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enums";
@@ -17,17 +17,12 @@ export default function TakeOut() {
   const { categories, menuItems, loading } = useMenuStore();
   const totalItems = useOrderStore((state) => state.getTotalItems());
 
-  const {
-    query,
-    debouncedQuery,
-    handleQueryChange,
-    clearSearch,
-    searching,
-  } = useDebouncedMenuSearch();
+  const { query, debouncedQuery, handleQueryChange, clearSearch, searching } =
+    useDebouncedMenuSearch();
 
   const searchItems = useMemo(
     () => getVisibleMenuItemsInCategoryOrder(categories, menuItems),
-    [categories, menuItems]
+    [categories, menuItems],
   );
 
   if (loading) return <Text>Loading...</Text>;

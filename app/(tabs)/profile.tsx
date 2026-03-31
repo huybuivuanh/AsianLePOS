@@ -1,4 +1,4 @@
-import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
+import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useAuth } from "@/providers/AuthProvider";
 import { useRouter } from "expo-router";
 import React from "react";

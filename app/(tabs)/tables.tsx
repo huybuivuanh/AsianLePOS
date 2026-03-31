@@ -1,4 +1,4 @@
-import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
+import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";

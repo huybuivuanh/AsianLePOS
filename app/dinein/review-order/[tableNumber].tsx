@@ -1,11 +1,11 @@
-import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
 import { OrderLinesList } from "@/features/order";
-import Header from "@/components/ui/Header";
+import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { db } from "@/lib/firebaseConfig";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { OrderStatus, OrderType, TableStatus } from "@/types/enums";
+import Header from "@/ui/Header";
 import {
   calculateTaxBreakdown,
   generateFirestoreId,
@@ -64,7 +64,7 @@ export default function ReviewDineInOrder() {
 
       const subtotal = (order.orderItems ?? []).reduce(
         (acc, i) => acc + i.price * i.quantity,
-        0
+        0,
       );
       const computedTax = calculateTaxBreakdown(subtotal);
 

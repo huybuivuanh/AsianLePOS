@@ -1,10 +1,10 @@
-import TableInfoCard from "@/components/dinein/TableInfoCard";
-import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
-import Header from "@/components/ui/Header";
+import TableInfoCard from "@/features/dinein/TableInfoCard";
+import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { OrderType } from "@/types/enums";
+import Header from "@/ui/Header";
 import {
   calculateTaxBreakdown,
   orderSubtotal,

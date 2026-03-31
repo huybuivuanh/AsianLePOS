@@ -1,4 +1,4 @@
-import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
+import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { auth } from "@/lib/firebaseConfig";
 import { useRouter } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";

@@ -1,13 +1,13 @@
-import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
-import Header from "@/components/ui/Header";
 import {
   AddExtraEditor,
   ItemChangeEditor,
   SpecialFlagsSelector,
 } from "@/features/order";
+import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enums";
+import Header from "@/ui/Header";
 import { generateFirestoreId, showAlert } from "@/utils/helpers";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";

@@ -1,9 +1,9 @@
-import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
-import Header from "@/components/ui/Header";
 import { OrderLinesList } from "@/features/order";
 import { OrderFooter } from "@/features/takeout";
+import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrderStore } from "@/stores/useOrderStore";
+import Header from "@/ui/Header";
 import { showAlert } from "@/utils/helpers";
 import { useRouter, type Href } from "expo-router";
 import React, { useState } from "react";

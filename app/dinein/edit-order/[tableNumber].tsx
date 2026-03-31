@@ -1,11 +1,11 @@
-import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
-import Header from "@/components/ui/Header";
 import { OrderLinesList } from "@/features/order";
+import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useAuth } from "@/providers/AuthProvider";
 import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { OrderStatus } from "@/types/enums";
+import Header from "@/ui/Header";
 import { convertOrderTimestamps, showAlert } from "@/utils/helpers";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
@@ -30,7 +30,7 @@ export default function EditDinInOrder() {
   const { user } = useAuth();
 
   const table = useTableStore((state) =>
-    state.tables.find((t) => t.tableNumber === tableNumber)
+    state.tables.find((t) => t.tableNumber === tableNumber),
   );
 
   const { activeDineInOrders } = useActiveDineInOrdersStore();
@@ -82,8 +82,7 @@ export default function EditDinInOrder() {
     router.push("/take-out-orders/add-item" as Href);
   };
 
-  const isSubmitDisabled =
-    submitting || (order.orderItems?.length ?? 0) === 0;
+  const isSubmitDisabled = submitting || (order.orderItems?.length ?? 0) === 0;
 
   return (
     <SafeAreaViewWrapper className="flex-1 bg-white">

@@ -1,6 +1,6 @@
-import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
-import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
+import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useOrderStore } from "@/stores/useOrderStore";
+import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
 import { OrderStatus } from "@/types/enums";
 import {
   calculateTaxBreakdown,
@@ -37,11 +37,11 @@ export default function TakeOutOrdersTab() {
     ? params.orderId[0]
     : params.orderId;
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(
-    orderIdParam || null
+    orderIdParam || null,
   );
   const [selectionMode, setSelectionMode] = useState<string | null>(null);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const router = useRouter();
   const {
@@ -144,11 +144,11 @@ export default function TakeOutOrdersTab() {
         ? 0
         : item.orderItems
             .filter(
-              (orderItem) => orderItem.id && selectedItemIds.has(orderItem.id)
+              (orderItem) => orderItem.id && selectedItemIds.has(orderItem.id),
             )
             .reduce(
               (sum, orderItem) => sum + orderItem.price * orderItem.quantity,
-              0
+              0,
             );
 
     const selectedItemsTaxBreakDown =
@@ -178,8 +178,7 @@ export default function TakeOutOrdersTab() {
             </Text>
             {takeoutFulfillmentIsScheduled(item) && (
               <Text className="font-semibold text-gray-800 text-base">
-                Preorder:{" "}
-                {formatDate(takeoutScheduledAt(item)!)}
+                Preorder: {formatDate(takeoutScheduledAt(item)!)}
               </Text>
             )}
           </View>

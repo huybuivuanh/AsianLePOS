@@ -1,5 +1,5 @@
-import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
-import Header from "@/components/ui/Header";
+import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
+import Header from "@/ui/Header";
 import React from "react";
 import { View } from "react-native";
 import SearchResults from "./SearchResults";
