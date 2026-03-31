@@ -103,7 +103,7 @@ export default function TablePage() {
     try {
       await completeOrder(order);
       setOrder(null);
-      router.replace("/dine-in");
+      router.replace("/tables");
     } catch (err) {
       console.error("Failed to complete order:", err);
     }
@@ -160,7 +160,7 @@ export default function TablePage() {
       <Header
         title={`Table ${tableNumber}`}
         onBack={() => {
-          router.replace("/dine-in");
+          router.replace("/tables");
         }}
       />
 

@@ -8,7 +8,7 @@ import { Check, X } from "lucide-react-native";
 import React, { useEffect } from "react";
 import { FlatList, ListRenderItem, Pressable, Text, View } from "react-native";
 
-export default function DineIn() {
+export default function Tables() {
   const { tables } = useTableStore();
   const router = useRouter();
   const { clearOrder } = useOrderStore();
@@ -18,7 +18,6 @@ export default function DineIn() {
     clearOrder();
   }, [clearOrder]);
 
-  // Toggle table status
   const openTablePage = (tableNumber: string) => {
     const table = tables.find((t) => t.tableNumber === tableNumber);
     if (!table) return;
@@ -74,7 +73,6 @@ export default function DineIn() {
 
   return (
     <SafeAreaViewWrapper className="p-4">
-      {/* Table Grid */}
       <FlatList
         keyboardShouldPersistTaps="always"
         data={tables}

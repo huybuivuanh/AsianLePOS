@@ -1,4 +1,5 @@
 // app/(tabs)/_layout.tsx
+import { useAuth } from "@/providers/AuthProvider";
 import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
 import { useDineInOrdersStore } from "@/stores/useDineInOrdersStore";
 import { loadCachedMenu, useMenuStore } from "@/stores/useMenuStore";
@@ -9,7 +10,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
 import { useEffect } from "react";
 import { Text, View } from "react-native";
-import { useAuth } from "@/providers/AuthProvider";
 
 export default function TabsLayout() {
   const { user, loading: authLoading } = useAuth();
@@ -138,20 +138,20 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="dine-in"
-        options={{
-          title: "Dine In",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="restaurant-outline" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="take-out-orders"
         options={{
           title: "Take Out Orders",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="bag-handle-outline" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="tables"
+        options={{
+          title: "Tables",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="grid-outline" color={color} size={size} />
           ),
         }}
       />
