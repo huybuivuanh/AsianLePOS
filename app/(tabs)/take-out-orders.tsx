@@ -1,5 +1,6 @@
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import OrderItemsList from "@/features/order/components/OrderItemsList";
+import OrderTaxBreakdown from "@/features/order/components/OrderTaxBreakdown";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
 import { OrderStatus } from "@/types/enums";
@@ -255,77 +256,13 @@ export default function TakeOutOrdersTab() {
 
             {/* Tax breakdown */}
             {taxBreakDown && (
-              <View className="mt-2 p-2 border-t border-gray-200">
-                {isSelectionMode ? (
-                  // Selection Mode: Show selected items total
-                  <>
-                    <View className="flex-row justify-between mb-1">
-                      <Text className="text-base text-gray-700">
-                        Selected Items Subtotal
-                      </Text>
-                      <Text className="text-base text-gray-700">
-                        ${selectedItemsTotal.toFixed(2)}
-                      </Text>
-                    </View>
-
-                    <View className="flex-row justify-between mb-1">
-                      <Text className="text-base text-gray-700">PST (6%)</Text>
-                      <Text className="text-base text-gray-700">
-                        ${selectedItemsTaxBreakDown.pst.toFixed(2)}
-                      </Text>
-                    </View>
-
-                    <View className="flex-row justify-between mb-1">
-                      <Text className="text-base text-gray-700">GST (5%)</Text>
-                      <Text className="text-base text-gray-700">
-                        ${selectedItemsTaxBreakDown.gst.toFixed(2)}
-                      </Text>
-                    </View>
-
-                    <View className="flex-row justify-between mt-1 pt-1 border-t border-gray-200">
-                      <Text className="text-base font-semibold text-gray-800">
-                        Selected Total
-                      </Text>
-                      <Text className="text-base font-bold text-gray-900">
-                        ${selectedItemsTaxBreakDown.total.toFixed(2)}
-                      </Text>
-                    </View>
-                  </>
-                ) : (
-                  // Normal Mode: Show full order total
-                  <>
-                    <View className="flex-row justify-between mb-1">
-                      <Text className="text-base text-gray-700">Subtotal</Text>
-                      <Text className="text-base text-gray-700">
-                        ${orderSubtotal(item).toFixed(2)}
-                      </Text>
-                    </View>
-
-                    <View className="flex-row justify-between mb-1">
-                      <Text className="text-base text-gray-700">PST (6%)</Text>
-                      <Text className="text-base text-gray-700">
-                        ${taxBreakDown.pst.toFixed(2)}
-                      </Text>
-                    </View>
-
-                    <View className="flex-row justify-between mb-1">
-                      <Text className="text-base text-gray-700">GST (5%)</Text>
-                      <Text className="text-base text-gray-700">
-                        ${taxBreakDown.gst.toFixed(2)}
-                      </Text>
-                    </View>
-
-                    <View className="flex-row justify-between mt-1 pt-1 border-t border-gray-200">
-                      <Text className="text-base font-semibold text-gray-800">
-                        Total
-                      </Text>
-                      <Text className="text-base font-bold text-gray-900">
-                        ${taxBreakDown.total.toFixed(2)}
-                      </Text>
-                    </View>
-                  </>
-                )}
-              </View>
+              <OrderTaxBreakdown
+                taxBreakDown={taxBreakDown}
+                isSelectionMode={isSelectionMode}
+                selectedItemsTotal={selectedItemsTotal}
+                selectedItemsTaxBreakDown={selectedItemsTaxBreakDown}
+                orderSubtotal={orderSubtotal(item)}
+              />
             )}
 
             {/* Buttons */}
