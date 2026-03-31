@@ -1,4 +1,4 @@
-import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
+import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { TableStatus } from "@/types/enums";
@@ -19,7 +19,7 @@ export default function EditTableForm({
   );
   const updateTable = useTableStore((state) => state.updateTable);
   const { updateOrderOnFirestore } = useOrderStore();
-  const { dineInOrders } = useLiveOrdersStore();
+  const { activeDineInOrders } = useActiveDineInOrdersStore();
 
   const [guests, setGuests] = useState<number>(0);
   const [status, setStatus] = useState<TableStatus>(TableStatus.Open);
@@ -61,7 +61,7 @@ export default function EditTableForm({
         guests,
         status,
       });
-      const order = dineInOrders.find((o) => o.id === table.currentOrderId);
+      const order = activeDineInOrders.find((o) => o.id === table.currentOrderId);
       if (order) {
         await updateOrderOnFirestore({ ...order, guests: guests });
       }

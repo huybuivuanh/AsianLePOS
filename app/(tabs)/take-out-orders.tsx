@@ -1,5 +1,5 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
-import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
+import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderStatus } from "@/types/enums";
 import {
@@ -12,8 +12,8 @@ import {
   takeoutFulfillmentIsScheduled,
   takeoutScheduledAt,
 } from "@/utils/helpers";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useLocalSearchParams, useRouter, type Href } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -22,8 +22,16 @@ import {
   View,
 } from "react-native";
 
-export default function LiveOrders() {
-  const { takeOutOrders, loading } = useLiveOrdersStore();
+export default function TakeOutOrdersTab() {
+  const {
+    takeOutOrders,
+    loading,
+    loadingMore,
+    hasMore,
+    loadTakeOutOrders,
+    loadMoreOrders,
+    refreshTakeOutOrders,
+  } = useTakeOutOrdersStore();
   const params = useLocalSearchParams<{ orderId?: string | string[] }>();
   const orderIdParam = Array.isArray(params.orderId)
     ? params.orderId[0]
@@ -44,6 +52,10 @@ export default function LiveOrders() {
     submitToPrintQueue,
     submitSelectedItemsToPrintQueue,
   } = useOrderStore();
+
+  useEffect(() => {
+    loadTakeOutOrders();
+  }, [loadTakeOutOrders]);
 
   const toggleExpand = (id: string) => {
     setExpandedOrderId((prev) => (prev === id ? null : id));
@@ -117,7 +129,7 @@ export default function LiveOrders() {
     // Convert Firestore Timestamps to JavaScript Dates
     const convertedOrder = convertOrderTimestamps(order);
     setOrder(convertedOrder);
-    router.push("/live-orders/edit-order");
+    router.push("/take-out-orders/edit-order" as Href);
   }
 
   const renderOrder = ({ item }: { item: TakeOutOrder }) => {
@@ -516,7 +528,7 @@ export default function LiveOrders() {
     return (
       <SafeAreaViewWrapper className="flex-1 justify-center items-center bg-white">
         <ActivityIndicator size="large" color="#007AFF" />
-        <Text className="mt-2 text-gray-600">Loading live orders...</Text>
+        <Text className="mt-2 text-gray-600">Loading take out orders...</Text>
       </SafeAreaViewWrapper>
     );
   }
@@ -538,6 +550,21 @@ export default function LiveOrders() {
           windowSize={10}
           initialNumToRender={10}
           updateCellsBatchingPeriod={50}
+          refreshing={loading}
+          onRefresh={refreshTakeOutOrders}
+          onEndReached={() => {
+            if (hasMore && !loadingMore) {
+              loadMoreOrders();
+            }
+          }}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            loadingMore ? (
+              <View className="py-4">
+                <ActivityIndicator size="small" color="#007AFF" />
+              </View>
+            ) : null
+          }
           getItemLayout={(data, index) => ({
             length: 200, // Approximate item height
             offset: 200 * index,

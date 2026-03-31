@@ -5,7 +5,7 @@ import { OrderFooter } from "@/features/takeout";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { showAlert } from "@/utils/helpers";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -49,7 +49,7 @@ export default function EditOrder() {
   };
 
   const handleAddItem = () => {
-    router.push("/live-orders/add-item");
+    router.push("/take-out-orders/add-item" as Href);
   };
 
   const isSubmitDisabled =

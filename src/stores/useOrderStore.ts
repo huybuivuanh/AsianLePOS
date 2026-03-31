@@ -1,5 +1,10 @@
 import { db } from "@/lib/firebaseConfig";
-import { OrderStatus, OrderType, TakeOutFulfillmentKind } from "@/types/enums";
+import {
+  OrderStatus,
+  OrderType,
+  TableStatus,
+  TakeOutFulfillmentKind,
+} from "@/types/enums";
 import { calculateTaxBreakdown, orderItemsSubtotal } from "@/utils/helpers";
 import {
   collection,
@@ -263,10 +268,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       doc(db, firestorecollection, order.id!),
       orderToSubmit as Record<string, unknown>
     );
-    batch.set(
-      doc(db, "orderHistory", order.id!),
-      orderToSubmit as Record<string, unknown>
-    );
     await batch.commit();
 
     get().clearOrder();
@@ -324,8 +325,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const batch = writeBatch(db);
     const orderRef = doc(db, firestorecollection, order.id);
     batch.update(orderRef, updateData);
-    const historyRef = doc(db, "orderHistory", order.id);
-    batch.update(historyRef, updateData);
     await batch.commit();
   },
 
@@ -339,11 +338,19 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
     const batch = writeBatch(db);
     const orderRef = doc(db, firestorecollection, order.id);
-    batch.delete(orderRef);
-    const orderHistoryRef = doc(db, "orderHistory", order.id);
-    batch.update(orderHistoryRef, {
+    batch.update(orderRef, {
       status: OrderStatus.Canceled,
     });
+
+    if (order.orderType === OrderType.DineIn && order.tableNumber) {
+      const tableRef = doc(db, "tables", order.tableNumber);
+      batch.update(tableRef, {
+        status: TableStatus.Open,
+        currentOrderId: null,
+        guests: 0,
+      });
+    }
+
     await batch.commit();
   },
 
@@ -357,12 +364,19 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
     const batch = writeBatch(db);
     const orderRef = doc(db, firestorecollection, order.id);
-    batch.delete(orderRef);
-    const orderHistoryRef = doc(db, "orderHistory", order.id);
-    batch.update(orderHistoryRef, {
+    batch.update(orderRef, {
       status: OrderStatus.Completed,
-      paid: true,
     });
+
+    if (order.orderType === OrderType.DineIn && order.tableNumber) {
+      const tableRef = doc(db, "tables", order.tableNumber);
+      batch.update(tableRef, {
+        status: TableStatus.Open,
+        currentOrderId: null,
+        guests: 0,
+      });
+    }
+
     await batch.commit();
   },
 
@@ -375,8 +389,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const batch = writeBatch(db);
     const orderRef = doc(db, firestorecollection, order.id);
     batch.update(orderRef, { paid });
-    const historyRef = doc(db, "orderHistory", order.id);
-    batch.update(historyRef, { paid });
     await batch.commit();
   },
 

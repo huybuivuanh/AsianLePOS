@@ -5,7 +5,7 @@ import Header from "@/components/ui/Header";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { generateFirestoreId, showAlert } from "@/utils/helpers";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -49,9 +49,9 @@ export default function ReviewOrder() {
       setSubmitting(true);
       await submitOrder(newOrder);
       router.push({
-        pathname: "/live-orders",
-        params: { orderId: orderId },
-      });
+        pathname: "/(tabs)/take-out-orders",
+        params: { orderId },
+      } as unknown as Href);
     } catch (error: any) {
       showAlert("Error", error.message || "Failed to submit order.");
     } finally {

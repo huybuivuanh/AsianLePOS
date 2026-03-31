@@ -85,9 +85,6 @@ export default function ReviewDineInOrder() {
       // Add order to dineInOrders
       batch.set(doc(db, "dineInOrders", orderId), orderToSubmit);
 
-      // Add order to orderHistory
-      batch.set(doc(db, "orderHistory", orderId), orderToSubmit);
-
       // Execute all operations atomically
       await batch.commit();
 

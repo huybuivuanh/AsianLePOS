@@ -58,7 +58,7 @@ export default function AddItemPage() {
           }
           categories={categories}
           onSelectCategory={(cat) =>
-            router.push(`/live-orders/add-item/category/${cat.id!}` as Href)
+            router.push(`/take-out-orders/add-item/category/${cat.id!}` as Href)
           }
         />
       </View>

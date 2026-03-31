@@ -1,10 +1,10 @@
 import TableInfoCard from "@/components/dinein/TableInfoCard";
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
 import Header from "@/components/ui/Header";
-import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
+import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
-import { OrderType, TableStatus } from "@/types/enums";
+import { OrderType } from "@/types/enums";
 import {
   calculateTaxBreakdown,
   orderSubtotal,
@@ -25,7 +25,6 @@ import {
 export default function TablePage() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
   const router = useRouter();
-  const updateTable = useTableStore((state) => state.updateTable);
   const table = useTableStore((state) =>
     state.tables.find((t) => t.tableNumber === tableNumber)
   );
@@ -35,7 +34,8 @@ export default function TablePage() {
     new Set()
   );
 
-  const { dineInOrders, loading: ordersLoading } = useLiveOrdersStore();
+  const { activeDineInOrders, loading: ordersLoading } =
+    useActiveDineInOrdersStore();
   const {
     clearOrder,
     cancelOrder,
@@ -49,8 +49,8 @@ export default function TablePage() {
   // ✅ Find the current order using table.currentOrderId
   const currentOrder = useMemo(() => {
     if (!table?.currentOrderId) return undefined;
-    return dineInOrders.find((o) => o.id === table.currentOrderId);
-  }, [dineInOrders, table]);
+    return activeDineInOrders.find((o) => o.id === table.currentOrderId);
+  }, [activeDineInOrders, table]);
 
   // Use taxBreakDown from order, or calculate it if missing
   const taxBreakDown = order ? resolveTaxBreakdown(order) : undefined;
@@ -92,11 +92,6 @@ export default function TablePage() {
 
     try {
       await cancelOrder(order);
-      await updateTable(tableNumber!, {
-        status: TableStatus.Open,
-        currentOrderId: null,
-        guests: 0,
-      });
       setOrder(null);
     } catch (error: any) {
       console.log("Failed to cancel order:", error);
@@ -106,13 +101,8 @@ export default function TablePage() {
   const handleCompleteOrder = async () => {
     if (!order) return;
     try {
-      await updateTable(tableNumber!, {
-        status: TableStatus.Open,
-        currentOrderId: null,
-        guests: 0,
-      });
-      setOrder(null);
       await completeOrder(order);
+      setOrder(null);
       router.replace("/dine-in");
     } catch (err) {
       console.error("Failed to complete order:", err);

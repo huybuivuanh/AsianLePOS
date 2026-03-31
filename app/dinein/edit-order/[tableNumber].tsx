@@ -2,11 +2,12 @@ import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
 import Header from "@/components/ui/Header";
 import { OrderLinesList } from "@/features/order";
 import { useAuth } from "@/providers/AuthProvider";
-import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
+import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
+import { OrderStatus } from "@/types/enums";
 import { convertOrderTimestamps, showAlert } from "@/utils/helpers";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -32,14 +33,15 @@ export default function EditDinInOrder() {
     state.tables.find((t) => t.tableNumber === tableNumber)
   );
 
-  const { dineInOrders } = useLiveOrdersStore();
+  const { activeDineInOrders } = useActiveDineInOrdersStore();
 
   const currentOrder = useMemo(() => {
     if (!table?.currentOrderId) return undefined;
-    return dineInOrders.find(
-      (o) => o.id === table.currentOrderId && o.status !== "completed"
+    return activeDineInOrders.find(
+      (o) =>
+        o.id === table.currentOrderId && o.status === OrderStatus.InProgress,
     );
-  }, [dineInOrders, table]);
+  }, [activeDineInOrders, table]);
 
   useEffect(() => {
     if (!currentOrder?.id) return;
@@ -77,7 +79,7 @@ export default function EditDinInOrder() {
 
   const handleAddItem = () => {
     if (!order.id) return;
-    router.push("/live-orders/add-item");
+    router.push("/take-out-orders/add-item" as Href);
   };
 
   const isSubmitDisabled =

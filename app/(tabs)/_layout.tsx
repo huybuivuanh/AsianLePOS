@@ -1,9 +1,10 @@
 // app/(tabs)/_layout.tsx
-import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
+import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
+import { useDineInOrdersStore } from "@/stores/useDineInOrdersStore";
 import { loadCachedMenu, useMenuStore } from "@/stores/useMenuStore";
-import { useOrderHistoryStore } from "@/stores/useOrderHistoryStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
+import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
 import { useEffect } from "react";
@@ -18,10 +19,12 @@ export default function TabsLayout() {
     loading: menuLoading,
     clearData: clearMenu,
   } = useMenuStore();
-  const { subscribeToLiveOrders, clearData: clearLiveOrders } =
-    useLiveOrdersStore();
-  const { subscribeToOrderHistory, clearData: clearOrderHistory } =
-    useOrderHistoryStore();
+  const { subscribeToTakeOutOrders, clearData: clearTakeOutOrders } =
+    useTakeOutOrdersStore();
+  const { subscribeToDineInOrders, clearData: clearDineInOrdersTab } =
+    useDineInOrdersStore();
+  const { subscribeToActiveDineInOrders, clearData: clearActiveDineIn } =
+    useActiveDineInOrdersStore();
   const { subscribeToTables, clearData: clearTables } = useTableStore();
   const { clearOrder } = useOrderStore();
 
@@ -30,8 +33,9 @@ export default function TabsLayout() {
     if (!authLoading && !user) {
       // Clear all store data when user logs out to prevent memory leaks
       clearMenu();
-      clearLiveOrders();
-      clearOrderHistory();
+      clearTakeOutOrders();
+      clearDineInOrdersTab();
+      clearActiveDineIn();
       clearTables();
       clearOrder();
       router.push("/login");
@@ -41,8 +45,9 @@ export default function TabsLayout() {
     authLoading,
     router,
     clearMenu,
-    clearLiveOrders,
-    clearOrderHistory,
+    clearTakeOutOrders,
+    clearDineInOrdersTab,
+    clearActiveDineIn,
     clearTables,
     clearOrder,
   ]);
@@ -60,8 +65,9 @@ export default function TabsLayout() {
       if (!isMounted) return;
 
       const unsubscribeMenu = subscribeToMenuVersion();
-      const unsubscribeOrders = subscribeToLiveOrders();
-      const unsubscribeHistory = subscribeToOrderHistory();
+      const unsubscribeTakeOut = subscribeToTakeOutOrders();
+      const unsubscribeDineInTab = subscribeToDineInOrders();
+      const unsubscribeActiveDineIn = subscribeToActiveDineInOrders();
 
       // ✅ Handle async subscribeToTables
       const unsubscribeTables = await subscribeToTables();
@@ -69,16 +75,18 @@ export default function TabsLayout() {
       if (!isMounted) {
         // Clean up immediately if component unmounted during async operation
         unsubscribeMenu?.();
-        unsubscribeOrders?.();
-        unsubscribeHistory?.();
+        unsubscribeTakeOut?.();
+        unsubscribeDineInTab?.();
+        unsubscribeActiveDineIn?.();
         unsubscribeTables?.();
         return;
       }
 
       return () => {
         unsubscribeMenu?.();
-        unsubscribeOrders?.();
-        unsubscribeHistory?.();
+        unsubscribeTakeOut?.();
+        unsubscribeDineInTab?.();
+        unsubscribeActiveDineIn?.();
         unsubscribeTables?.();
       };
     };
@@ -96,8 +104,9 @@ export default function TabsLayout() {
   }, [
     user,
     subscribeToMenuVersion,
-    subscribeToLiveOrders,
-    subscribeToOrderHistory,
+    subscribeToTakeOutOrders,
+    subscribeToDineInOrders,
+    subscribeToActiveDineInOrders,
     subscribeToTables,
   ]);
 
@@ -138,18 +147,18 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="live-orders"
+        name="take-out-orders"
         options={{
-          title: "Live Orders",
+          title: "Take Out Orders",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list-outline" color={color} size={size} />
+            <Ionicons name="bag-handle-outline" color={color} size={size} />
           ),
         }}
       />
       <Tabs.Screen
-        name="order-history"
+        name="dine-in-orders"
         options={{
-          title: "History",
+          title: "Dine In Orders",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="receipt-outline" color={color} size={size} />
           ),

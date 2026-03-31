@@ -1,5 +1,5 @@
 import SafeAreaViewWrapper from "@/components/layout/SafeAreaViewWrapper";
-import { useLiveOrdersStore } from "@/stores/useLiveOrdersStore";
+import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { TableStatus } from "@/types/enums";
@@ -12,7 +12,7 @@ export default function DineIn() {
   const { tables } = useTableStore();
   const router = useRouter();
   const { clearOrder } = useOrderStore();
-  const { dineInOrders } = useLiveOrdersStore();
+  const { activeDineInOrders } = useActiveDineInOrdersStore();
 
   useEffect(() => {
     clearOrder();
@@ -29,7 +29,7 @@ export default function DineIn() {
   };
 
   const getPrintedStatus = (orderId: string) => {
-    const order = dineInOrders.find((o) => o.id === orderId);
+    const order = activeDineInOrders.find((o) => o.id === orderId);
     return order?.printed ?? false;
   };
 
