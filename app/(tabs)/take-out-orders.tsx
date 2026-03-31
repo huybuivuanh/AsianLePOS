@@ -180,6 +180,9 @@ export default function TakeOutOrdersTab() {
               Phone #: {item.phoneNumber ? formatPhone(item.phoneNumber) : ""}
             </Text>
             <Text className="font-semibold text-gray-800 text-base">
+              Staff: {`${item.staff.name}`}
+            </Text>
+            <Text className="font-semibold text-gray-800 text-base">
               Time: {formatDate(item.createdAt)}
             </Text>
             {takeoutFulfillmentIsScheduled(item) && (
