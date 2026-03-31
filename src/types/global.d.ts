@@ -3,12 +3,6 @@ import { TakeOutFulfillmentKind } from "./enums";
 export {};
 
 declare global {
-  interface User {
-    id: string;
-    name: string;
-    email?: string;
-  }
-
   interface FoodCategory {
     id?: string;
     name: string;

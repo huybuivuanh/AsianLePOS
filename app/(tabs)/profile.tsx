@@ -13,24 +13,58 @@ const Profile = () => {
     router.push("/login");
   };
 
+  const initials = (user?.displayName || user?.email || "?")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((s) => s[0]?.toUpperCase())
+    .join("");
+
   return (
-    <SafeAreaViewWrapper className="flex-1 p-5 bg-white">
-      <View className="mb-4">
-        <Text className="text-lg font-bold">Name:</Text>
-        <Text className="text-base">{user?.displayName || "N/A"}</Text>
-      </View>
+    <SafeAreaViewWrapper className="flex-1 bg-white">
+      <View className="p-5">
+        {/* Header card */}
+        <View className="bg-gray-50 border border-gray-200 rounded-2xl p-4">
+          <View className="flex-row items-center">
+            <View className="w-14 h-14 rounded-full bg-blue-100 border border-blue-200 items-center justify-center">
+              <Text className="text-blue-800 font-extrabold text-lg">
+                {initials || "?"}
+              </Text>
+            </View>
+            <View className="ml-4 flex-1">
+              <Text
+                className="text-xl font-extrabold text-gray-900"
+                numberOfLines={1}
+              >
+                {user?.displayName || "Staff"}
+              </Text>
+              <Text className="text-sm text-gray-600" numberOfLines={1}>
+                {user?.email || "No email"}
+              </Text>
+            </View>
+          </View>
 
-      <View className="mb-6">
-        <Text className="text-lg font-bold">Email:</Text>
-        <Text className="text-base">{user?.email || "N/A"}</Text>
-      </View>
+          <View className="mt-4 flex-row justify-between">
+            <View className="flex-1 bg-white border border-gray-200 rounded-xl p-3 mr-2">
+              <Text className="text-xs text-gray-500">Role</Text>
+              <Text className="text-base font-bold text-gray-900">Staff</Text>
+            </View>
+            <View className="flex-1 bg-white border border-gray-200 rounded-xl p-3 ml-2">
+              <Text className="text-xs text-gray-500">Status</Text>
+              <Text className="text-base font-bold text-green-700">Online</Text>
+            </View>
+          </View>
+        </View>
 
-      <Pressable
-        onPress={handleLogout}
-        className="bg-red-500 rounded-lg py-3 px-5 items-center"
-      >
-        <Text className="text-white font-semibold">Logout</Text>
-      </Pressable>
+        <View className="mt-5">
+          <Pressable
+            onPress={handleLogout}
+            className="bg-red-500 rounded-xl py-4 px-5 items-center mt-3"
+          >
+            <Text className="text-white font-semibold">Logout</Text>
+          </Pressable>
+        </View>
+      </View>
     </SafeAreaViewWrapper>
   );
 };
