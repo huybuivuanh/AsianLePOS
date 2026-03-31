@@ -128,7 +128,9 @@ export default function DineInOrdersTab() {
         : calculateTaxBreakdown(selectedItemsTotal);
 
     return (
-      <View className="bg-amber-100 p-4 mb-3 rounded-xl shadow-sm border border-amber-200">
+      <View
+        className={`${item.status === OrderStatus.Completed ? "bg-green-100 border-green-200" : "bg-amber-100 border-amber-200"} p-4 mb-3 rounded-xl shadow-sm border `}
+      >
         <TouchableOpacity
           className="flex-row justify-between items-center"
           onPress={() => toggleExpand(item.id!)}
@@ -174,32 +176,31 @@ export default function DineInOrdersTab() {
                   {item.paid ? "Paid" : "Unpaid"}
                 </Text>
               </View>
-
-              <View
-                className={`px-3 py-1 rounded-full ${
+            </View>
+            <View
+              className={`px-3 py-1 rounded-full ${
+                item.status === OrderStatus.InProgress
+                  ? "bg-blue-100"
+                  : item.status === OrderStatus.Completed
+                    ? "bg-green-100"
+                    : "bg-red-200"
+              }`}
+            >
+              <Text
+                className={`text-xs font-semibold ${
                   item.status === OrderStatus.InProgress
-                    ? "bg-blue-100"
+                    ? "text-blue-700"
                     : item.status === OrderStatus.Completed
-                      ? "bg-green-100"
-                      : "bg-red-200"
+                      ? "text-green-700"
+                      : "text-red-700"
                 }`}
               >
-                <Text
-                  className={`text-xs font-semibold ${
-                    item.status === OrderStatus.InProgress
-                      ? "text-blue-700"
-                      : item.status === OrderStatus.Completed
-                        ? "text-green-700"
-                        : "text-red-700"
-                  }`}
-                >
-                  {item.status === OrderStatus.InProgress
-                    ? "In Progress"
-                    : item.status === OrderStatus.Completed
-                      ? "Completed"
-                      : "Canceled"}
-                </Text>
-              </View>
+                {item.status === OrderStatus.InProgress
+                  ? "In Progress"
+                  : item.status === OrderStatus.Completed
+                    ? "Completed"
+                    : "Canceled"}
+              </Text>
             </View>
           </View>
         </TouchableOpacity>

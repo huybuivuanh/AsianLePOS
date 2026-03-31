@@ -1,6 +1,6 @@
-import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import OrderItemsList from "@/features/order/components/OrderItemsList";
 import OrderTaxBreakdown from "@/features/order/components/OrderTaxBreakdown";
+import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
 import { OrderStatus } from "@/types/enums";
@@ -161,8 +161,12 @@ export default function TakeOutOrdersTab() {
     return (
       <View
         className={`${
-          takeoutFulfillmentIsScheduled(item) ? "bg-orange-100" : "bg-blue-100"
-        } p-4 mb-3 rounded-xl shadow-sm`}
+          takeoutFulfillmentIsScheduled(item)
+            ? "bg-orange-100 border-orange-200"
+            : item.status === OrderStatus.Completed
+              ? "bg-green-100 border-green-200"
+              : "bg-blue-100 border-blue-200"
+        } p-4 mb-3 rounded-xl shadow-sm border `}
       >
         <TouchableOpacity
           className="flex-row justify-between items-center"
@@ -214,7 +218,6 @@ export default function TakeOutOrdersTab() {
                   {item.paid ? "Paid" : "Unpaid"}
                 </Text>
               </View>
-
               <View
                 className={`px-3 py-1 rounded-full ${
                   item.status === OrderStatus.InProgress
@@ -349,7 +352,7 @@ export default function TakeOutOrdersTab() {
                     onPress={() => handleComplete(item)}
                   >
                     <Text className="text-white font-semibold text-center text-sm">
-                      Done
+                      Complete
                     </Text>
                   </TouchableOpacity>
                 </View>
