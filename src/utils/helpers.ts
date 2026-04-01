@@ -14,6 +14,16 @@ export const formatDate = (timestamp: Timestamp) => {
   return dayjs(date).format("DD MMM YYYY, hh:mm A");
 };
 
+export const formatTimeOnly = (timestamp: Timestamp) => {
+  if (!timestamp) return "";
+
+  const date = timestamp.toDate
+    ? timestamp.toDate()
+    : new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1_000_000);
+
+  return dayjs(date).format("hh:mm A");
+};
+
 export const formatPhone = (phone: string) => {
   phone = phone.replace(/\D/g, ""); // remove any non-digit characters
   if (phone.length > 7) {

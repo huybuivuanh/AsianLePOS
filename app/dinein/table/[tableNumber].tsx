@@ -5,22 +5,11 @@ import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { OrderType } from "@/types/enums";
 import Header from "@/ui/Header";
-import {
-  calculateTaxBreakdown,
-  orderSubtotal,
-  resolveTaxBreakdown,
-  showAlert,
-} from "@/utils/helpers";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { formatTimeOnly, showAlert } from "@/utils/helpers";
+import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { Check } from "lucide-react-native";
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 
 export default function TablePage() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
@@ -29,10 +18,6 @@ export default function TablePage() {
     state.tables.find((t) => t.tableNumber === tableNumber),
   );
   const [order, setOrder] = useState<Partial<DineInOrder> | null>(null);
-  const [selectionMode, setSelectionMode] = useState(false);
-  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(
-    new Set(),
-  );
 
   const { activeDineInOrders, loading: ordersLoading } =
     useActiveDineInOrdersStore();
@@ -43,7 +28,6 @@ export default function TablePage() {
     markOrderAsPaid,
     updateOrder,
     submitToPrintQueue,
-    submitSelectedItemsToPrintQueue,
   } = useOrderStore();
 
   // ✅ Find the current order using table.currentOrderId
@@ -52,31 +36,15 @@ export default function TablePage() {
     return activeDineInOrders.find((o) => o.id === table.currentOrderId);
   }, [activeDineInOrders, table]);
 
-  // Use taxBreakDown from order, or calculate it if missing
-  const taxBreakDown = order ? resolveTaxBreakdown(order) : undefined;
-
-  // Calculate selected items total and tax breakdown when in selection mode
-  const selectedItemsTotal = useMemo(() => {
-    if (!selectionMode || !order?.orderItems || selectedItemIds.size === 0) {
-      return 0;
-    }
-    return order.orderItems
-      .filter((item) => item.id && selectedItemIds.has(item.id))
-      .reduce((sum, item) => sum + item.price * item.quantity, 0);
-  }, [selectionMode, order?.orderItems, selectedItemIds]);
-
-  const selectedItemsTaxBreakDown = useMemo(() => {
-    if (selectedItemsTotal === 0) {
-      return { subTotal: 0, pst: 0, gst: 0, total: 0 };
-    }
-    return calculateTaxBreakdown(selectedItemsTotal);
-  }, [selectedItemsTotal]);
-
   // ✅ Sync order store with live data
   useEffect(() => {
     if (currentOrder) setOrder(currentOrder);
     else setOrder(null);
   }, [currentOrder, table]);
+
+  const hasActiveOrderItems = Boolean(
+    order?.orderItems && order.orderItems.length > 0,
+  );
 
   // ✅ Loading or table not found
   if (!table || ordersLoading) {
@@ -127,32 +95,12 @@ export default function TablePage() {
     }
   };
 
-  const handleToggleSelectionMode = () => {
-    setSelectionMode((prev) => !prev);
-    setSelectedItemIds(new Set());
-  };
-
-  const handleToggleItemSelection = (itemId: string) => {
-    setSelectedItemIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(itemId)) {
-        newSet.delete(itemId);
-      } else {
-        newSet.add(itemId);
-      }
-      return newSet;
-    });
-  };
-
-  const handlePrintSelected = async () => {
-    if (!order) return;
-    try {
-      await submitSelectedItemsToPrintQueue(order, Array.from(selectedItemIds));
-      setSelectionMode(false);
-      setSelectedItemIds(new Set());
-    } catch (error) {
-      console.error("❌ Error printing selected items:", error);
-    }
+  const handleSeeOrder = () => {
+    if (!order?.id) return;
+    router.push({
+      pathname: "/dinein/order/[orderId]",
+      params: { orderId: order.id },
+    } as unknown as Href);
   };
 
   return (
@@ -167,347 +115,198 @@ export default function TablePage() {
       <View className="flex-1 justify-between">
         <TableInfoCard tableNumber={tableNumber} />
 
-        {/* Order Items */}
-        {!order || !order.orderItems || order.orderItems.length === 0 ? (
-          <Text className="text-gray-500 text-center mt-10">
+        {!hasActiveOrderItems ? (
+          <Text className="text-gray-500 text-center mt-10 text-lg">
             No active order for this table.
           </Text>
         ) : (
-          <FlatList
-            keyboardShouldPersistTaps="always"
-            data={order.orderItems}
-            keyExtractor={(item, index) => item.id ?? index.toString()}
-            renderItem={({ item }) => {
-              const isSelected = item.id ? selectedItemIds.has(item.id) : false;
+          <View className="mt-4 mx-4 bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+            <View className="flex-row justify-between">
+              <View className="flex-1 pr-3">
+                <Text className="text-sm text-gray-500">Staff</Text>
+                <Text
+                  className="text-lg font-bold text-gray-900"
+                  numberOfLines={1}
+                >
+                  {order!.staff?.name ?? "Unknown"}
+                </Text>
+              </View>
+              <View className="items-end">
+                <Text className="text-sm text-gray-500">Time</Text>
+                <Text className="text-lg font-bold text-gray-900">
+                  {formatTimeOnly(order!.createdAt)}
+                </Text>
+              </View>
+            </View>
 
-              return (
-                <View
-                  className={`flex-1 m-2 p-4 rounded-lg ${
-                    selectionMode
-                      ? isSelected
-                        ? "bg-blue-100 border-2 border-blue-500"
-                        : "bg-white border-2 border-transparent"
-                      : "bg-white"
+            {order!.taxBreakDown && (
+              <View className="mt-4 pt-4 border-t border-gray-200">
+                <View className="flex-row justify-between mb-2">
+                  <Text className="text-base text-gray-600">Subtotal</Text>
+                  <Text className="text-base text-gray-800 font-medium">
+                    ${order!.taxBreakDown.subTotal.toFixed(2)}
+                  </Text>
+                </View>
+                <View className="flex-row justify-between mb-2">
+                  <Text className="text-base text-gray-600">PST (6%)</Text>
+                  <Text className="text-base text-gray-800 font-medium">
+                    ${order!.taxBreakDown.pst.toFixed(2)}
+                  </Text>
+                </View>
+                <View className="flex-row justify-between mb-2">
+                  <Text className="text-base text-gray-600">GST (5%)</Text>
+                  <Text className="text-base text-gray-800 font-medium">
+                    ${order!.taxBreakDown.gst.toFixed(2)}
+                  </Text>
+                </View>
+                <View className="flex-row justify-between mt-2 pt-3 border-t border-gray-100">
+                  <Text className="text-lg font-semibold text-gray-900">
+                    Total
+                  </Text>
+                  <Text className="text-lg font-bold text-gray-900">
+                    ${order!.taxBreakDown.total.toFixed(2)}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            <View className="mt-4 pt-4 border-t border-gray-200 flex-row justify-between items-center">
+              <View
+                className={`px-5 py-2.5 rounded-full ${
+                  order!.paid ? "bg-green-100" : "bg-gray-100"
+                }`}
+              >
+                <Text
+                  className={`text-base font-semibold ${
+                    order!.paid ? "text-green-700" : "text-gray-700"
                   }`}
                 >
-                  {selectionMode && (
-                    <TouchableOpacity
-                      onPress={() =>
-                        item.id && handleToggleItemSelection(item.id)
-                      }
-                      className="absolute top-2 right-2 z-10"
-                    >
-                      <View
-                        className={`w-6 h-6 rounded border-2 items-center justify-center ${
-                          isSelected
-                            ? "bg-blue-500 border-blue-500"
-                            : "bg-white border-gray-400"
-                        }`}
-                      >
-                        {isSelected && (
-                          <Text className="text-white text-xs font-bold">
-                            ✓
-                          </Text>
-                        )}
-                      </View>
-                    </TouchableOpacity>
-                  )}
-                  {/* Main item info */}
-                  <Text className="text-lg font-semibold">
-                    {item.quantity} x {item.name} - $
-                    {(item.price * item.quantity).toFixed(2)}
-                    {item.togo && " - (To Go)"}
-                    {item.appetizer && " - (Appetizer)"}
-                  </Text>
-
-                  {/* Options */}
-                  {item.options && item.options.length > 0 && (
-                    <View className="mt-2 space-y-1">
-                      {item.options.map((option, index) => (
-                        <Text key={index} className="text-base text-gray-600">
-                          • {option.quantity > 1 ? `${option.quantity}x ` : ""}
-                          {option.name}
-                          {option.price > 0 &&
-                            ` - $${(option.price * option.quantity).toFixed(2)}`}
-                        </Text>
-                      ))}
-                    </View>
-                  )}
-
-                  {/* Add Extras */}
-                  {item.extras && item.extras.length > 0 && (
-                    <View>
-                      {item.extras.map((extra, index) => (
-                        <Text key={index} className="text-base text-gray-600">
-                          • Add: {extra.description}- ${extra.price.toFixed(2)}
-                        </Text>
-                      ))}
-                    </View>
-                  )}
-
-                  {/* Item Changes */}
-                  {item.changes && item.changes.length > 0 && (
-                    <View>
-                      {item.changes.map((change, index) => (
-                        <Text key={index} className="text-base text-gray-600">
-                          • Change: {change.from} → {change.to} - $
-                          {change.price.toFixed(2)}
-                        </Text>
-                      ))}
-                    </View>
-                  )}
-
-                  {/* Special Instructions */}
-                  {item.instructions && (
-                    <Text className="text-base text-gray-500 mt-2 italic">
-                      {`"${item.instructions}"`}
-                    </Text>
-                  )}
-                </View>
-              );
-            }}
-            className="mt-4"
-          />
+                  {order!.paid ? "✓ Paid" : "Unpaid"}
+                </Text>
+              </View>
+              <View
+                className={`px-5 py-2.5 rounded-full ${
+                  order!.printed ? "bg-green-100" : "bg-yellow-100"
+                }`}
+              >
+                <Text
+                  className={`text-base font-semibold ${
+                    order!.printed ? "text-green-700" : "text-yellow-700"
+                  }`}
+                >
+                  {order!.printed ? "Printed" : "Not Printed"}
+                </Text>
+              </View>
+            </View>
+          </View>
         )}
 
         {/* Footer Actions */}
         <View className="m-4">
-          {order && (
-            <View className="bg-white p-4 rounded-lg shadow-sm mb-4">
-              {selectionMode ? (
-                // Selection Mode: Show selected items total
-                <>
-                  <View className="flex-row justify-between mb-1">
-                    <Text className="text-base text-gray-700">
-                      Selected Items Subtotal
-                    </Text>
-                    <Text className="text-base text-gray-700">
-                      ${selectedItemsTotal.toFixed(2)}
-                    </Text>
-                  </View>
+          {/* Buttons */}
+          <View className="flex-row justify-between mb-3">
+            <TouchableOpacity
+              onPress={() => {
+                if (!order) {
+                  if (table.guests === 0) {
+                    showAlert("Please Enter Number of Guests");
+                    return;
+                  }
+                  clearOrder();
+                  updateOrder({ orderType: OrderType.DineIn });
+                  router.push({
+                    pathname: "/dinein/take-order/[tableNumber]",
+                    params: { tableNumber },
+                  });
+                } else {
+                  updateOrder({ orderType: OrderType.DineIn });
+                  router.push({
+                    pathname: "/dinein/edit-order/[tableNumber]",
+                    params: { tableNumber },
+                  });
+                }
+              }}
+              activeOpacity={0.7}
+              className="bg-orange-500 px-3 py-3 rounded-lg items-center justify-center flex-1 mr-1"
+            >
+              <Text className="text-white text-sm font-semibold text-center">
+                {order ? "Edit Order" : "Take Order"}
+              </Text>
+            </TouchableOpacity>
 
-                  <View className="flex-row justify-between mb-1">
-                    <Text className="text-base text-gray-700">PST (6%)</Text>
-                    <Text className="text-base text-gray-700">
-                      ${selectedItemsTaxBreakDown.pst.toFixed(2)}
-                    </Text>
-                  </View>
+            <TouchableOpacity
+              onPress={handleSeeOrder}
+              activeOpacity={0.7}
+              disabled={!order?.id}
+              className={`px-3 py-3 rounded-lg items-center justify-center flex-1 mx-1 ${
+                order?.id ? "bg-purple-600" : "bg-purple-300"
+              }`}
+            >
+              <Text className="text-white text-sm font-semibold text-center">
+                See Order
+              </Text>
+            </TouchableOpacity>
 
-                  <View className="flex-row justify-between mb-2">
-                    <Text className="text-base text-gray-700">GST (5%)</Text>
-                    <Text className="text-base text-gray-700">
-                      ${selectedItemsTaxBreakDown.gst.toFixed(2)}
-                    </Text>
-                  </View>
-
-                  <View className="border-t border-gray-200 mt-2 pt-2 flex-row justify-between items-center">
-                    <Text className="text-lg font-semibold text-gray-800">
-                      Selected Total
-                    </Text>
-                    <Text className="text-xl font-bold text-gray-900">
-                      ${selectedItemsTaxBreakDown.total.toFixed(2)}
-                    </Text>
-                  </View>
-                </>
-              ) : (
-                // Normal Mode: Show full order total
-                <>
-                  <View className="flex-row justify-between mb-1">
-                    <Text className="text-base text-gray-700">Subtotal</Text>
-                    <Text className="text-base text-gray-700">
-                      ${(order ? orderSubtotal(order) : 0).toFixed(2)}
-                    </Text>
-                  </View>
-
-                  <View className="flex-row justify-between mb-1">
-                    <Text className="text-base text-gray-700">PST (6%)</Text>
-                    <Text className="text-base text-gray-700">
-                      ${(taxBreakDown?.pst ?? 0).toFixed(2)}
-                    </Text>
-                  </View>
-
-                  <View className="flex-row justify-between mb-2">
-                    <Text className="text-base text-gray-700">GST (5%)</Text>
-                    <Text className="text-base text-gray-700">
-                      ${(taxBreakDown?.gst ?? 0).toFixed(2)}
-                    </Text>
-                  </View>
-
-                  <View className="border-t border-gray-200 mt-2 pt-2 flex-row justify-between items-center">
-                    <Text className="text-lg font-semibold text-gray-800">
-                      Total
-                    </Text>
-                    {/* Paid Status Badge */}
-
-                    <View
-                      className={`px-4 py-2 rounded-full ${
-                        order.paid ? "bg-green-100" : "bg-gray-100"
-                      }`}
-                    >
-                      <Text
-                        className={`text-sm font-semibold ${
-                          order.paid ? "text-green-700" : "text-gray-700"
-                        }`}
-                      >
-                        {order.paid ? "✓ Paid" : "Unpaid"}
-                      </Text>
-                    </View>
-                    <Text className="text-xl font-bold text-gray-900">
-                      ${(taxBreakDown?.total ?? 0).toFixed(2)}
-                    </Text>
-                  </View>
-                </>
-              )}
-            </View>
-          )}
-
-          {/* Normal Mode Buttons */}
-          {!selectionMode && (
-            <>
-              {/* Row 1: Take/Edit | Select Items | Print */}
-              <View className="flex-row justify-between mb-3">
-                <TouchableOpacity
-                  onPress={() => {
-                    if (!order) {
-                      if (table.guests === 0) {
-                        showAlert("Please Enter Number of Guests");
-                        return;
-                      }
-                      clearOrder();
-                      updateOrder({
-                        orderType: OrderType.DineIn,
-                      });
-                      router.push({
-                        pathname: "/dinein/take-order/[tableNumber]",
-                        params: { tableNumber },
-                      });
-                    } else {
-                      updateOrder({
-                        orderType: OrderType.DineIn,
-                      });
-                      router.push({
-                        pathname: "/dinein/edit-order/[tableNumber]",
-                        params: { tableNumber },
-                      });
-                    }
-                  }}
-                  activeOpacity={0.7}
-                  className="bg-orange-500 px-3 py-3 rounded-lg items-center justify-center flex-1 mr-1"
-                >
-                  <Text className="text-white text-sm font-semibold text-center">
-                    {order ? "Edit Order" : "Take Order"}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={handleToggleSelectionMode}
-                  activeOpacity={0.7}
-                  disabled={!order}
-                  className={`px-3 py-3 rounded-lg items-center justify-center flex-1 mx-1 ${
-                    order ? "bg-purple-500" : "bg-purple-300"
-                  }`}
-                >
-                  <Text className="text-white text-sm font-semibold text-center">
-                    Select Items
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={handlePrint}
-                  activeOpacity={0.7}
-                  disabled={!order}
-                  className={`px-3 py-3 rounded-lg items-center justify-center flex-1 ml-1 ${
-                    order ? "bg-blue-500" : "bg-blue-300"
-                  }`}
-                >
-                  <View className="flex-row items-center justify-center">
-                    <Text className="text-white text-sm font-semibold">
-                      Print
-                    </Text>
-                    {order?.printed && (
-                      <Check
-                        size={14}
-                        color="orange"
-                        style={{ marginLeft: 4 }}
-                      />
-                    )}
-                  </View>
-                </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handlePrint}
+              activeOpacity={0.7}
+              disabled={!order}
+              className={`px-3 py-3 rounded-lg items-center justify-center flex-1 ml-1 ${
+                order ? "bg-blue-500" : "bg-blue-300"
+              }`}
+            >
+              <View className="flex-row items-center justify-center">
+                <Text className="text-white text-sm font-semibold">Print</Text>
+                {order?.printed && (
+                  <Check size={14} color="orange" style={{ marginLeft: 4 }} />
+                )}
               </View>
+            </TouchableOpacity>
+          </View>
 
-              {/* Row 2: Paid | Complete */}
-              <View className="flex-row justify-between mb-4">
-                <TouchableOpacity
-                  onPress={handleCancelOrder}
-                  activeOpacity={0.7}
-                  className={`${
-                    order ? "bg-red-500" : "bg-red-300"
-                  } px-3 py-3 rounded-lg items-center justify-center flex-1 mr-1`}
-                  disabled={!order}
-                >
-                  <Text className="text-white text-sm font-semibold text-center">
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => handleMarkAsPaid(!order?.paid)}
-                  activeOpacity={0.7}
-                  disabled={!order}
-                  className={`px-3 py-3 rounded-lg items-center justify-center flex-1 mx-1 ${
-                    order?.paid
-                      ? "bg-gray-500"
-                      : order
-                        ? "bg-pink-500"
-                        : "bg-gray-300"
-                  }`}
-                >
-                  <Text className="text-white text-sm font-semibold text-center">
-                    {order?.paid ? "Unpaid" : "Paid"}
-                  </Text>
-                </TouchableOpacity>
+          <View className="flex-row justify-between mb-4">
+            <TouchableOpacity
+              onPress={handleCancelOrder}
+              activeOpacity={0.7}
+              className={`${
+                order ? "bg-red-500" : "bg-red-300"
+              } px-3 py-3 rounded-lg items-center justify-center flex-1 mr-1`}
+              disabled={!order}
+            >
+              <Text className="text-white text-sm font-semibold text-center">
+                Cancel
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleMarkAsPaid(!order?.paid)}
+              activeOpacity={0.7}
+              disabled={!order}
+              className={`px-3 py-3 rounded-lg items-center justify-center flex-1 mx-1 ${
+                order?.paid
+                  ? "bg-gray-500"
+                  : order
+                    ? "bg-pink-500"
+                    : "bg-gray-300"
+              }`}
+            >
+              <Text className="text-white text-sm font-semibold text-center">
+                {order?.paid ? "Unpaid" : "Paid"}
+              </Text>
+            </TouchableOpacity>
 
-                <TouchableOpacity
-                  onPress={handleCompleteOrder}
-                  activeOpacity={0.7}
-                  disabled={!order}
-                  className={`px-3 py-3 rounded-lg items-center justify-center flex-1 mr-1 ${
-                    order ? "bg-green-500" : "bg-green-200"
-                  }`}
-                >
-                  <Text className="text-white text-sm font-semibold text-center">
-                    Complete
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </>
-          )}
-
-          {/* Selection Mode Buttons */}
-          {selectionMode && (
-            <View className="mb-4">
-              <View className="flex-row justify-between mb-3">
-                <TouchableOpacity
-                  className={`bg-green-500 px-4 py-3 rounded-lg items-center justify-center flex-1 mr-2 ${
-                    selectedItemIds.size === 0 ? "opacity-50" : "opacity-100"
-                  }`}
-                  onPress={handlePrintSelected}
-                  disabled={selectedItemIds.size === 0}
-                >
-                  <Text className="text-white text-base font-semibold text-center">
-                    Print Selected ({selectedItemIds.size})
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className="bg-gray-500 px-4 py-3 rounded-lg items-center justify-center flex-1 ml-2"
-                  onPress={handleToggleSelectionMode}
-                >
-                  <Text className="text-white text-base font-semibold text-center">
-                    Cancel Selection
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
+            <TouchableOpacity
+              onPress={handleCompleteOrder}
+              activeOpacity={0.7}
+              disabled={!order}
+              className={`px-3 py-3 rounded-lg items-center justify-center flex-1 mr-1 ${
+                order ? "bg-green-500" : "bg-green-200"
+              }`}
+            >
+              <Text className="text-white text-sm font-semibold text-center">
+                Complete
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </SafeAreaViewWrapper>

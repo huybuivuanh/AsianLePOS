@@ -68,7 +68,8 @@ export const useTakeOutOrdersStore = create<TakeOutOrdersTabState>(
 
       loadTakeOutOrders: async () => {
         try {
-          if (get().fullTakeOutOrders.length > 0) {
+          const { fullTakeOutOrders, lastFetchTime } = get();
+          if (fullTakeOutOrders.length > 0 || lastFetchTime !== null) {
             set({ loading: false });
             return;
           }

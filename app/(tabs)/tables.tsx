@@ -55,16 +55,16 @@ export default function Tables() {
             ) : (
               <X size={16} color="red" />
             )}
-            {item.currentOrderId && (
-              <View className="flex-row items-center space-x-1">
-                <Text className="text-sm">Printed:</Text>
-                {getPrintedStatus(item.currentOrderId) ? (
-                  <Check size={16} color="green" />
-                ) : (
-                  <X size={16} color="red" />
-                )}
-              </View>
-            )}
+          </View>
+          <View className="flex-row items-center space-x-1">
+            <View className="flex-row items-center space-x-1">
+              <Text className="text-sm">Printed:</Text>
+              {item.currentOrderId && getPrintedStatus(item.currentOrderId) ? (
+                <Check size={16} color="green" />
+              ) : (
+                <X size={16} color="red" />
+              )}
+            </View>
           </View>
         </View>
       </Pressable>

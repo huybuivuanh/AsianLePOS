@@ -67,7 +67,10 @@ export const useDineInOrdersStore = create<DineInOrdersTabState>((set, get) => {
 
     loadDineInOrders: async () => {
       try {
-        if (get().fullDineInOrders.length > 0) {
+        const { fullDineInOrders, lastFetchTime } = get();
+        // Non-empty list, or realtime already delivered (including empty) — do
+        // not flip loading back on (avoids race with tab mount + subscribe).
+        if (fullDineInOrders.length > 0 || lastFetchTime !== null) {
           set({ loading: false });
           return;
         }
