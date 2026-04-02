@@ -339,7 +339,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const batch = writeBatch(db);
     const orderRef = doc(db, firestorecollection, order.id);
     batch.update(orderRef, {
-      status: OrderStatus.Canceled,
+      status: OrderStatus.Cancelled,
     });
 
     if (order.orderType === OrderType.DineIn && order.tableNumber) {

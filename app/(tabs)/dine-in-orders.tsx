@@ -167,7 +167,7 @@ export default function DineInOrdersTab() {
                 </Text>
               </View>
               {!(item.status === OrderStatus.Completed && !item.paid) &&
-                item.status !== OrderStatus.Canceled && (
+                item.status !== OrderStatus.Cancelled && (
                   <View
                     className={`px-3 py-1 rounded-full ${
                       item.paid ? "bg-green-100" : "bg-gray-100"
@@ -205,7 +205,7 @@ export default function DineInOrdersTab() {
                   ? "In Progress"
                   : item.status === OrderStatus.Completed
                     ? "Completed"
-                    : "Canceled"}
+                    : "Cancelled"}
               </Text>
             </View>
           </View>

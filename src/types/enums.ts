@@ -8,7 +8,7 @@ export enum KitchenType {
 export enum OrderStatus {
   InProgress = "InProgress",
   Completed = "Completed",
-  Canceled = "Canceled",
+  Cancelled = "Cancelled",
 }
 
 export enum TimeFormat {
@@ -16,12 +16,6 @@ export enum TimeFormat {
   OnlyTime = "OnlyTime",
   OnlyDate = "OnlyDate",
   OnlyMonth = "OnlyMonth",
-}
-
-export enum AlertType {
-  Success = "success",
-  Error = "error",
-  Info = "info",
 }
 
 export enum OrderType {
