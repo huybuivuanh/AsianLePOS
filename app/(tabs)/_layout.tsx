@@ -9,7 +9,7 @@ import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
 import { useEffect } from "react";
-import { Text, View } from "react-native";
+import { Platform, Text, View } from "react-native";
 
 export default function TabsLayout() {
   const { user, loading: authLoading } = useAuth();
@@ -126,6 +126,11 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: "#6B7280",
         tabBarStyle: { backgroundColor: "#F3F4F6", height: 80 },
         tabBarLabelStyle: { fontSize: 12, marginBottom: 5 },
+        sceneStyle: {
+          flex: 1,
+          width: "100%",
+          ...(Platform.OS === "web" ? { alignSelf: "stretch" as const } : {}),
+        },
       }}
     >
       <Tabs.Screen

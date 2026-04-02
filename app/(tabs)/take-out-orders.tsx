@@ -19,6 +19,7 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Platform,
   Text,
   TouchableOpacity,
   View,
@@ -390,11 +391,17 @@ export default function TakeOutOrdersTab() {
         </View>
       ) : (
         <FlatList
+          style={{ flex: 1, width: "100%", alignSelf: "stretch" }}
+          contentContainerStyle={{
+            flexGrow: 1,
+            alignSelf: "stretch",
+            width: "100%",
+          }}
           keyboardShouldPersistTaps="always"
           data={takeOutOrders}
           keyExtractor={(item) => item.id!}
           renderItem={renderOrder}
-          removeClippedSubviews={true}
+          removeClippedSubviews={Platform.OS !== "web"}
           maxToRenderPerBatch={10}
           windowSize={10}
           initialNumToRender={10}
@@ -414,11 +421,6 @@ export default function TakeOutOrdersTab() {
               </View>
             ) : null
           }
-          getItemLayout={(data, index) => ({
-            length: 200, // Approximate item height
-            offset: 200 * index,
-            index,
-          })}
         />
       )}
     </SafeAreaViewWrapper>

@@ -11,7 +11,14 @@ export default function Header({
   onBack: () => void;
 }) {
   return (
-    <View className="flex-row items-center justify-between px-4 py-3 bg-gray-400">
+    <View
+      className="flex-row items-center justify-between px-4 py-3 bg-gray-400 w-full"
+      style={{
+        width: "100%",
+        alignSelf: "stretch",
+        ...(Platform.OS === "web" ? { maxWidth: "100%" } : {}),
+      }}
+    >
       <TouchableOpacity onPress={onBack}>
         {Platform.OS === "web" ? (
           <ArrowLeft size={32} color="white" />

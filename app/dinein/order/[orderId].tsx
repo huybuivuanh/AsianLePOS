@@ -12,7 +12,13 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { doc, onSnapshot } from "firebase/firestore";
 import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function DineInOrderDetails() {
   const { orderId } = useLocalSearchParams<{ orderId: string }>();
@@ -136,9 +142,21 @@ export default function DineInOrderDetails() {
         title={`Table ${order.tableNumber}`}
         onBack={() => router.back()}
       />
-      <View className="flex-1 p-4">
-        {/* Items */}
-        <View className="mt-4 bg-white border border-gray-200 rounded-2xl p-4">
+      <ScrollView
+        style={{ flex: 1, width: "100%", alignSelf: "stretch" }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          alignSelf: "stretch",
+          width: "100%",
+          padding: 16,
+          paddingBottom: 24,
+        }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View
+          className="w-full bg-white border border-gray-200 rounded-2xl p-4"
+          style={{ alignSelf: "stretch" }}
+        >
           <View className="flex-row items-center justify-between mb-3">
             <Text className="text-lg font-extrabold text-gray-900">
               Order Items
@@ -209,7 +227,7 @@ export default function DineInOrderDetails() {
             )}
           </View>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaViewWrapper>
   );
 }

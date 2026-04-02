@@ -1,6 +1,6 @@
 // src/components/layout/SafeAreaViewWrapper.tsx
 import React, { ReactNode } from "react";
-import { View, ViewProps } from "react-native";
+import { Platform, View, ViewProps } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface Props extends ViewProps {
@@ -16,6 +16,15 @@ export default function SafeAreaViewWrapper({
 }: Props) {
   const insets = useSafeAreaInsets();
 
+  const webLayout =
+    Platform.OS === "web"
+      ? {
+          width: "100%" as const,
+          minHeight: "100%" as const,
+          alignSelf: "stretch" as const,
+        }
+      : undefined;
+
   return (
     <View
       style={[
@@ -24,6 +33,7 @@ export default function SafeAreaViewWrapper({
           paddingTop: insets.top,
           paddingBottom: insets.bottom,
           backgroundColor,
+          ...webLayout,
         },
         style,
       ]}
