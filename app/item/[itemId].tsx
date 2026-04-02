@@ -409,78 +409,97 @@ export default function Item() {
                   )}
                 </View>
 
-                {group.optionIds?.map((optionId) => {
-                  const option = options.find((o) => o.id === optionId);
-                  if (!option) return null;
+                {(() => {
+                  const normalizedOptions =
+                    (group.optionIds ?? [])
+                      .map((optionId) =>
+                        options.find((o) => o.id === optionId),
+                      )
+                      .filter(Boolean) as ItemOption[];
 
-                  const optionQuantity =
-                    selectedOptions[group.id!]?.[option.id!] || 0;
-                  const isSelected = optionQuantity > 0;
+                  // Sort by display name (option ids alone can't be alphabetized)
+                  normalizedOptions.sort((a, b) =>
+                    a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
+                  );
 
-                  return (
-                    <View
-                      key={option.id}
-                      className={`py-2 px-3 mb-2 rounded-lg border ${
-                        isSelected
-                          ? "border-blue-600 bg-blue-100"
-                          : "border-gray-300 bg-white"
-                      }`}
-                    >
-                      <View className="flex-row items-center justify-between">
-                        <TouchableOpacity
-                          onPress={() => toggleOption(group, option)}
-                          className="flex-1"
-                        >
-                          <Text className="text-base">
-                            {option.name}{" "}
-                            {option.price > 0 &&
-                              `- $${option.price.toFixed(2)}`}
-                          </Text>
-                        </TouchableOpacity>
+                  return normalizedOptions.map((option) => {
+                    const optionQuantity =
+                      selectedOptions[group.id!]?.[option.id!] || 0;
+                    const isSelected = optionQuantity > 0;
 
-                        {/* Quantity Stepper for multipleSelection groups */}
-                        {group.multipleSelection && (
-                          <View className="flex-row items-center ml-3">
-                            <TouchableOpacity
-                              onPress={() =>
-                                updateOptionQuantity(group.id!, option.id!, -1)
-                              }
-                              disabled={optionQuantity === 0}
-                              className={`w-8 h-8 rounded-full bg-white justify-center items-center border ${
-                                optionQuantity === 0
-                                  ? "border-gray-200 opacity-50"
-                                  : "border-gray-300"
-                              }`}
-                            >
-                              <Text
-                                className={`text-lg font-bold ${
+                    return (
+                      <View
+                        key={option.id}
+                        className={`py-2 px-3 mb-2 rounded-lg border ${
+                          isSelected
+                            ? "border-blue-600 bg-blue-100"
+                            : "border-gray-300 bg-white"
+                        }`}
+                      >
+                        <View className="flex-row items-center justify-between">
+                          <TouchableOpacity
+                            onPress={() => toggleOption(group, option)}
+                            className="flex-1"
+                          >
+                            <Text className="text-base">
+                              {option.name}{" "}
+                              {option.price > 0 &&
+                                `- $${option.price.toFixed(2)}`}
+                            </Text>
+                          </TouchableOpacity>
+
+                          {/* Quantity Stepper for multipleSelection groups */}
+                          {group.multipleSelection && (
+                            <View className="flex-row items-center ml-3">
+                              <TouchableOpacity
+                                onPress={() =>
+                                  updateOptionQuantity(
+                                    group.id!,
+                                    option.id!,
+                                    -1,
+                                  )
+                                }
+                                disabled={optionQuantity === 0}
+                                className={`w-8 h-8 rounded-full bg-white justify-center items-center border ${
                                   optionQuantity === 0
-                                    ? "text-gray-400"
-                                    : "text-gray-700"
+                                    ? "border-gray-200 opacity-50"
+                                    : "border-gray-300"
                                 }`}
                               >
-                                −
+                                <Text
+                                  className={`text-lg font-bold ${
+                                    optionQuantity === 0
+                                      ? "text-gray-400"
+                                      : "text-gray-700"
+                                  }`}
+                                >
+                                  −
+                                </Text>
+                              </TouchableOpacity>
+                              <Text className="mx-3 text-base font-semibold">
+                                {optionQuantity}
                               </Text>
-                            </TouchableOpacity>
-                            <Text className="mx-3 text-base font-semibold">
-                              {optionQuantity}
-                            </Text>
-                            <TouchableOpacity
-                              onPress={() =>
-                                updateOptionQuantity(group.id!, option.id!, 1)
-                              }
-                              className="w-8 h-8 rounded-full bg-white justify-center items-center border border-gray-300"
-                            >
-                              <Text className="text-lg font-bold text-gray-700">
-                                ＋
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
-                        )}
+                              <TouchableOpacity
+                                onPress={() =>
+                                  updateOptionQuantity(
+                                    group.id!,
+                                    option.id!,
+                                    1,
+                                  )
+                                }
+                                className="w-8 h-8 rounded-full bg-white justify-center items-center border border-gray-300"
+                              >
+                                <Text className="text-lg font-bold text-gray-700">
+                                  ＋
+                                </Text>
+                              </TouchableOpacity>
+                            </View>
+                          )}
+                        </View>
                       </View>
-                    </View>
-                  );
-                })}
+                    );
+                  });
+                })()}
               </View>
             );
           })}

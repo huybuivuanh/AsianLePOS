@@ -1,6 +1,6 @@
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import Header from "@/ui/Header";
-import React from "react";
+import React, { useMemo } from "react";
 import { View } from "react-native";
 import SearchResults from "./SearchResults";
 
@@ -17,11 +17,21 @@ export default function CategoryItemsView({
   onBack,
   onSelectItem,
 }: Props) {
+  const sortedItems = useMemo(() => {
+    return [...items].sort((a, b) =>
+      a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
+    );
+  }, [items]);
+
   return (
     <SafeAreaViewWrapper className="flex-1 bg-white">
       <Header title={title} onBack={onBack} />
       <View className="flex-1 pt-2">
-        <SearchResults items={items} query="" onSelectItem={onSelectItem} />
+        <SearchResults
+          items={sortedItems}
+          query=""
+          onSelectItem={onSelectItem}
+        />
       </View>
     </SafeAreaViewWrapper>
   );

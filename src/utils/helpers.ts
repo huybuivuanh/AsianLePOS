@@ -1,7 +1,7 @@
+import { OrderType, TakeOutFulfillmentKind } from "@/types/enums";
 import dayjs from "dayjs";
 import { collection, doc, Timestamp } from "firebase/firestore";
 import { Alert, Platform } from "react-native";
-import { OrderType, TakeOutFulfillmentKind } from "@/types/enums";
 import { db } from "../lib/firebaseConfig";
 
 export const formatDate = (timestamp: Timestamp) => {
@@ -39,7 +39,7 @@ export const formatPhone = (phone: string) => {
 
 // Convert Firestore Timestamp to JavaScript Date
 export const timestampToDate = (
-  timestamp: Timestamp | Date | undefined
+  timestamp: Timestamp | Date | undefined,
 ): Date | undefined => {
   if (!timestamp) return undefined;
   if (timestamp instanceof Date) return timestamp;
@@ -48,15 +48,13 @@ export const timestampToDate = (
   if (typeof timestamp === "object" && "seconds" in timestamp) {
     return new Date(
       (timestamp as any).seconds * 1000 +
-        ((timestamp as any).nanoseconds || 0) / 1_000_000
+        ((timestamp as any).nanoseconds || 0) / 1_000_000,
     );
   }
   return undefined;
 };
 
-export const orderItemsSubtotal = (
-  items: OrderItem[] | undefined
-): number => {
+export const orderItemsSubtotal = (items: OrderItem[] | undefined): number => {
   return (items ?? []).reduce((acc, i) => acc + i.price * i.quantity, 0);
 };
 
@@ -69,7 +67,7 @@ export const orderSubtotal = (order: Partial<Order>): number => {
 };
 
 export const resolveTaxBreakdown = (
-  order: Partial<Order>
+  order: Partial<Order>,
 ): TaxBreakDown | undefined => {
   if (order.taxBreakDown) return order.taxBreakDown;
   const sub = orderItemsSubtotal(order.orderItems);
@@ -96,7 +94,7 @@ export const takeoutScheduledAt = (order: {
 
 // Convert order timestamps for UI (keeps fulfillment.scheduledAt as Timestamp)
 export const convertOrderTimestamps = (
-  order: Partial<AnyOrder>
+  order: Partial<AnyOrder>,
 ): Partial<AnyOrder> => {
   const taxBreakDown = resolveTaxBreakdown(order);
   return {
@@ -125,7 +123,7 @@ export const generateFirestoreId = () => {
 
 export const sortTables = (tables: Table[]): Table[] => {
   return [...tables].sort(
-    (a, b) => parseInt(a.tableNumber, 10) - parseInt(b.tableNumber, 10)
+    (a, b) => parseInt(a.tableNumber, 10) - parseInt(b.tableNumber, 10),
   );
 };
 
