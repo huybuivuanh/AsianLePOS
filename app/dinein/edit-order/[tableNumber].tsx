@@ -7,6 +7,7 @@ import { useTableStore } from "@/stores/useTableStore";
 import { OrderStatus } from "@/types/enums";
 import Header from "@/ui/Header";
 import { convertOrderTimestamps, showAlert } from "@/utils/helpers";
+import DiscountButtonModalAndSummary from "@/features/order/components/DiscountButtonModalAndSummary";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -113,6 +114,7 @@ export default function EditDinInOrder() {
           keyboardShouldPersistTaps="handled"
         >
           <OrderLinesList orderItems={order.orderItems} />
+          <DiscountButtonModalAndSummary />
         </KeyboardAwareScrollView>
 
         <View className="flex-row justify-between items-center px-4 mb-2">

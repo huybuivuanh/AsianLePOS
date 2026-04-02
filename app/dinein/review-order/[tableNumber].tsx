@@ -7,6 +7,7 @@ import { useTableStore } from "@/stores/useTableStore";
 import { OrderStatus, OrderType, TableStatus } from "@/types/enums";
 import Header from "@/ui/Header";
 import {
+  calculateDiscountAmount,
   calculateTaxBreakdown,
   generateFirestoreId,
   showAlert,
@@ -23,6 +24,7 @@ import {
   View,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import DiscountButtonModalAndSummary from "@/features/order/components/DiscountButtonModalAndSummary";
 
 export default function ReviewDineInOrder() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
@@ -63,7 +65,13 @@ export default function ReviewDineInOrder() {
         (acc, i) => acc + i.price * i.quantity,
         0,
       );
-      const computedTax = calculateTaxBreakdown(subtotal);
+      const discountAmount = calculateDiscountAmount(
+        subtotal,
+        order.discountType,
+        order.discountValue,
+      );
+      const taxableSubtotal = Math.max(0, subtotal - discountAmount);
+      const computedTax = calculateTaxBreakdown(taxableSubtotal);
 
       const orderToSubmit = {
         id: orderId,
@@ -73,6 +81,8 @@ export default function ReviewDineInOrder() {
         guests: getTable(tableNumber)?.guests || 0,
         orderItems: order.orderItems,
         taxBreakDown: computedTax,
+        discountType: order.discountType ?? "none",
+        discountValue: order.discountValue ?? 0,
         status: OrderStatus.InProgress,
         paid: false,
         printed: false,
@@ -118,6 +128,7 @@ export default function ReviewDineInOrder() {
           keyboardShouldPersistTaps="handled"
         >
           <OrderLinesList orderItems={order.orderItems} />
+          <DiscountButtonModalAndSummary />
         </KeyboardAwareScrollView>
 
         {/* Clear + Toggle Footer */}

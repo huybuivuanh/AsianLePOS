@@ -66,12 +66,47 @@ export const orderSubtotal = (order: Partial<Order>): number => {
   return orderItemsSubtotal(order.orderItems);
 };
 
+export const calculateDiscountAmount = (
+  itemsSubtotal: number,
+  discountType?: DiscountType,
+  discountValue?: number,
+): number => {
+  if (itemsSubtotal <= 0) return 0;
+
+  const type = discountType ?? "none";
+  const value = discountValue ?? 0;
+
+  if (type === "amount") {
+    // Clamp amount discount so it can't exceed subtotal.
+    return Math.min(itemsSubtotal, Math.max(0, value));
+  }
+
+  if (type === "percent") {
+    // Clamp percent so it can't go negative or above 100.
+    const pct = Math.min(100, Math.max(0, value));
+    return (itemsSubtotal * pct) / 100;
+  }
+
+  return 0;
+};
+
 export const resolveTaxBreakdown = (
   order: Partial<Order>,
 ): TaxBreakDown | undefined => {
   if (order.taxBreakDown) return order.taxBreakDown;
-  const sub = orderItemsSubtotal(order.orderItems);
-  return sub > 0 ? calculateTaxBreakdown(sub) : undefined;
+
+  const itemsSubtotal = orderItemsSubtotal(order.orderItems);
+  const discountAmount = calculateDiscountAmount(
+    itemsSubtotal,
+    order.discountType,
+    order.discountValue,
+  );
+  const taxableSubtotal = Math.max(0, itemsSubtotal - discountAmount);
+
+  // Show tax breakdown when the order had items, even if discount makes taxableSubtotal 0.
+  return itemsSubtotal > 0
+    ? calculateTaxBreakdown(taxableSubtotal)
+    : undefined;
 };
 
 export const takeoutFulfillmentIsScheduled = (order: {

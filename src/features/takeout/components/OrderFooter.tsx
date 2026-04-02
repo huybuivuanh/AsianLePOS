@@ -8,14 +8,12 @@ interface Props {
   onSubmit: () => void;
   submitting: boolean;
   disabled: boolean;
-  autoFocusPhone?: boolean;
 }
 
 export default function OrderFooter({
   onSubmit,
   submitting,
   disabled,
-  autoFocusPhone,
 }: Props) {
   const orderId = useOrderStore((s) => s.order.id);
   const getTotalItems = useOrderStore((s) => s.getTotalItems);
@@ -27,7 +25,7 @@ export default function OrderFooter({
   return (
     <View className="p-4 bg-white border-t border-gray-200">
       {/* These components now read/write from the store directly */}
-      <CustomerInfoForm autoFocusPhone={autoFocusPhone} />
+      <CustomerInfoForm />
       <ReadyTimeSelector />
 
       <TouchableOpacity

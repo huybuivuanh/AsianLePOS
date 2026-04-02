@@ -7,6 +7,7 @@ import Header from "@/ui/Header";
 import { generateFirestoreId, showAlert } from "@/utils/helpers";
 import { useRouter, type Href } from "expo-router";
 import React, { useState } from "react";
+import DiscountButtonModalAndSummary from "@/features/order/components/DiscountButtonModalAndSummary";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -78,6 +79,7 @@ export default function ReviewOrder() {
           keyboardShouldPersistTaps="handled"
         >
           <OrderLinesList orderItems={order.orderItems} />
+          <DiscountButtonModalAndSummary />
         </KeyboardAwareScrollView>
 
         {/* Clear + Toggle Footer */}
@@ -107,7 +109,6 @@ export default function ReviewOrder() {
             onSubmit={handleSubmit}
             submitting={submitting}
             disabled={isSubmitDisabled}
-            autoFocusPhone
           />
         )}
       </KeyboardAvoidingView>

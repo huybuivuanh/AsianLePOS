@@ -1,4 +1,5 @@
 import { OrderLinesList } from "@/features/order";
+import DiscountButtonModalAndSummary from "@/features/order/components/DiscountButtonModalAndSummary";
 import { OrderFooter } from "@/features/takeout";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useAuth } from "@/providers/AuthProvider";
@@ -89,6 +90,7 @@ export default function EditOrder() {
           keyboardShouldPersistTaps="handled"
         >
           <OrderLinesList orderItems={order.orderItems} />
+          <DiscountButtonModalAndSummary />
         </KeyboardAwareScrollView>
 
         {/* Toggle Footer */}
