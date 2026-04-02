@@ -160,15 +160,33 @@ export default function Item() {
     setSelectedOptions((prev) => {
       const current = prev[group.id!] || {};
 
-      // If multipleSelection is enabled, increment quantity instead of toggling
       if (group.multipleSelection) {
         const currentQty = current[option.id!] || 0;
-        const newQty = currentQty > 0 ? 0 : 1; // Toggle between 0 and 1 initially
+        if (currentQty > 0) {
+          const updated = { ...current };
+          delete updated[option.id!];
+          return { ...prev, [group.id!]: updated };
+        }
+        // Select this option (qty 1): respect max distinct options
+        const activeIds = Object.keys(current).filter((id) => current[id] > 0);
+        if (group.maxSelection === 1) {
+          return {
+            ...prev,
+            [group.id!]: { [option.id!]: 1 },
+          };
+        }
+        if (
+          group.maxSelection != null &&
+          group.maxSelection > 0 &&
+          activeIds.length >= group.maxSelection
+        ) {
+          return prev;
+        }
         return {
           ...prev,
           [group.id!]: {
             ...current,
-            [option.id!]: newQty,
+            [option.id!]: 1,
           },
         };
       }
@@ -210,15 +228,38 @@ export default function Item() {
     delta: number,
   ) => {
     setSelectedOptions((prev) => {
+      const group = optionGroups.find((g) => g.id === groupId);
+      if (!group) return prev;
+
       const current = prev[groupId] || {};
       const currentQty = current[optionId] || 0;
       const newQty = Math.max(0, currentQty + delta);
 
       if (newQty === 0) {
-        // Remove option if quantity is 0
         const updated = { ...current };
         delete updated[optionId];
         return { ...prev, [groupId]: updated };
+      }
+
+      // First unit on this option counts as a new distinct choice — same caps as toggle
+      if (currentQty === 0 && delta > 0) {
+        const activeIds = Object.keys(current).filter((id) => current[id] > 0);
+        const addingNewDistinct = !activeIds.includes(optionId);
+        if (addingNewDistinct) {
+          if (group.maxSelection === 1) {
+            return {
+              ...prev,
+              [groupId]: { [optionId]: newQty },
+            };
+          }
+          if (
+            group.maxSelection != null &&
+            group.maxSelection > 0 &&
+            activeIds.length >= group.maxSelection
+          ) {
+            return prev;
+          }
+        }
       }
 
       return {
@@ -240,9 +281,9 @@ export default function Item() {
         .filter(Boolean) as OptionGroup[]) || [];
 
     for (const group of groups) {
-      const selectedCount = Object.keys(
+      const selectedCount = Object.values(
         selectedOptions[group.id!] || {},
-      ).length;
+      ).filter((q) => q > 0).length;
       if (selectedCount < group.minSelection) {
         showAlert("Please Select Required Options");
         return;
@@ -428,20 +469,9 @@ export default function Item() {
                               onPress={() =>
                                 updateOptionQuantity(group.id!, option.id!, 1)
                               }
-                              disabled={optionQuantity === 0}
-                              className={`w-8 h-8 rounded-full bg-white justify-center items-center border ${
-                                optionQuantity === 0
-                                  ? "border-gray-200 opacity-50"
-                                  : "border-gray-300"
-                              }`}
+                              className="w-8 h-8 rounded-full bg-white justify-center items-center border border-gray-300"
                             >
-                              <Text
-                                className={`text-lg font-bold ${
-                                  optionQuantity === 0
-                                    ? "text-gray-400"
-                                    : "text-gray-700"
-                                }`}
-                              >
+                              <Text className="text-lg font-bold text-gray-700">
                                 ＋
                               </Text>
                             </TouchableOpacity>
