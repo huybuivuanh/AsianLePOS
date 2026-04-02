@@ -25,7 +25,7 @@ export default function EditOrder() {
 
   // Local UI states
   const [submitting, setSubmitting] = useState(false);
-  const [footerVisible, setFooterVisible] = useState(false);
+  const [footerVisible, setFooterVisible] = useState(true);
 
   // Handle order submission
   const handleSubmit = async () => {

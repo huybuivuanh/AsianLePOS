@@ -307,11 +307,17 @@ export default function Item() {
       addItem(cleanItem);
     }
 
-    if (orderTypeStr === OrderType.DineIn) {
+    // Pop stack when dine-in, or take-out with an existing order (e.g. edit-order + add-item).
+    // New take-out from tabs (no order.id yet) still goes to tab root.
+    const shouldPopStack =
+      orderTypeStr === OrderType.DineIn || Boolean(order.id);
+
+    if (shouldPopStack) {
       router.back();
-      // From category list → item: stack is [take-order, category, item] — pop twice to grid.
-      // From search: stack is [take-order, item] — only one back.
-      if (!isEditMode && menuEntryStr === "category") {
+      // Category path: […, category, item] — second pop skips category (take-order / add-item grid,
+      // or edit-order after add-item → category). Search path is […, item] — one back only.
+      // Applies to both new lines and editing a line when menuEntry is still "category".
+      if (menuEntryStr === "category") {
         queueMicrotask(() => router.back());
       }
     } else {

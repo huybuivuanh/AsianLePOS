@@ -214,20 +214,22 @@ export default function TakeOutOrdersTab() {
                   {item.printed ? "Printed" : "Not Printed"}
                 </Text>
               </View>
-
-              <View
-                className={`px-3 py-1 rounded-full ${
-                  item.paid ? "bg-green-100" : "bg-gray-100"
-                }`}
-              >
-                <Text
-                  className={`text-xs font-semibold ${
-                    item.paid ? "text-green-700" : "text-gray-700"
-                  }`}
-                >
-                  {item.paid ? "Paid" : "Unpaid"}
-                </Text>
-              </View>
+              {!(item.status === OrderStatus.Completed && !item.paid) &&
+                item.status !== OrderStatus.Canceled && (
+                  <View
+                    className={`px-3 py-1 rounded-full ${
+                      item.paid ? "bg-green-100" : "bg-gray-100"
+                    }`}
+                  >
+                    <Text
+                      className={`text-xs font-semibold ${
+                        item.paid ? "text-green-700" : "text-gray-700"
+                      }`}
+                    >
+                      {item.paid ? "Paid" : "Unpaid"}
+                    </Text>
+                  </View>
+                )}
               <View
                 className={`px-3 py-1 rounded-full ${
                   item.status === OrderStatus.InProgress
