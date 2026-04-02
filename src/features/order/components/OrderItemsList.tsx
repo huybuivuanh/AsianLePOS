@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
 type Props = {
   orderItems: OrderItem[];
@@ -24,8 +24,14 @@ export default function OrderItemsList({
         const isSelected = orderItem.id ? selectedItemIds.has(orderItem.id) : false;
 
         return (
-          <View
+          <Pressable
             key={`${orderItem.id} ${index}`}
+            onPress={
+              isSelectionMode && orderItem.id
+                ? () => onToggleItemSelection(orderItem.id!)
+                : undefined
+            }
+            disabled={!isSelectionMode || !orderItem.id}
             className={`flex-row justify-between items-center mb-3 p-2 rounded-lg ${
               isSelectionMode
                 ? isSelected
@@ -35,10 +41,7 @@ export default function OrderItemsList({
             }`}
           >
             {isSelectionMode && (
-              <TouchableOpacity
-                onPress={() => orderItem.id && onToggleItemSelection(orderItem.id)}
-                className="mr-3"
-              >
+              <View className="mr-3">
                 <View
                   className={`w-6 h-6 rounded border-2 items-center justify-center ${
                     isSelected
@@ -50,7 +53,7 @@ export default function OrderItemsList({
                     <Text className="text-white text-xs font-bold">✓</Text>
                   )}
                 </View>
-              </TouchableOpacity>
+              </View>
             )}
             <View className="flex-row justify-between items-start p-1 rounded-lg flex-1">
               <View className="flex-1">
@@ -107,7 +110,7 @@ export default function OrderItemsList({
                 )}
               </View>
             </View>
-          </View>
+          </Pressable>
         );
       })}
     </>
