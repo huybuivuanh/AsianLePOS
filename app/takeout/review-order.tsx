@@ -107,6 +107,7 @@ export default function ReviewOrder() {
             onSubmit={handleSubmit}
             submitting={submitting}
             disabled={isSubmitDisabled}
+            autoFocusPhone
           />
         )}
       </KeyboardAvoidingView>

@@ -8,9 +8,15 @@ interface Props {
   onSubmit: () => void;
   submitting: boolean;
   disabled: boolean;
+  autoFocusPhone?: boolean;
 }
 
-export default function OrderFooter({ onSubmit, submitting, disabled }: Props) {
+export default function OrderFooter({
+  onSubmit,
+  submitting,
+  disabled,
+  autoFocusPhone,
+}: Props) {
   const orderId = useOrderStore((s) => s.order.id);
   const getTotalItems = useOrderStore((s) => s.getTotalItems);
   const getTaxBreakdown = useOrderStore((s) => s.getTaxBreakdown);
@@ -21,7 +27,7 @@ export default function OrderFooter({ onSubmit, submitting, disabled }: Props) {
   return (
     <View className="p-4 bg-white border-t border-gray-200">
       {/* These components now read/write from the store directly */}
-      <CustomerInfoForm />
+      <CustomerInfoForm autoFocusPhone={autoFocusPhone} />
       <ReadyTimeSelector />
 
       <TouchableOpacity
