@@ -144,7 +144,7 @@ export default function DineInOrdersTab() {
               Guests: {item.guests ?? 0}
             </Text>
             <Text className="font-semibold text-gray-800 text-base">
-              Staff: {item.staff.name}
+              Staff: {item.staff ?? "—"}
             </Text>
             <Text className="font-semibold text-gray-800 text-base">
               Time: {formatDate(item.createdAt)}

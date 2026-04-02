@@ -32,18 +32,15 @@ export default function ReviewOrder() {
     }
 
     try {
-      const staff: User = {
-        id: user.uid,
-        name: user.displayName || "Unknown",
-        email: user.email || undefined,
-      };
+      const staffName =
+        user.displayName?.trim() || user.email?.trim() || "Unknown";
 
       const orderId = generateFirestoreId();
 
       const newOrder = {
         ...order,
         id: orderId,
-        staff: staff,
+        staff: staffName,
       };
 
       setSubmitting(true);

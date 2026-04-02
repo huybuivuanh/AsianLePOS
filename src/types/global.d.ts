@@ -90,7 +90,7 @@ declare global {
 
   interface Order {
     id?: string;
-    staff: User;
+    staff: string;
     orderType: OrderType;
     orderItems: OrderItem[];
     taxBreakDown: TaxBreakDown;

@@ -128,7 +128,7 @@ export default function TablePage() {
                   className="text-lg font-bold text-gray-900"
                   numberOfLines={1}
                 >
-                  {order!.staff?.name ?? "Unknown"}
+                  {order!.staff ?? "Unknown"}
                 </Text>
               </View>
               <View className="items-end">

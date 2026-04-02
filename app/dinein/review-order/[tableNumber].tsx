@@ -44,11 +44,8 @@ export default function ReviewDineInOrder() {
     try {
       setSubmitting(true);
 
-      const staff: User = {
-        id: user.uid,
-        name: user.displayName || "Unknown",
-        email: user.email || undefined,
-      };
+      const staffName =
+        user.displayName?.trim() || user.email?.trim() || "Unknown";
 
       const orderId = generateFirestoreId();
 
@@ -70,7 +67,7 @@ export default function ReviewDineInOrder() {
 
       const orderToSubmit = {
         id: orderId,
-        staff,
+        staff: staffName,
         orderType: OrderType.DineIn,
         tableNumber,
         guests: getTable(tableNumber)?.guests || 0,

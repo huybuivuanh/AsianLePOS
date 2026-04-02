@@ -187,7 +187,7 @@ export default function TakeOutOrdersTab() {
               </Text>
             ) : null}
             <Text className="font-semibold text-gray-800 text-base">
-              Staff: {`${item.staff.name}`}
+              Staff: {item.staff ?? "—"}
             </Text>
             <Text className="font-semibold text-gray-800 text-base">
               Time: {formatDate(item.createdAt)}
