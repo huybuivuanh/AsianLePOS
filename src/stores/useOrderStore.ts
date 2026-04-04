@@ -1,12 +1,12 @@
 import { db } from "@/lib/firebaseConfig";
 import {
+  DiscountType,
   OrderStatus,
   OrderType,
   TableStatus,
   TakeOutFulfillmentKind,
 } from "@/types/enums";
 import {
-  calculateDiscountAmount,
   calculateTaxBreakdown,
   orderItemsSubtotal,
 } from "@/utils/helpers";
@@ -58,25 +58,31 @@ const defaultTakeOutDraft: OrderDraft = {
   orderItems: [],
   orderType: OrderType.TakeOut,
   printed: false,
-  discountType: "none",
-  discountValue: 0,
   fulfillment: {
     kind: TakeOutFulfillmentKind.Immediate,
     readyTimeMinutes: 15,
   },
 };
 
+function discountInputsFromOrder(order: OrderDraft): {
+  type: DiscountType;
+  value: number;
+} {
+  const d = order.taxBreakDown?.discount;
+  return {
+    type: d?.discountType ?? DiscountType.None,
+    value: d?.discountValue ?? 0,
+  };
+}
+
 function withRecalculatedTax(order: OrderDraft): OrderDraft {
   const itemsSubtotal = orderItemsSubtotal(order.orderItems);
-  const discountAmount = calculateDiscountAmount(
-    itemsSubtotal,
-    order.discountType,
-    order.discountValue,
-  );
-  const taxableSubtotal = Math.max(0, itemsSubtotal - discountAmount);
+  const { type, value } = discountInputsFromOrder(order);
 
   const taxBreakDown =
-    itemsSubtotal > 0 ? calculateTaxBreakdown(taxableSubtotal) : undefined;
+    itemsSubtotal > 0
+      ? calculateTaxBreakdown(itemsSubtotal, type, value)
+      : undefined;
   return {
     ...order,
     taxBreakDown,
@@ -171,14 +177,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const order = get().order;
     if (order.taxBreakDown) return order.taxBreakDown;
     const itemsSubtotal = orderItemsSubtotal(order.orderItems);
-    const discountAmount = calculateDiscountAmount(
-      itemsSubtotal,
-      order.discountType,
-      order.discountValue,
-    );
-    const taxableSubtotal = Math.max(0, itemsSubtotal - discountAmount);
     return itemsSubtotal > 0
-      ? calculateTaxBreakdown(taxableSubtotal)
+      ? calculateTaxBreakdown(itemsSubtotal, DiscountType.None, 0)
       : undefined;
   },
 
@@ -259,21 +259,14 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }
 
     const itemsSubtotal = orderItemsSubtotal(order.orderItems);
-    const discountAmount = calculateDiscountAmount(
-      itemsSubtotal,
-      order.discountType,
-      order.discountValue,
-    );
-    const taxableSubtotal = Math.max(0, itemsSubtotal - discountAmount);
-    const taxBreakDown = calculateTaxBreakdown(taxableSubtotal);
+    const { type, value } = discountInputsFromOrder(order);
+    const taxBreakDown = calculateTaxBreakdown(itemsSubtotal, type, value);
 
     const base = {
       id: order.id,
       orderType: order.orderType,
       orderItems: order.orderItems,
       taxBreakDown,
-      discountType: order.discountType ?? "none",
-      discountValue: order.discountValue ?? 0,
       status: OrderStatus.InProgress,
       paid: false,
       printed: false,
@@ -309,13 +302,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       order.orderType === OrderType.DineIn ? "dineInOrders" : "takeOutOrders";
 
     const itemsSubtotal = orderItemsSubtotal(order.orderItems);
-    const discountAmount = calculateDiscountAmount(
-      itemsSubtotal,
-      order.discountType,
-      order.discountValue,
-    );
-    const taxableSubtotal = Math.max(0, itemsSubtotal - discountAmount);
-    const taxBreakDown = calculateTaxBreakdown(taxableSubtotal);
+    const { type, value } = discountInputsFromOrder(order);
+    const taxBreakDown = calculateTaxBreakdown(itemsSubtotal, type, value);
 
     const cleanOrderItems = (order.orderItems ?? []).map((item) => {
       const cleanItem: OrderItem = {
@@ -339,8 +327,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       orderType: order.orderType,
       orderItems: cleanOrderItems,
       taxBreakDown,
-      discountType: order.discountType ?? "none",
-      discountValue: order.discountValue ?? 0,
       status: order.status,
       paid: order.paid ?? false,
       printed: order.printed ?? false,
@@ -453,13 +439,15 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       (acc, i) => acc + i.price * i.quantity,
       0
     );
-    const selectedTaxBreakDown = calculateTaxBreakdown(selectedSubtotal);
+    const selectedTaxBreakDown = calculateTaxBreakdown(
+      selectedSubtotal,
+      DiscountType.None,
+      0,
+    );
 
     const partialOrder: OrderDraft = {
       ...order,
       orderItems: selectedItems,
-      discountType: "none",
-      discountValue: 0,
       taxBreakDown: selectedTaxBreakDown,
     };
 

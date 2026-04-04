@@ -6,12 +6,8 @@ import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { OrderStatus, OrderType, TableStatus } from "@/types/enums";
 import Header from "@/ui/Header";
-import {
-  calculateDiscountAmount,
-  calculateTaxBreakdown,
-  generateFirestoreId,
-  showAlert,
-} from "@/utils/helpers";
+import { DiscountType } from "@/types/enums";
+import { calculateTaxBreakdown, generateFirestoreId, showAlert } from "@/utils/helpers";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { doc, Timestamp, writeBatch } from "firebase/firestore";
 import React, { useState } from "react";
@@ -65,13 +61,12 @@ export default function ReviewDineInOrder() {
         (acc, i) => acc + i.price * i.quantity,
         0,
       );
-      const discountAmount = calculateDiscountAmount(
+      const d = order.taxBreakDown?.discount;
+      const computedTax = calculateTaxBreakdown(
         subtotal,
-        order.discountType,
-        order.discountValue,
+        d?.discountType ?? DiscountType.None,
+        d?.discountValue ?? 0,
       );
-      const taxableSubtotal = Math.max(0, subtotal - discountAmount);
-      const computedTax = calculateTaxBreakdown(taxableSubtotal);
 
       const orderToSubmit = {
         id: orderId,
@@ -81,8 +76,6 @@ export default function ReviewDineInOrder() {
         guests: getTable(tableNumber)?.guests || 0,
         orderItems: order.orderItems,
         taxBreakDown: computedTax,
-        discountType: order.discountType ?? "none",
-        discountValue: order.discountValue ?? 0,
         status: OrderStatus.InProgress,
         paid: false,
         printed: false,

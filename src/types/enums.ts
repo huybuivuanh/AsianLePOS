@@ -23,6 +23,12 @@ export enum OrderType {
   TakeOut = "Take Out",
 }
 
+export enum DiscountType {
+  None = "None",
+  Amount = "Amount",
+  Percent = "Percent",
+}
+
 export enum TakeOutFulfillmentKind {
   Immediate = "immediate",
   Scheduled = "scheduled",

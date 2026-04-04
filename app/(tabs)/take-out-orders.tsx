@@ -3,10 +3,11 @@ import OrderTaxBreakdown from "@/features/order/components/OrderTaxBreakdown";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
-import { OrderStatus } from "@/types/enums";
+import { DiscountType, OrderStatus } from "@/types/enums";
 import {
   calculateTaxBreakdown,
   convertOrderTimestamps,
+  EMPTY_TAX_BREAKDOWN,
   formatDate,
   formatPhone,
   orderSubtotal,
@@ -156,8 +157,8 @@ export default function TakeOutOrdersTab() {
 
     const selectedItemsTaxBreakDown =
       selectedItemsTotal === 0
-        ? { subTotal: 0, pst: 0, gst: 0, total: 0 }
-        : calculateTaxBreakdown(selectedItemsTotal);
+        ? EMPTY_TAX_BREAKDOWN
+        : calculateTaxBreakdown(selectedItemsTotal, DiscountType.None, 0);
 
     return (
       <View

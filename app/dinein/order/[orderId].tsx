@@ -4,8 +4,10 @@ import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { db } from "@/lib/firebaseConfig";
 import { useOrderStore } from "@/stores/useOrderStore";
 import Header from "@/ui/Header";
+import { DiscountType } from "@/types/enums";
 import {
   calculateTaxBreakdown,
+  EMPTY_TAX_BREAKDOWN,
   orderSubtotal,
   resolveTaxBreakdown,
 } from "@/utils/helpers";
@@ -77,9 +79,9 @@ export default function DineInOrderDetails() {
 
   const selectedItemsTaxBreakDown = useMemo(() => {
     if (selectedItemsTotal === 0) {
-      return { subTotal: 0, pst: 0, gst: 0, total: 0 };
+      return EMPTY_TAX_BREAKDOWN;
     }
-    return calculateTaxBreakdown(selectedItemsTotal);
+    return calculateTaxBreakdown(selectedItemsTotal, DiscountType.None, 0);
   }, [selectedItemsTotal]);
 
   const toggleSelectionMode = () => {

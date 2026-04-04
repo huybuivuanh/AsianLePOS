@@ -1,5 +1,10 @@
 import { useOrderStore } from "@/stores/useOrderStore";
-import { calculateDiscountAmount, orderItemsSubtotal } from "@/utils/helpers";
+import { DiscountType } from "@/types/enums";
+import {
+  calculateDiscountAmount,
+  calculateTaxBreakdown,
+  orderItemsSubtotal,
+} from "@/utils/helpers";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Modal,
@@ -11,16 +16,17 @@ import {
 } from "react-native";
 
 const DISCOUNT_TYPES: { type: DiscountType; label: string }[] = [
-  { type: "none", label: "None" },
-  { type: "amount", label: "$ Amount" },
-  { type: "percent", label: "% Percent" },
+  { type: DiscountType.None, label: "None" },
+  { type: DiscountType.Amount, label: "$ Amount" },
+  { type: DiscountType.Percent, label: "% Percent" },
 ];
 
 export default function DiscountButtonModalAndSummary() {
   const { order, updateOrder } = useOrderStore();
 
-  const committedType = order.discountType ?? "none";
-  const committedValue = order.discountValue ?? 0;
+  const committedType =
+    order.taxBreakDown?.discount.discountType ?? DiscountType.None;
+  const committedValue = order.taxBreakDown?.discount.discountValue ?? 0;
 
   const itemsSubtotal = useMemo(
     () => orderItemsSubtotal(order.orderItems),
@@ -60,16 +66,16 @@ export default function DiscountButtonModalAndSummary() {
   const closeModal = () => setModalVisible(false);
 
   const apply = () => {
-    if (draftType === "none") {
-      updateOrder({ discountType: "none", discountValue: 0 });
-      closeModal();
-      return;
-    }
-
-    updateOrder({
-      discountType: draftType,
-      discountValue: draftValue,
-    });
+    const sub = orderItemsSubtotal(order.orderItems);
+    const taxBreakDown =
+      sub > 0
+        ? calculateTaxBreakdown(
+            sub,
+            draftType === DiscountType.None ? DiscountType.None : draftType,
+            draftType === DiscountType.None ? 0 : draftValue,
+          )
+        : undefined;
+    updateOrder({ taxBreakDown });
     closeModal();
   };
 
@@ -82,20 +88,18 @@ export default function DiscountButtonModalAndSummary() {
           className="px-4 py-2 rounded-full bg-gray-900"
           activeOpacity={0.8}
         >
-          <Text className="text-white font-semibold">
-            Discount
-            {committedDiscountAmount > 0
-              ? ` (-$${committedDiscountAmount.toFixed(2)})`
-              : ""}
-          </Text>
+          <Text className="text-white font-semibold">Discount</Text>
         </TouchableOpacity>
       </View>
 
       {/* Summary: discount + final total */}
       <View className="bg-white border border-gray-200 rounded-2xl p-4">
-        {committedDiscountAmount > 0 ? (
+        {committedType !== DiscountType.None && committedDiscountAmount > 0 ? (
           <View className="flex-row justify-between mb-2">
-            <Text className="text-gray-600 font-medium">Discount</Text>
+            <Text className="text-gray-600 font-medium">
+              Discount:{" "}
+              {`${committedType === DiscountType.Percent ? "%" : "$"} ${committedValue.toFixed(2)}`}
+            </Text>
             <Text className="text-gray-900 font-bold">
               -${committedDiscountAmount.toFixed(2)}
             </Text>
@@ -167,16 +171,18 @@ export default function DiscountButtonModalAndSummary() {
 
               <View className="flex-row items-center mb-3">
                 <Text className="text-gray-700 font-semibold w-20">
-                  {draftType === "percent" ? "%" : "$"}
+                  {draftType === DiscountType.Percent ? "%" : "$"}
                 </Text>
                 <TextInput
                   value={draftValueText}
                   onChangeText={setDraftValueText}
                   keyboardType="decimal-pad"
-                  placeholder={draftType === "percent" ? "0" : "0.00"}
-                  editable={draftType !== "none"}
+                  placeholder={
+                    draftType === DiscountType.Percent ? "0" : "0.00"
+                  }
+                  editable={draftType !== DiscountType.None}
                   className={`flex-1 border rounded-lg px-3 py-2 ${
-                    draftType === "none"
+                    draftType === DiscountType.None
                       ? "border-gray-200 bg-gray-100"
                       : "border-gray-300 bg-white"
                   }`}

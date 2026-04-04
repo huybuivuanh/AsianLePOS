@@ -1,4 +1,8 @@
-import { OrderType, TakeOutFulfillmentKind } from "@/types/enums";
+import {
+  DiscountType,
+  OrderType,
+  TakeOutFulfillmentKind,
+} from "@/types/enums";
 import dayjs from "dayjs";
 import { collection, doc, Timestamp } from "firebase/firestore";
 import { Alert, Platform } from "react-native";
@@ -73,15 +77,15 @@ export const calculateDiscountAmount = (
 ): number => {
   if (itemsSubtotal <= 0) return 0;
 
-  const type = discountType ?? "none";
+  const type = discountType ?? DiscountType.None;
   const value = discountValue ?? 0;
 
-  if (type === "amount") {
+  if (type === DiscountType.Amount) {
     // Clamp amount discount so it can't exceed subtotal.
     return Math.min(itemsSubtotal, Math.max(0, value));
   }
 
-  if (type === "percent") {
+  if (type === DiscountType.Percent) {
     // Clamp percent so it can't go negative or above 100.
     const pct = Math.min(100, Math.max(0, value));
     return (itemsSubtotal * pct) / 100;
@@ -90,22 +94,28 @@ export const calculateDiscountAmount = (
   return 0;
 };
 
+/** Zero placeholder for selection UI when no items are selected. */
+export const EMPTY_TAX_BREAKDOWN: TaxBreakDown = {
+  subTotal: 0,
+  discount: {
+    discountType: DiscountType.None,
+    discountValue: 0,
+    discountAmount: 0,
+    subTotalAfterDiscount: 0,
+  },
+  pst: 0,
+  gst: 0,
+  total: 0,
+};
+
 export const resolveTaxBreakdown = (
   order: Partial<Order>,
 ): TaxBreakDown | undefined => {
   if (order.taxBreakDown) return order.taxBreakDown;
 
   const itemsSubtotal = orderItemsSubtotal(order.orderItems);
-  const discountAmount = calculateDiscountAmount(
-    itemsSubtotal,
-    order.discountType,
-    order.discountValue,
-  );
-  const taxableSubtotal = Math.max(0, itemsSubtotal - discountAmount);
-
-  // Show tax breakdown when the order had items, even if discount makes taxableSubtotal 0.
   return itemsSubtotal > 0
-    ? calculateTaxBreakdown(taxableSubtotal)
+    ? calculateTaxBreakdown(itemsSubtotal, DiscountType.None, 0)
     : undefined;
 };
 
@@ -139,13 +149,51 @@ export const convertOrderTimestamps = (
   };
 };
 
-// Calculate tax breakdown for an order (subtotal = pre-tax line total)
-export const calculateTaxBreakdown = (subtotal: number): TaxBreakDown => {
-  const pst = subtotal * 0.06;
-  const gst = subtotal * 0.05;
-  const total = subtotal + pst + gst;
+/**
+ * Full tax breakdown: `subTotal` = pre-discount line subtotal; taxes apply to
+ * `discount.subTotalAfterDiscount` (pre-tax, post-discount).
+ */
+export const calculateTaxBreakdown = (
+  itemsSubtotal: number,
+  discountType: DiscountType = DiscountType.None,
+  discountValue: number = 0,
+): TaxBreakDown => {
+  const dType = discountType ?? DiscountType.None;
+  const dVal = discountValue ?? 0;
+
+  if (itemsSubtotal <= 0) {
+    return {
+      subTotal: 0,
+      discount: {
+        discountType: dType,
+        discountValue: dVal,
+        discountAmount: 0,
+        subTotalAfterDiscount: 0,
+      },
+      pst: 0,
+      gst: 0,
+      total: 0,
+    };
+  }
+
+  const discountAmount = calculateDiscountAmount(
+    itemsSubtotal,
+    dType,
+    dVal,
+  );
+  const subTotalAfterDiscount = Math.max(0, itemsSubtotal - discountAmount);
+  const pst = subTotalAfterDiscount * 0.06;
+  const gst = subTotalAfterDiscount * 0.05;
+  const total = subTotalAfterDiscount + pst + gst;
+
   return {
-    subTotal: subtotal,
+    subTotal: itemsSubtotal,
+    discount: {
+      discountType: dType,
+      discountValue: dVal,
+      discountAmount,
+      subTotalAfterDiscount,
+    },
     pst,
     gst,
     total,

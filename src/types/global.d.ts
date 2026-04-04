@@ -1,10 +1,6 @@
-import { TakeOutFulfillmentKind } from "./enums";
-
 export {};
 
 declare global {
-  type DiscountType = "none" | "amount" | "percent";
-
   interface FoodCategory {
     id?: string;
     name: string;
@@ -73,8 +69,16 @@ declare global {
     price: number;
   }
 
+  interface Discount {
+    discountType: DiscountType;
+    discountValue: number;
+    discountAmount: number;
+    subTotalAfterDiscount: number;
+  }
+
   interface TaxBreakDown {
     subTotal: number;
+    discount: Discount;
     pst: number;
     gst: number;
     total: number;
@@ -100,8 +104,6 @@ declare global {
     paid: boolean;
     printed: boolean;
     createdAt: TimeStamp;
-    discountType?: DiscountType;
-    discountValue?: number;
   }
 
   interface TakeOutOrder extends Order {

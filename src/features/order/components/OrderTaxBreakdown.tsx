@@ -1,3 +1,4 @@
+import { DiscountType } from "@/types/enums";
 import React from "react";
 import { Text, View } from "react-native";
 
@@ -21,7 +22,9 @@ export default function OrderTaxBreakdown({
       {isSelectionMode ? (
         <>
           <View className="flex-row justify-between mb-1">
-            <Text className="text-base text-gray-700">Selected Items Subtotal</Text>
+            <Text className="text-base text-gray-700">
+              Selected Items Subtotal
+            </Text>
             <Text className="text-base text-gray-700">
               ${selectedItemsTotal.toFixed(2)}
             </Text>
@@ -59,6 +62,20 @@ export default function OrderTaxBreakdown({
             </Text>
           </View>
 
+          {taxBreakDown.discount.discountType !== DiscountType.None &&
+            taxBreakDown.discount.discountAmount > 0 && (
+              <View className="flex-row justify-between mb-1">
+                <Text className="text-base text-gray-700">
+                  Discount: (
+                  {`${taxBreakDown.discount.discountType === DiscountType.Percent ? "%" : "$"} ${taxBreakDown.discount.discountValue.toFixed(2)}`}
+                  )
+                </Text>
+                <Text className="text-base text-gray-700">
+                  -${taxBreakDown.discount.discountAmount.toFixed(2)}
+                </Text>
+              </View>
+            )}
+
           <View className="flex-row justify-between mb-1">
             <Text className="text-base text-gray-700">PST (6%)</Text>
             <Text className="text-base text-gray-700">
@@ -84,4 +101,3 @@ export default function OrderTaxBreakdown({
     </View>
   );
 }
-

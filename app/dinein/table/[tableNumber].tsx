@@ -3,7 +3,7 @@ import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
-import { OrderType } from "@/types/enums";
+import { DiscountType, OrderType } from "@/types/enums";
 import Header from "@/ui/Header";
 import { formatTimeOnly, showAlert } from "@/utils/helpers";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
@@ -147,6 +147,19 @@ export default function TablePage() {
                     ${order!.taxBreakDown.subTotal.toFixed(2)}
                   </Text>
                 </View>
+                {order!.taxBreakDown.discount.discountType !==
+                  DiscountType.None &&
+                  order!.taxBreakDown.discount.discountAmount > 0 && (
+                    <View className="flex-row justify-between mb-2">
+                      <Text className="text-base text-gray-600">Discount</Text>
+                      <Text className="text-base text-gray-800 font-medium">
+                        -$
+                        {order!.taxBreakDown.discount.discountAmount.toFixed(
+                          2,
+                        )}
+                      </Text>
+                    </View>
+                  )}
                 <View className="flex-row justify-between mb-2">
                   <Text className="text-base text-gray-600">PST (6%)</Text>
                   <Text className="text-base text-gray-800 font-medium">
