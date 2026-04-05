@@ -84,13 +84,14 @@ declare global {
     total: number;
   }
 
+  /** String-literal `kind` so TypeScript narrows the union (matches enum values). */
   type TakeOutFulfillment =
     | {
-        kind: TakeOutFulfillmentKind.Immediate;
+        kind: "immediate";
         readyTimeMinutes?: number;
       }
     | {
-        kind: TakeOutFulfillmentKind.Scheduled;
+        kind: "scheduled";
         scheduledAt: TimeStamp;
       };
 

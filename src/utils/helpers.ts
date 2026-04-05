@@ -127,7 +127,7 @@ export const takeoutScheduledAt = (order: {
 }): Timestamp | undefined => {
   if (order.orderType !== OrderType.TakeOut) return undefined;
   const f = order.fulfillment;
-  if (f?.kind === TakeOutFulfillmentKind.Scheduled) return f.scheduledAt;
+  if (f?.kind === "scheduled") return f.scheduledAt;
   return undefined;
 };
 
@@ -234,4 +234,21 @@ export const showAlert = (title: string, message?: string) => {
       Alert.alert(title);
     }
   }
+};
+
+/** OK / Cancel; resolves true if user confirms. */
+export const confirmAlert = (
+  title: string,
+  message?: string,
+): Promise<boolean> => {
+  if (Platform.OS === "web") {
+    const text = message ? `${title}\n\n${message}` : title;
+    return Promise.resolve(window.confirm(text));
+  }
+  return new Promise((resolve) => {
+    Alert.alert(title, message ?? "", [
+      { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
+      { text: "OK", onPress: () => resolve(true) },
+    ]);
+  });
 };

@@ -13,6 +13,7 @@ import {
 import {
   collection,
   doc,
+  getDoc,
   setDoc,
   Timestamp,
   writeBatch,
@@ -52,6 +53,12 @@ type OrderState = {
     order: OrderDraft,
     selectedItemIds: string[]
   ) => Promise<void>;
+  /** Atomically move a dine-in order to another table and update guest count. */
+  changeDineInOrderTable: (args: {
+    orderId: string;
+    fromTableNumber: string;
+    toTableNumber: string;
+  }) => Promise<void>;
 };
 
 const defaultTakeOutDraft: OrderDraft = {
@@ -453,5 +460,76 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
     const printQueueRef = doc(collection(db, "printQueue"));
     await setDoc(printQueueRef, partialOrder as Record<string, unknown>);
+  },
+
+  changeDineInOrderTable: async ({
+    orderId,
+    fromTableNumber,
+    toTableNumber,
+  }) => {
+    if (!orderId) throw new Error("Order ID is required.");
+    if (fromTableNumber === toTableNumber) {
+      throw new Error("Select a different table.");
+    }
+
+    const orderRef = doc(db, "dineInOrders", orderId);
+    const orderSnap = await getDoc(orderRef);
+    if (!orderSnap.exists()) {
+      throw new Error("Order not found.");
+    }
+    const orderData = orderSnap.data() as {
+      tableNumber?: string;
+      guests?: number;
+    };
+    const actualFrom = orderData.tableNumber;
+    if (!actualFrom) {
+      throw new Error("Order has no table.");
+    }
+
+    const rawGuests = Math.floor(Number(orderData.guests ?? 0));
+    const g = rawGuests >= 1 ? rawGuests : 1;
+
+    const oldTableRef = doc(db, "tables", actualFrom);
+    const newTableRef = doc(db, "tables", toTableNumber);
+
+    const [oldTableSnap, newTableSnap] = await Promise.all([
+      getDoc(oldTableRef),
+      getDoc(newTableRef),
+    ]);
+
+    if (!oldTableSnap.exists() || !newTableSnap.exists()) {
+      throw new Error("Table not found.");
+    }
+
+    const oldT = oldTableSnap.data() as Table;
+    const newT = newTableSnap.data() as Table;
+
+    if (oldT.currentOrderId !== orderId) {
+      throw new Error(
+        "This order is no longer on the original table. Go back and refresh.",
+      );
+    }
+    if (newT.status !== TableStatus.Open) {
+      throw new Error("That table is not available. Choose another.");
+    }
+
+    const batch = writeBatch(db);
+
+    batch.update(oldTableRef, {
+      status: TableStatus.Open,
+      currentOrderId: null,
+      guests: 0,
+    });
+    batch.update(newTableRef, {
+      status: TableStatus.Occupied,
+      currentOrderId: orderId,
+      guests: g,
+    });
+    batch.update(orderRef, {
+      tableNumber: toTableNumber,
+      guests: g,
+    });
+
+    await batch.commit();
   },
 }));

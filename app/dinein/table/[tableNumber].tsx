@@ -300,7 +300,13 @@ export default function TablePage() {
 
           <View className="flex-row mb-3 gap-2">
             <TouchableOpacity
-              onPress={() => {}}
+              onPress={() => {
+                if (!order?.id) return;
+                router.push({
+                  pathname: "/dinein/change-table/[tableNumber]",
+                  params: { tableNumber, orderId: order.id },
+                } as Href);
+              }}
               activeOpacity={0.7}
               disabled={!order}
               className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 ${
