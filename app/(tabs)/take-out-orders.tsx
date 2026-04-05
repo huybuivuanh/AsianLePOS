@@ -287,7 +287,7 @@ export default function TakeOutOrdersTab() {
               <View className="mt-3">
                 <View className="flex-row justify-between">
                   <TouchableOpacity
-                    className="bg-green-500 px-4 py-3 rounded-full flex-1 mr-2"
+                    className="bg-green-500 px-4 py-3 rounded-md flex-1 mr-2"
                     onPress={() => handlePrintSelected(item)}
                     disabled={selectedItemIds.size === 0}
                     style={{
@@ -299,7 +299,7 @@ export default function TakeOutOrdersTab() {
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    className="bg-gray-500 px-4 py-3 rounded-full flex-1 ml-2"
+                    className="bg-gray-700 px-4 py-3 rounded-md flex-1 ml-2"
                     onPress={() => handleToggleSelectionMode(item.id!)}
                   >
                     <Text className="text-white font-semibold text-center">
@@ -313,7 +313,7 @@ export default function TakeOutOrdersTab() {
                 {/* Row 1: Print All | Select Items | Edit */}
                 <View className="flex-row justify-between mt-3">
                   <TouchableOpacity
-                    className="bg-orange-500 px-3 py-3 rounded-full flex-1 mr-2"
+                    className="bg-orange-500 px-3 py-3 rounded-md flex-1 mr-2"
                     onPress={() => handleEditOrder(item)}
                   >
                     <Text className="text-white font-semibold text-center text-sm">
@@ -321,7 +321,7 @@ export default function TakeOutOrdersTab() {
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    className="bg-purple-500 px-3 py-3 rounded-full flex-1 mx-1"
+                    className="bg-purple-500 px-3 py-3 rounded-md flex-1 mx-1"
                     onPress={() => handleToggleSelectionMode(item.id!)}
                   >
                     <Text className="text-white font-semibold text-center text-sm">
@@ -330,7 +330,7 @@ export default function TakeOutOrdersTab() {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    className="bg-blue-500 px-3 py-3 rounded-full flex-1 ml-2"
+                    className="bg-blue-500 px-3 py-3 rounded-md flex-1 ml-2"
                     onPress={() => handlePrint(item)}
                   >
                     <Text className="text-white font-semibold text-center text-sm">
@@ -342,7 +342,7 @@ export default function TakeOutOrdersTab() {
                 {/* Row 2: Done | Mark Paid | Cancel */}
                 <View className="flex-row justify-between mt-3">
                   <TouchableOpacity
-                    className="bg-red-500 px-3 py-3 rounded-full flex-1 mr-2"
+                    className="bg-red-500 px-3 py-3 rounded-md flex-1 mr-2"
                     onPress={() => handleCancel(item)}
                   >
                     <Text className="text-white font-semibold text-center text-sm">
@@ -350,7 +350,7 @@ export default function TakeOutOrdersTab() {
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    className={`px-3 py-3 rounded-full flex-1 mx-1 ${
+                    className={`px-3 py-3 rounded-md flex-1 mx-1 ${
                       item.paid ? "bg-gray-500" : "bg-pink-500"
                     }`}
                     onPress={() => handleMarkAsPaid(item, !item.paid)}
@@ -361,7 +361,7 @@ export default function TakeOutOrdersTab() {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    className="bg-green-500 px-3 py-3 rounded-full flex-1 ml-2"
+                    className="bg-green-500 px-3 py-3 rounded-md flex-1 ml-2"
                     onPress={() => handleComplete(item)}
                   >
                     <Text className="text-white font-semibold text-center text-sm">

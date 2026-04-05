@@ -3,8 +3,8 @@ import OrderTaxBreakdown from "@/features/order/components/OrderTaxBreakdown";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { db } from "@/lib/firebaseConfig";
 import { useOrderStore } from "@/stores/useOrderStore";
-import Header from "@/ui/Header";
 import { DiscountType } from "@/types/enums";
+import Header from "@/ui/Header";
 import {
   calculateTaxBreakdown,
   EMPTY_TAX_BREAKDOWN,
@@ -166,12 +166,12 @@ export default function DineInOrderDetails() {
 
             <TouchableOpacity
               onPress={toggleSelectionMode}
-              className={`px-3 py-2 rounded-full ${
+              className={`px-3 py-2 rounded-md ${
                 selectionMode ? "bg-gray-700" : "bg-purple-600"
               }`}
             >
               <Text className="text-white font-semibold text-sm">
-                {selectionMode ? "Cancel Select" : "Select Items"}
+                {selectionMode ? "Cancel Selection" : "Select Items"}
               </Text>
             </TouchableOpacity>
           </View>

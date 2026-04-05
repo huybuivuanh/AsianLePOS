@@ -251,7 +251,7 @@ export default function DineInOrdersTab() {
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    className="bg-gray-500 px-4 py-3 rounded-full flex-1 ml-2"
+                    className="bg-gray-700 px-4 py-3 rounded-md flex-1 ml-2"
                     onPress={() => handleToggleSelectionMode(item.id!)}
                   >
                     <Text className="text-white font-semibold text-center">
@@ -265,7 +265,7 @@ export default function DineInOrdersTab() {
                 {/* Row 1: Paid | Select Items | Print */}
                 <View className="flex-row justify-between mt-3">
                   <TouchableOpacity
-                    className={`px-3 py-3 rounded-full flex-1 mx-1 ${
+                    className={`px-3 py-3 rounded-md flex-1 mx-1 ${
                       item.paid ? "bg-gray-500" : "bg-pink-500"
                     }`}
                     onPress={() => handleMarkAsPaid(item, !item.paid)}
@@ -275,7 +275,7 @@ export default function DineInOrdersTab() {
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    className="bg-purple-500 px-3 py-3 rounded-full flex-1 mx-1"
+                    className="bg-purple-500 px-3 py-3 rounded-md flex-1 mx-1"
                     onPress={() => handleToggleSelectionMode(item.id!)}
                   >
                     <Text className="text-white font-semibold text-center text-sm">
@@ -284,7 +284,7 @@ export default function DineInOrdersTab() {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    className="bg-blue-500 px-3 py-3 rounded-full flex-1 ml-2"
+                    className="bg-blue-500 px-3 py-3 rounded-md flex-1 ml-2"
                     onPress={() => handlePrint(item)}
                   >
                     <Text className="text-white font-semibold text-center text-sm">
