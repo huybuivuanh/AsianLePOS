@@ -238,7 +238,7 @@ export default function TablePage() {
         {/* Footer Actions */}
         <View className="m-4">
           {/* Buttons */}
-          <View className="flex-row justify-between mb-3">
+          <View className="flex-row mb-3 gap-2">
             <TouchableOpacity
               onPress={() => {
                 if (!order) {
@@ -261,7 +261,7 @@ export default function TablePage() {
                 }
               }}
               activeOpacity={0.7}
-              className="bg-orange-500 px-3 py-3 rounded-lg items-center justify-center flex-1 mr-1"
+              className="bg-orange-500 px-2 py-3 rounded-lg items-center justify-center flex-1 min-w-0"
             >
               <Text className="text-white text-sm font-semibold text-center">
                 {order ? "Edit Order" : "Take Order"}
@@ -272,7 +272,7 @@ export default function TablePage() {
               onPress={handleSeeOrder}
               activeOpacity={0.7}
               disabled={!order?.id}
-              className={`px-3 py-3 rounded-lg items-center justify-center flex-1 mx-1 ${
+              className={`px-2 py-3 rounded-lg items-center justify-center flex-1 min-w-0 ${
                 order?.id ? "bg-purple-600" : "bg-purple-300"
               }`}
             >
@@ -285,7 +285,7 @@ export default function TablePage() {
               onPress={handlePrint}
               activeOpacity={0.7}
               disabled={!order}
-              className={`px-3 py-3 rounded-lg items-center justify-center flex-1 ml-1 ${
+              className={`px-2 py-3 rounded-lg items-center justify-center flex-1 min-w-0 ${
                 order ? "bg-blue-500" : "bg-blue-300"
               }`}
             >
@@ -298,13 +298,52 @@ export default function TablePage() {
             </TouchableOpacity>
           </View>
 
-          <View className="flex-row justify-between mb-4">
+          <View className="flex-row mb-3 gap-2">
+            <TouchableOpacity
+              onPress={() => {}}
+              activeOpacity={0.7}
+              disabled={!order}
+              className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 ${
+                order ? "bg-teal-500" : "bg-teal-300"
+              }`}
+            >
+              <Text className="text-white text-sm font-semibold text-center">
+                Change Table
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {}}
+              activeOpacity={0.7}
+              disabled={true}
+              className="px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 bg-white border border-gray-200"
+            >
+              <Text className="text-gray-500 text-sm font-semibold text-center">
+                Place Holder
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handlePrint}
+              activeOpacity={0.7}
+              disabled={!order}
+              className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 ${
+                order ? "bg-sky-500" : "bg-sky-300"
+              }`}
+            >
+              <Text className="text-white text-sm font-semibold text-center">
+                Change Type
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View className="flex-row mb-4 gap-2">
             <TouchableOpacity
               onPress={handleCancelOrder}
               activeOpacity={0.7}
               className={`${
                 order ? "bg-red-500" : "bg-red-300"
-              } px-3 py-3 rounded-lg items-center justify-center flex-1 mr-1`}
+              } px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0`}
               disabled={!order}
             >
               <Text className="text-white text-sm font-semibold text-center">
@@ -315,7 +354,7 @@ export default function TablePage() {
               onPress={() => handleMarkAsPaid(!order?.paid)}
               activeOpacity={0.7}
               disabled={!order}
-              className={`px-3 py-3 rounded-lg items-center justify-center flex-1 mx-1 ${
+              className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 ${
                 order?.paid
                   ? "bg-gray-500"
                   : order
@@ -332,7 +371,7 @@ export default function TablePage() {
               onPress={handleCompleteOrder}
               activeOpacity={0.7}
               disabled={!order}
-              className={`px-3 py-3 rounded-lg items-center justify-center flex-1 mr-1 ${
+              className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 ${
                 order ? "bg-green-500" : "bg-green-200"
               }`}
             >
