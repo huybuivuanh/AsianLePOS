@@ -85,7 +85,7 @@ export default function DiscountButtonModalAndSummary() {
       <View className="flex-row justify-end mb-2">
         <TouchableOpacity
           onPress={openModal}
-          className="px-4 py-2 rounded-full bg-gray-900"
+          className="px-4 py-2 rounded-md bg-gray-900"
           activeOpacity={0.8}
         >
           <Text className="text-white font-semibold">Discount</Text>
@@ -152,7 +152,7 @@ export default function DiscountButtonModalAndSummary() {
                   <TouchableOpacity
                     key={t.type}
                     onPress={() => setDraftType(t.type)}
-                    className={`px-3 py-2 rounded-full mr-2 mb-2 ${
+                    className={`px-3 py-2 rounded-md mr-2 mb-2 ${
                       draftType === t.type
                         ? "bg-gray-900"
                         : "bg-white border border-gray-300"

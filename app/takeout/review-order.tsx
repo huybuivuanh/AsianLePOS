@@ -1,4 +1,5 @@
 import { OrderLinesList } from "@/features/order";
+import DiscountButtonModalAndSummary from "@/features/order/components/DiscountButtonModalAndSummary";
 import { OrderFooter } from "@/features/takeout";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useAuth } from "@/providers/AuthProvider";
@@ -7,7 +8,6 @@ import Header from "@/ui/Header";
 import { generateFirestoreId, showAlert } from "@/utils/helpers";
 import { useRouter, type Href } from "expo-router";
 import React, { useState } from "react";
-import DiscountButtonModalAndSummary from "@/features/order/components/DiscountButtonModalAndSummary";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -79,7 +79,9 @@ export default function ReviewOrder() {
           keyboardShouldPersistTaps="handled"
         >
           <OrderLinesList orderItems={order.orderItems} />
-          <DiscountButtonModalAndSummary />
+          {order.orderItems && order.orderItems.length > 0 && (
+            <DiscountButtonModalAndSummary />
+          )}
         </KeyboardAwareScrollView>
 
         {/* Clear + Toggle Footer */}

@@ -1,13 +1,22 @@
 import { OrderLinesList } from "@/features/order";
+import DiscountButtonModalAndSummary from "@/features/order/components/DiscountButtonModalAndSummary";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { db } from "@/lib/firebaseConfig";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
-import { OrderStatus, OrderType, TableStatus } from "@/types/enums";
+import {
+  DiscountType,
+  OrderStatus,
+  OrderType,
+  TableStatus,
+} from "@/types/enums";
 import Header from "@/ui/Header";
-import { DiscountType } from "@/types/enums";
-import { calculateTaxBreakdown, generateFirestoreId, showAlert } from "@/utils/helpers";
+import {
+  calculateTaxBreakdown,
+  generateFirestoreId,
+  showAlert,
+} from "@/utils/helpers";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { doc, Timestamp, writeBatch } from "firebase/firestore";
 import React, { useState } from "react";
@@ -20,7 +29,6 @@ import {
   View,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import DiscountButtonModalAndSummary from "@/features/order/components/DiscountButtonModalAndSummary";
 
 export default function ReviewDineInOrder() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
@@ -121,7 +129,9 @@ export default function ReviewDineInOrder() {
           keyboardShouldPersistTaps="handled"
         >
           <OrderLinesList orderItems={order.orderItems} />
-          <DiscountButtonModalAndSummary />
+          {order.orderItems && order.orderItems.length > 0 && (
+            <DiscountButtonModalAndSummary />
+          )}
         </KeyboardAwareScrollView>
 
         {/* Clear + Toggle Footer */}
