@@ -62,17 +62,32 @@ export default function OrderTaxBreakdown({
             </Text>
           </View>
 
-          {taxBreakDown.discount.discountType !== DiscountType.None &&
+          {taxBreakDown.discount &&
             taxBreakDown.discount.discountAmount > 0 && (
-              <View className="flex-row justify-between mb-1">
-                <Text className="text-base text-gray-700">
-                  Discount: (
-                  {`${taxBreakDown.discount.discountType === DiscountType.Percent ? "%" : "$"} ${taxBreakDown.discount.discountValue.toFixed(2)}`}
-                  )
-                </Text>
-                <Text className="text-base text-gray-700">
-                  -${taxBreakDown.discount.discountAmount.toFixed(2)}
-                </Text>
+              <View>
+                <View className="flex-row justify-between mb-1">
+                  {taxBreakDown.discount.discountType ===
+                  DiscountType.Percent ? (
+                    <Text className="text-base text-gray-600">
+                      {`Discount (${taxBreakDown.discount.discountValue}%)`}
+                    </Text>
+                  ) : (
+                    <Text className="text-base text-gray-600">
+                      {`Discount ($${taxBreakDown.discount.discountValue.toFixed(2)})`}
+                    </Text>
+                  )}
+                  <Text className="text-base text-gray-700">
+                    -${taxBreakDown.discount.discountAmount.toFixed(2)}
+                  </Text>
+                </View>
+                <View className="flex-row justify-between mb-1">
+                  <Text className="text-base text-gray-700">
+                    Taxable Subtotal
+                  </Text>
+                  <Text className="text-base text-gray-700">
+                    ${taxBreakDown.discount.taxableSubtotal.toFixed(2)}
+                  </Text>
+                </View>
               </View>
             )}
 
@@ -90,7 +105,7 @@ export default function OrderTaxBreakdown({
             </Text>
           </View>
 
-          <View className="flex-row justify-between mt-1 pt-1 border-t border-gray-200">
+          <View className="flex-row justify-between mb-1">
             <Text className="text-base font-semibold text-gray-800">Total</Text>
             <Text className="text-base font-bold text-gray-900">
               ${taxBreakDown.total.toFixed(2)}

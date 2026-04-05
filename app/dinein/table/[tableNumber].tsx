@@ -147,17 +147,38 @@ export default function TablePage() {
                     ${order!.taxBreakDown.subTotal.toFixed(2)}
                   </Text>
                 </View>
-                {order!.taxBreakDown.discount.discountType !==
-                  DiscountType.None &&
+                {order!.taxBreakDown.discount &&
                   order!.taxBreakDown.discount.discountAmount > 0 && (
-                    <View className="flex-row justify-between mb-2">
-                      <Text className="text-base text-gray-600">Discount</Text>
-                      <Text className="text-base text-gray-800 font-medium">
-                        -$
-                        {order!.taxBreakDown.discount.discountAmount.toFixed(
-                          2,
+                    <View>
+                      <View className="flex-row justify-between mb-2">
+                        {order!.taxBreakDown.discount.discountType ===
+                        DiscountType.Percent ? (
+                          <Text className="text-base text-gray-600">
+                            {`Discount (${order!.taxBreakDown.discount.discountValue}%)`}
+                          </Text>
+                        ) : (
+                          <Text className="text-base text-gray-600">
+                            {`Discount ($${order!.taxBreakDown.discount.discountValue.toFixed(2)})`}
+                          </Text>
                         )}
-                      </Text>
+                        <Text className="text-base text-gray-800 font-medium">
+                          -$
+                          {order!.taxBreakDown.discount.discountAmount.toFixed(
+                            2,
+                          )}
+                        </Text>
+                      </View>
+                      <View className="flex-row justify-between mb-2">
+                        <Text className="text-base text-gray-600">
+                          Taxable Subtotal
+                        </Text>
+                        <Text className="text-base text-gray-800 font-medium">
+                          $
+                          {order!.taxBreakDown.discount.taxableSubtotal.toFixed(
+                            2,
+                          )}
+                        </Text>
+                      </View>
                     </View>
                   )}
                 <View className="flex-row justify-between mb-2">

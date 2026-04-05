@@ -97,12 +97,6 @@ export const calculateDiscountAmount = (
 /** Zero placeholder for selection UI when no items are selected. */
 export const EMPTY_TAX_BREAKDOWN: TaxBreakDown = {
   subTotal: 0,
-  discount: {
-    discountType: DiscountType.None,
-    discountValue: 0,
-    discountAmount: 0,
-    subTotalAfterDiscount: 0,
-  },
   pst: 0,
   gst: 0,
   total: 0,
@@ -151,7 +145,9 @@ export const convertOrderTimestamps = (
 
 /**
  * Full tax breakdown: `subTotal` = pre-discount line subtotal; taxes apply to
- * `discount.subTotalAfterDiscount` (pre-tax, post-discount).
+ * `discount.taxableSubtotal` when a discount exists (same as `subTotal` when
+ * `discount` is omitted). `discount` is omitted when there is no effective
+ * discount (`none` or $0 / 0%).
  */
 export const calculateTaxBreakdown = (
   itemsSubtotal: number,
@@ -164,12 +160,6 @@ export const calculateTaxBreakdown = (
   if (itemsSubtotal <= 0) {
     return {
       subTotal: 0,
-      discount: {
-        discountType: dType,
-        discountValue: dVal,
-        discountAmount: 0,
-        subTotalAfterDiscount: 0,
-      },
       pst: 0,
       gst: 0,
       total: 0,
@@ -181,22 +171,30 @@ export const calculateTaxBreakdown = (
     dType,
     dVal,
   );
-  const subTotalAfterDiscount = Math.max(0, itemsSubtotal - discountAmount);
-  const pst = subTotalAfterDiscount * 0.06;
-  const gst = subTotalAfterDiscount * 0.05;
-  const total = subTotalAfterDiscount + pst + gst;
+  const taxableSubtotal = Math.max(0, itemsSubtotal - discountAmount);
+  const pst = taxableSubtotal * 0.06;
+  const gst = taxableSubtotal * 0.05;
+  const total = taxableSubtotal + pst + gst;
+
+  const base: TaxBreakDown = {
+    subTotal: itemsSubtotal,
+    pst,
+    gst,
+    total,
+  };
+
+  if (dType === DiscountType.None || discountAmount <= 0) {
+    return base;
+  }
 
   return {
-    subTotal: itemsSubtotal,
+    ...base,
     discount: {
       discountType: dType,
       discountValue: dVal,
       discountAmount,
-      subTotalAfterDiscount,
+      taxableSubtotal,
     },
-    pst,
-    gst,
-    total,
   };
 };
 

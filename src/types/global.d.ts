@@ -73,12 +73,12 @@ declare global {
     discountType: DiscountType;
     discountValue: number;
     discountAmount: number;
-    subTotalAfterDiscount: number;
+    taxableSubtotal: number;
   }
 
   interface TaxBreakDown {
     subTotal: number;
-    discount: Discount;
+    discount?: Discount;
     pst: number;
     gst: number;
     total: number;

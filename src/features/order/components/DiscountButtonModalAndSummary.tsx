@@ -25,8 +25,8 @@ export default function DiscountButtonModalAndSummary() {
   const { order, updateOrder } = useOrderStore();
 
   const committedType =
-    order.taxBreakDown?.discount.discountType ?? DiscountType.None;
-  const committedValue = order.taxBreakDown?.discount.discountValue ?? 0;
+    order.taxBreakDown?.discount?.discountType ?? DiscountType.None;
+  const committedValue = order.taxBreakDown?.discount?.discountValue ?? 0;
 
   const itemsSubtotal = useMemo(
     () => orderItemsSubtotal(order.orderItems),
