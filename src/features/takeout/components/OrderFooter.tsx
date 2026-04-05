@@ -8,12 +8,15 @@ interface Props {
   onSubmit: () => void;
   submitting: boolean;
   disabled: boolean;
+  /** When set, used as the primary button label (instead of submit/update defaults). */
+  submitLabel?: string;
 }
 
 export default function OrderFooter({
   onSubmit,
   submitting,
   disabled,
+  submitLabel,
 }: Props) {
   const orderId = useOrderStore((s) => s.order.id);
   const getTotalItems = useOrderStore((s) => s.getTotalItems);
@@ -38,9 +41,10 @@ export default function OrderFooter({
         <Text className="text-white font-bold text-base">
           {submitting
             ? "Submitting…"
-            : isUpdatingExistingOrder
-              ? `Submit Update - $${taxBreakDown?.total.toFixed(2) ?? "0.00"}`
-              : ` Submit ${totalItems} Item(s) - $${taxBreakDown?.total.toFixed(2) ?? "0.00"}`}
+            : submitLabel ??
+              (isUpdatingExistingOrder
+                ? `Submit Update - $${taxBreakDown?.total.toFixed(2) ?? "0.00"}`
+                : ` Submit ${totalItems} Item(s) - $${taxBreakDown?.total.toFixed(2) ?? "0.00"}`)}
         </Text>
       </TouchableOpacity>
     </View>

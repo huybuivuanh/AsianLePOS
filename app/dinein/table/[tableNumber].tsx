@@ -354,7 +354,13 @@ export default function TablePage() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={handlePrint}
+              onPress={() => {
+                if (!order?.id) return;
+                router.push({
+                  pathname: "/dinein/change-to-takeout/[tableNumber]",
+                  params: { tableNumber },
+                } as Href);
+              }}
               activeOpacity={0.7}
               disabled={!order || actionBusy}
               className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 ${

@@ -61,6 +61,12 @@ export default function TakeOutOrdersTab() {
     loadTakeOutOrders();
   }, [loadTakeOutOrders]);
 
+  useEffect(() => {
+    if (!orderIdParam) return;
+    setExpandedOrderId(orderIdParam);
+    void refreshTakeOutOrders();
+  }, [orderIdParam, refreshTakeOutOrders]);
+
   const toggleExpand = (id: string) => {
     setExpandedOrderId((prev) => (prev === id ? null : id));
   };

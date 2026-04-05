@@ -59,6 +59,17 @@ type OrderState = {
     fromTableNumber: string;
     toTableNumber: string;
   }) => Promise<void>;
+  /**
+   * Move an in-progress dine-in order to `takeOutOrders`, clear the table row,
+   * and remove the dine-in document (same order id).
+   */
+  convertDineInOrderToTakeOut: (args: {
+    orderId: string;
+    tableNumber: string;
+    customerName?: string;
+    phoneNumber?: string;
+    fulfillment: TakeOutFulfillment;
+  }) => Promise<void>;
 };
 
 const defaultTakeOutDraft: OrderDraft = {
@@ -531,5 +542,124 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     });
 
     await batch.commit();
+  },
+
+  convertDineInOrderToTakeOut: async ({
+    orderId,
+    tableNumber,
+    customerName,
+    phoneNumber,
+    fulfillment,
+  }) => {
+    const name = customerName?.trim() ?? "";
+    const phone = phoneNumber?.trim() ?? "";
+    if (!name && !phone) {
+      throw new Error("Enter a customer name or phone number.");
+    }
+
+    const orderRef = doc(db, "dineInOrders", orderId);
+    const tableRef = doc(db, "tables", tableNumber);
+
+    const [orderSnap, tableSnap] = await Promise.all([
+      getDoc(orderRef),
+      getDoc(tableRef),
+    ]);
+
+    if (!orderSnap.exists()) {
+      throw new Error("Dine-in order not found.");
+    }
+    if (!tableSnap.exists()) {
+      throw new Error("Table not found.");
+    }
+
+    const data = orderSnap.data() as Record<string, unknown> & {
+      orderType?: string;
+      tableNumber?: string;
+      status?: OrderStatus;
+      staff?: string;
+      orderItems?: OrderItem[];
+      taxBreakDown?: TaxBreakDown;
+      paid?: boolean;
+      printed?: boolean;
+      createdAt?: Timestamp;
+    };
+
+    if (data.orderType !== OrderType.DineIn) {
+      throw new Error("This order is not dine-in.");
+    }
+    if (data.status !== OrderStatus.InProgress) {
+      throw new Error("Only in-progress orders can be converted.");
+    }
+    if (data.tableNumber !== tableNumber) {
+      throw new Error("Order is not on this table.");
+    }
+
+    const tableData = tableSnap.data() as Table;
+    if (tableData.currentOrderId !== orderId) {
+      throw new Error("This order is no longer on this table.");
+    }
+
+    const draft = get().order;
+    if (draft.id !== orderId) {
+      throw new Error("Order was replaced in the editor. Go back and try again.");
+    }
+
+    const orderItems = draft.orderItems ?? [];
+    if (orderItems.length === 0) {
+      throw new Error("Cannot convert an empty order.");
+    }
+
+    const itemsSubtotal = orderItemsSubtotal(orderItems);
+    const { type: discountType, value: discountValue } =
+      discountInputsFromOrder(draft);
+    const taxBreakDown = calculateTaxBreakdown(
+      itemsSubtotal,
+      discountType,
+      discountValue,
+    );
+
+    const cleanOrderItems = orderItems.map((item) => {
+      const cleanItem: OrderItem = {
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        togo: item.togo,
+        appetizer: item.appetizer,
+        kitchenType: item.kitchenType,
+        options: item.options ?? [],
+        extras: item.extras ?? [],
+        changes: item.changes ?? [],
+        ...(item.instructions && { instructions: item.instructions }),
+      };
+      return cleanItem;
+    });
+
+    const takeOutPayload: Record<string, unknown> = {
+      id: orderId,
+      orderType: OrderType.TakeOut,
+      staff: data.staff ?? "",
+      orderItems: cleanOrderItems,
+      taxBreakDown,
+      status: OrderStatus.InProgress,
+      paid: data.paid ?? false,
+      printed: data.printed ?? false,
+      createdAt: data.createdAt,
+      customerName: name || null,
+      phoneNumber: phone || null,
+      fulfillment,
+    };
+
+    const batch = writeBatch(db);
+    batch.delete(orderRef);
+    batch.set(doc(db, "takeOutOrders", orderId), takeOutPayload);
+    batch.update(tableRef, {
+      status: TableStatus.Open,
+      currentOrderId: null,
+      guests: 0,
+    });
+
+    await batch.commit();
+    get().clearOrder();
   },
 }));
