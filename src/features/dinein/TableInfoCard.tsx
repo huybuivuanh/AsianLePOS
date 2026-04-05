@@ -1,8 +1,15 @@
-import EditTableForm from "./EditTableForm";
 import { useTableStore } from "@/stores/useTableStore";
 import { TableStatus } from "@/types/enums";
 import React, { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import {
+  Modal,
+  Platform,
+  Pressable,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import EditTableForm from "./EditTableForm";
 
 export default function TableInfoCard({
   tableNumber,
@@ -10,9 +17,12 @@ export default function TableInfoCard({
   tableNumber: string;
 }) {
   const table = useTableStore((state) =>
-    state.tables.find((t) => t.tableNumber === tableNumber)
+    state.tables.find((t) => t.tableNumber === tableNumber),
   );
-  const [isEditing, setIsEditing] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const closeModal = () => setModalVisible(false);
+  const openModal = () => setModalVisible(true);
 
   if (!table) {
     return (
@@ -22,41 +32,68 @@ export default function TableInfoCard({
     );
   }
 
-  // Determine status color
   const statusColor =
     table.status === TableStatus.Open ? "text-green-600" : "text-orange-400";
 
   return (
     <View className="w-full px-4 pt-2 pb-4">
-      <View className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
-        {/* Table Number */}
-
-        {/* Status */}
-        <Text className={`text-lg font-semibold mb-4 ${statusColor}`}>
-          {table.status}
-        </Text>
-
-        {/* Guest Counter */}
-        <Text className="text-gray-500 text-base mb-4">
-          Number of Guests: <Text className="font-bold">{table.guests}</Text>
-        </Text>
-
-        {/* Edit Form or Edit Button */}
-        {isEditing ? (
-          <EditTableForm
-            tableNumber={tableNumber}
-            onClose={() => setIsEditing(false)}
-          />
-        ) : (
-          <Pressable
-            onPress={() => setIsEditing(true)}
-            className="w-full bg-blue-500 py-3 rounded-lg items-center shadow"
-            android_ripple={{ color: "#2563eb" }}
+      <Pressable
+        onPress={openModal}
+        className="bg-white rounded-2xl shadow-md border border-gray-100 p-6 active:opacity-90"
+        android_ripple={{ color: "#e5e7eb", borderless: false }}
+      >
+        <View className="items-center justify-center">
+          <Text
+            className={`text-lg font-semibold mb-3 text-center ${statusColor}`}
           >
-            <Text className="text-white font-semibold text-lg">Edit Table</Text>
-          </Pressable>
-        )}
-      </View>
+            {table.status}
+          </Text>
+
+          <Text className="text-gray-500 text-base text-center mb-4">
+            Number of Guests:{" "}
+            <Text className="font-bold text-gray-800">{table.guests}</Text>
+          </Text>
+
+          <View className="px-4 py-2 rounded-md bg-blue-500">
+            <Text className="text-white font-semibold text-center">
+              Edit table
+            </Text>
+          </View>
+        </View>
+      </Pressable>
+
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={closeModal}
+      >
+        <TouchableOpacity
+          className="flex-1"
+          activeOpacity={1}
+          onPress={closeModal}
+          style={{
+            backgroundColor: "rgba(0,0,0,0.5)",
+            ...(Platform.OS === "web"
+              ? ({ backdropFilter: "blur(8px)" } as object)
+              : {}),
+          }}
+        >
+          <View className="flex-1 justify-center px-4 pb-6">
+            <TouchableOpacity
+              activeOpacity={1}
+              className="bg-white border border-gray-200 rounded-2xl p-4"
+              onPress={(e: any) => e?.stopPropagation?.()}
+            >
+              <EditTableForm
+                visible={modalVisible}
+                tableNumber={tableNumber}
+                onDismiss={closeModal}
+              />
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }

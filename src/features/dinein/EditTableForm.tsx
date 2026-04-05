@@ -7,15 +7,18 @@ import { Text, TouchableOpacity, View } from "react-native";
 
 interface EditTableFormProps {
   tableNumber: string;
-  onClose?: () => void;
+  /** When true, draft guests/status reset from the live table row. */
+  visible: boolean;
+  onDismiss: () => void;
 }
 
 export default function EditTableForm({
   tableNumber,
-  onClose,
+  visible,
+  onDismiss,
 }: EditTableFormProps) {
   const table = useTableStore((state) =>
-    state.tables.find((t) => t.tableNumber === tableNumber)
+    state.tables.find((t) => t.tableNumber === tableNumber),
   );
   const updateTable = useTableStore((state) => state.updateTable);
   const { updateOrderOnFirestore } = useOrderStore();
@@ -26,11 +29,10 @@ export default function EditTableForm({
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (table) {
-      setGuests(table.guests);
-      setStatus(table.status);
-    }
-  }, [table]);
+    if (!visible || !table) return;
+    setGuests(table.guests);
+    setStatus(table.status);
+  }, [visible, table]);
 
   if (!table) {
     return null;
@@ -61,11 +63,13 @@ export default function EditTableForm({
         guests,
         status,
       });
-      const order = activeDineInOrders.find((o) => o.id === table.currentOrderId);
+      const order = activeDineInOrders.find(
+        (o) => o.id === table.currentOrderId,
+      );
       if (order) {
         await updateOrderOnFirestore({ ...order, guests: guests });
       }
-      onClose?.();
+      onDismiss();
     } catch (error) {
       console.error("Failed to update table:", error);
     } finally {
@@ -74,12 +78,23 @@ export default function EditTableForm({
   };
 
   return (
-    <View className="mt-4 pt-4 border-t border-gray-200">
-      <View className="flex-row items-center justify-center mb-4">
+    <View className="items-center w-full">
+      <View className="flex-row justify-between items-center mb-4 w-full">
+        <Text className="text-gray-900 font-bold text-lg">Edit table</Text>
+        <TouchableOpacity
+          onPress={onDismiss}
+          activeOpacity={0.7}
+          className="px-3 py-2 rounded-full bg-gray-200 border border-gray-300"
+        >
+          <Text className="text-gray-800 font-semibold text-sm">Close</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View className="flex-row items-center justify-center mb-4 w-full">
         <TouchableOpacity
           onPress={decreaseGuests}
           activeOpacity={0.7}
-          className="w-12 h-12 rounded-full bg-white justify-center items-center shadow"
+          className="w-12 h-12 rounded-full bg-gray-100 justify-center items-center border border-gray-200"
         >
           <Text className="text-2xl font-bold text-gray-700">−</Text>
         </TouchableOpacity>
@@ -89,51 +104,44 @@ export default function EditTableForm({
         <TouchableOpacity
           onPress={increaseGuests}
           activeOpacity={0.7}
-          className="w-12 h-12 rounded-full bg-white justify-center items-center shadow"
+          className="w-12 h-12 rounded-full bg-gray-100 justify-center items-center border border-gray-200"
         >
           <Text className="text-2xl font-bold text-gray-700">＋</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Buttons Row */}
-      <View className="flex-row mt-4">
-        {/* Cancel Button */}
-        {onClose && (
-          <TouchableOpacity
-            onPress={onClose}
-            disabled={submitting}
-            className={`flex-1 bg-red-500 py-3 rounded-lg items-center ${
-              submitting ? "opacity-50" : ""
-            }`}
-          >
-            <Text className="text-white font-semibold text-base">Hide</Text>
-          </TouchableOpacity>
-        )}
+      <TouchableOpacity
+        onPress={handleClearTable}
+        activeOpacity={0.7}
+        disabled={submitting}
+        className={`mb-4 py-3 rounded-xl border border-gray-300 bg-gray-50 w-full max-w-xs self-center ${
+          submitting ? "opacity-50" : ""
+        }`}
+      >
+        <Text className="text-gray-700 font-semibold text-base text-center">
+          Clear
+        </Text>
+      </TouchableOpacity>
 
-        {/* Clear Table Button */}
+      <View className="flex-row justify-center w-full max-w-sm self-center">
         <TouchableOpacity
-          onPress={handleClearTable}
-          activeOpacity={0.7}
+          onPress={onDismiss}
           disabled={submitting}
-          className={`flex-1 px-4 py-3 rounded-lg border border-gray-300 bg-gray-50 ml-2 ${
-            submitting ? "opacity-50" : ""
-          }`}
+          className="flex-1 mr-2 py-3 rounded-xl bg-red-500"
         >
-          <Text className="text-gray-700 font-semibold text-base text-center">
-            Clear
+          <Text className="text-gray-800 text-center font-semibold">
+            Cancel
           </Text>
         </TouchableOpacity>
-
-        {/* Submit Button */}
         <TouchableOpacity
           onPress={handleSubmit}
           disabled={submitting}
-          className={`flex-1 bg-blue-500 py-3 rounded-lg items-center ml-2 ${
+          className={`flex-1 ml-2 py-3 rounded-xl bg-gray-900 ${
             submitting ? "opacity-50" : ""
           }`}
         >
-          <Text className="text-white font-bold text-base">
-            {submitting ? "Saving..." : "Submit"}
+          <Text className="text-white text-center font-semibold">
+            {submitting ? "Saving…" : "Save"}
           </Text>
         </TouchableOpacity>
       </View>
