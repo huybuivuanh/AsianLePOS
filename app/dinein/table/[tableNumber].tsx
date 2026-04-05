@@ -4,8 +4,8 @@ import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore"
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { DiscountType, OrderType } from "@/types/enums";
-import Header from "@/ui/Header";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
+import Header from "@/ui/Header";
 import { formatTimeOnly, showAlert } from "@/utils/helpers";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { Check } from "lucide-react-native";
@@ -334,7 +334,7 @@ export default function TablePage() {
               activeOpacity={0.7}
               disabled={!order || actionBusy}
               className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 ${
-                order && !actionBusy ? "bg-teal-500" : "bg-teal-300"
+                order && !actionBusy ? "bg-teal-500" : "bg-teal-200"
               }`}
             >
               <Text className="text-white text-sm font-semibold text-center">

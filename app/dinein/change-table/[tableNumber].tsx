@@ -3,8 +3,8 @@ import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore"
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { TableStatus } from "@/types/enums";
-import Header from "@/ui/Header";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
+import Header from "@/ui/Header";
 import { confirmAlert, showAlert } from "@/utils/helpers";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
@@ -137,9 +137,7 @@ export default function ChangeTableScreen() {
                 </Text>
               )}
               {selectable && (
-                <Text className="text-xs text-green-800 mt-1">
-                  Tap to move here
-                </Text>
+                <Text className="text-xs text-green-800 mt-1">Open</Text>
               )}
               {!order && item.status === TableStatus.Open && !isCurrent && (
                 <Text className="text-xs text-gray-500 mt-1">Wait…</Text>

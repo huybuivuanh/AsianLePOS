@@ -1,14 +1,14 @@
 import { OrderLinesList } from "@/features/order";
+import DiscountButtonModalAndSummary from "@/features/order/components/DiscountButtonModalAndSummary";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useAuth } from "@/providers/AuthProvider";
 import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { OrderStatus } from "@/types/enums";
-import Header from "@/ui/Header";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
+import Header from "@/ui/Header";
 import { convertOrderTimestamps, showAlert } from "@/utils/helpers";
-import DiscountButtonModalAndSummary from "@/features/order/components/DiscountButtonModalAndSummary";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -103,7 +103,7 @@ export default function EditDinInOrder() {
       >
         <View className="flex-row justify-center items-center p-4">
           <TouchableOpacity
-            className="bg-orange-400 px-4 py-3 rounded-full w-80 mb-4 items-center"
+            className="bg-orange-400 px-4 py-3 rounded-md w-80 mb-4 items-center"
             onPress={handleAddItem}
             disabled={submitting}
           >
@@ -123,7 +123,7 @@ export default function EditDinInOrder() {
           <TouchableOpacity
             onPress={handleSubmit}
             disabled={isSubmitDisabled}
-            className={`flex-1 bg-gray-800 py-4 rounded-lg items-center ${
+            className={`flex-1 bg-gray-800 py-4 rounded-md items-center ${
               isSubmitDisabled ? "opacity-50" : ""
             }`}
           >
@@ -136,10 +136,7 @@ export default function EditDinInOrder() {
         </View>
       </KeyboardAvoidingView>
 
-      <FullScreenLoadingOverlay
-        visible={submitting}
-        title="Saving order…"
-      />
+      <FullScreenLoadingOverlay visible={submitting} title="Saving order…" />
     </SafeAreaViewWrapper>
   );
 }

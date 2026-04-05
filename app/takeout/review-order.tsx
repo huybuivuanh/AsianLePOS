@@ -4,8 +4,8 @@ import { OrderFooter } from "@/features/takeout";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrderStore } from "@/stores/useOrderStore";
-import Header from "@/ui/Header";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
+import Header from "@/ui/Header";
 import { generateFirestoreId, showAlert } from "@/utils/helpers";
 import { useRouter, type Href } from "expo-router";
 import React, { useState } from "react";
@@ -96,7 +96,7 @@ export default function ReviewOrder() {
             <TouchableOpacity
               onPress={() => setFooterVisible(!footerVisible)}
               disabled={submitting}
-              className={`bg-orange-300 py-4 px-4 rounded-lg mx-4 mb-2 items-center flex-1 ml-2 ${
+              className={`bg-orange-300 py-4 px-4 rounded-md mx-4 mb-2 items-center flex-1 ml-2 ${
                 submitting ? "opacity-50" : ""
               }`}
             >
@@ -108,7 +108,7 @@ export default function ReviewOrder() {
             <TouchableOpacity
               onPress={clearOrder}
               disabled={submitting}
-              className={`bg-orange-300 py-4 px-4 rounded-lg mx-4 mb-2 items-center flex-1 mr-2 ${
+              className={`bg-orange-300 py-4 px-4 rounded-md mx-4 mb-2 items-center flex-1 mr-2 ${
                 submitting ? "opacity-50" : ""
               }`}
             >

@@ -4,8 +4,8 @@ import { OrderFooter } from "@/features/takeout";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrderStore } from "@/stores/useOrderStore";
-import Header from "@/ui/Header";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
+import Header from "@/ui/Header";
 import { showAlert } from "@/utils/helpers";
 import { useRouter, type Href } from "expo-router";
 import React, { useState } from "react";
@@ -79,7 +79,7 @@ export default function EditOrder() {
         {/* Add Item Button */}
         <View className="flex-row justify-center items-center p-4">
           <TouchableOpacity
-            className="bg-orange-400 px-4 py-3 rounded-full w-80 mb-4 items-center"
+            className="bg-orange-400 px-4 py-3 rounded-md w-80 mb-4 items-center"
             onPress={handleAddItem}
             disabled={submitting}
           >
@@ -101,7 +101,7 @@ export default function EditOrder() {
           <TouchableOpacity
             onPress={() => setFooterVisible(!footerVisible)}
             disabled={submitting}
-            className={`bg-orange-300 py-4 px-4 rounded-lg mx-4 mb-2 items-center ${
+            className={`bg-orange-300 py-4 px-4 rounded-md mx-4 mb-2 items-center ${
               submitting ? "opacity-50" : ""
             }`}
           >
@@ -121,10 +121,7 @@ export default function EditOrder() {
         )}
       </KeyboardAvoidingView>
 
-      <FullScreenLoadingOverlay
-        visible={submitting}
-        title="Saving order…"
-      />
+      <FullScreenLoadingOverlay visible={submitting} title="Saving order…" />
     </SafeAreaViewWrapper>
   );
 }

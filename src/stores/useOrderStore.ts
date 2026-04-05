@@ -70,6 +70,15 @@ type OrderState = {
     phoneNumber?: string;
     fulfillment: TakeOutFulfillment;
   }) => Promise<void>;
+  /**
+   * Move an in-progress take-out order to `dineInOrders`, assign a table,
+   * and remove the take-out document (same order id).
+   */
+  convertTakeOutOrderToDineIn: (args: {
+    orderId: string;
+    tableNumber: string;
+    guests: number;
+  }) => Promise<void>;
 };
 
 const defaultTakeOutDraft: OrderDraft = {
@@ -661,5 +670,112 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
     await batch.commit();
     get().clearOrder();
+  },
+
+  convertTakeOutOrderToDineIn: async ({
+    orderId,
+    tableNumber,
+    guests,
+  }) => {
+    const g = Math.floor(Number(guests));
+    if (!Number.isFinite(g) || g < 1) {
+      throw new Error("Enter at least one guest.");
+    }
+
+    const takeOutRef = doc(db, "takeOutOrders", orderId);
+    const tableRef = doc(db, "tables", tableNumber);
+
+    const [orderSnap, tableSnap] = await Promise.all([
+      getDoc(takeOutRef),
+      getDoc(tableRef),
+    ]);
+
+    if (!orderSnap.exists()) {
+      throw new Error("Take-out order not found.");
+    }
+    if (!tableSnap.exists()) {
+      throw new Error("Table not found.");
+    }
+
+    const data = orderSnap.data() as Record<string, unknown> & {
+      orderType?: string;
+      status?: OrderStatus;
+      staff?: string;
+      orderItems?: OrderItem[];
+      taxBreakDown?: TaxBreakDown;
+      paid?: boolean;
+      printed?: boolean;
+      createdAt?: Timestamp;
+    };
+
+    if (data.orderType !== OrderType.TakeOut) {
+      throw new Error("This order is not take-out.");
+    }
+    if (data.status !== OrderStatus.InProgress) {
+      throw new Error("Only in-progress orders can be converted.");
+    }
+
+    const tableData = tableSnap.data() as Table;
+    if (tableData.status !== TableStatus.Open) {
+      throw new Error("That table is not available. Choose another.");
+    }
+    if (tableData.currentOrderId) {
+      throw new Error("That table already has an order.");
+    }
+
+    const orderItems = data.orderItems ?? [];
+    if (orderItems.length === 0) {
+      throw new Error("Cannot convert an empty order.");
+    }
+
+    const itemsSubtotal = orderItemsSubtotal(orderItems);
+    const d = data.taxBreakDown?.discount;
+    const taxBreakDown = calculateTaxBreakdown(
+      itemsSubtotal,
+      d?.discountType ?? DiscountType.None,
+      d?.discountValue ?? 0,
+    );
+
+    const cleanOrderItems = orderItems.map((item) => {
+      const cleanItem: OrderItem = {
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        togo: item.togo,
+        appetizer: item.appetizer,
+        kitchenType: item.kitchenType,
+        options: item.options ?? [],
+        extras: item.extras ?? [],
+        changes: item.changes ?? [],
+        ...(item.instructions && { instructions: item.instructions }),
+      };
+      return cleanItem;
+    });
+
+    const dineInPayload: Record<string, unknown> = {
+      id: orderId,
+      orderType: OrderType.DineIn,
+      staff: data.staff ?? "",
+      orderItems: cleanOrderItems,
+      taxBreakDown,
+      status: OrderStatus.InProgress,
+      paid: data.paid ?? false,
+      printed: data.printed ?? false,
+      createdAt: data.createdAt,
+      tableNumber,
+      guests: g,
+    };
+
+    const batch = writeBatch(db);
+    batch.delete(takeOutRef);
+    batch.set(doc(db, "dineInOrders", orderId), dineInPayload);
+    batch.update(tableRef, {
+      status: TableStatus.Occupied,
+      currentOrderId: orderId,
+      guests: g,
+    });
+
+    await batch.commit();
   },
 }));

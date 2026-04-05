@@ -345,7 +345,27 @@ export default function TakeOutOrdersTab() {
                   </TouchableOpacity>
                 </View>
 
-                {/* Row 2: Done | Mark Paid | Cancel */}
+                <View className="flex-row justify-between mt-3">
+                  <TouchableOpacity
+                    className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 bg-sky-500 ${
+                      item.status !== OrderStatus.InProgress ? "opacity-50" : ""
+                    }`}
+                    disabled={item.status !== OrderStatus.InProgress || !item.id}
+                    onPress={() => {
+                      if (!item.id) return;
+                      router.push({
+                        pathname: "/take-out-orders/change-to-dinein/[orderId]",
+                        params: { orderId: item.id },
+                      } as Href);
+                    }}
+                  >
+                    <Text className="text-white font-semibold text-center text-sm">
+                      Change Type
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Row 3: Done | Mark Paid | Cancel */}
                 <View className="flex-row justify-between mt-3">
                   <TouchableOpacity
                     className="bg-red-500 px-3 py-3 rounded-md flex-1 mr-2"
