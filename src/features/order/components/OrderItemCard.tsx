@@ -16,7 +16,6 @@ export default function OrderItemCard({ item }: Props) {
   const { menuItems } = useMenuStore();
   const router = useRouter();
 
-  // Map the item's current flags to the FlagType for SpecialFlagsSelector
   const getSelectedFlag = (): "appetizer" | "toGo" | null => {
     if (item.togo) return "toGo";
     if (item.appetizer) return "appetizer";
@@ -33,114 +32,115 @@ export default function OrderItemCard({ item }: Props) {
     updateOrderItem(item.id, updates);
   };
 
+  const lineTotal = (item.price * item.quantity).toFixed(2);
+
   return (
-    <View className="flex-row justify-between items-start mb-4 bg-gray-100 p-4 rounded-lg">
-      <View className="flex-1">
-        {/* Main item info */}
-        <Text className="text-lg font-semibold">
-          {item.quantity} x {item.name} - $
-          {(item.price * item.quantity).toFixed(2)}
-        </Text>
-
-        {/* Options */}
-        {item.options && item.options.length > 0 && (
-          <View className="mt-2 space-y-1">
-            {item.options.map((option, index) => (
-              <Text key={index} className="text-base text-gray-600">
-                • {option.quantity > 1 ? `${option.quantity}x ` : ""}
-                {option.name}
-                {option.price > 0 &&
-                  ` - $${(option.price * option.quantity).toFixed(2)}`}
-              </Text>
-            ))}
-          </View>
-        )}
-
-        {/* Add Extras */}
-        {item.extras && item.extras.length > 0 && (
-          <View>
-            {item.extras.map((extra, index) => (
-              <Text key={index} className="text-base text-gray-600">
-                • Add: {extra.description}- ${extra.price.toFixed(2)}
-              </Text>
-            ))}
-          </View>
-        )}
-
-        {/* Item Changes */}
-        {item.changes && item.changes.length > 0 && (
-          <View>
-            {item.changes.map((change, index) => (
-              <Text key={index} className="text-base text-gray-600">
-                • Change: {change.from} → {change.to} - $
-                {change.price.toFixed(2)}
-              </Text>
-            ))}
-          </View>
-        )}
-
-        {/* Special Instructions */}
-        {item.instructions && (
-          <Text className="text-base text-gray-500 mt-2 italic">
-            {`"${item.instructions}"`}
+    <View className="mb-3 rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+      <View className="flex-row gap-3">
+        <View className="flex-1 min-w-0">
+          <Text className="text-base font-bold text-gray-900" numberOfLines={3}>
+            {item.quantity} × {item.name}
           </Text>
-        )}
+          <Text className="text-sm font-semibold text-gray-600 mt-0.5">
+            ${lineTotal}
+          </Text>
 
-        {/* Flags */}
-        {order.orderType === OrderType.DineIn && (
+          {item.options && item.options.length > 0 && (
+            <View className="mt-2">
+              {item.options.map((option, index) => (
+                <Text key={index} className="text-sm text-gray-600 leading-5">
+                  • {option.quantity > 1 ? `${option.quantity}x ` : ""}
+                  {option.name}
+                  {option.price > 0 &&
+                    ` · $${(option.price * option.quantity).toFixed(2)}`}
+                </Text>
+              ))}
+            </View>
+          )}
+
+          {item.extras && item.extras.length > 0 && (
+            <View className="mt-1.5">
+              {item.extras.map((extra, index) => (
+                <Text key={index} className="text-sm text-gray-600 leading-5">
+                  • Add {extra.description} · ${extra.price.toFixed(2)}
+                </Text>
+              ))}
+            </View>
+          )}
+
+          {item.changes && item.changes.length > 0 && (
+            <View className="mt-1.5">
+              {item.changes.map((change, index) => (
+                <Text key={index} className="text-sm text-gray-600 leading-5">
+                  • {change.from} → {change.to} · ${change.price.toFixed(2)}
+                </Text>
+              ))}
+            </View>
+          )}
+
+          {item.instructions && (
+            <Text className="text-sm text-gray-500 mt-2 italic leading-5">
+              {`"${item.instructions}"`}
+            </Text>
+          )}
+        </View>
+
+        <View className="items-stretch justify-start">
+          <View className="flex-row items-center">
+            <TouchableOpacity
+              className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 justify-center items-center active:bg-gray-200"
+              onPress={() =>
+                item.id &&
+                updateQuantity(item.id, Math.max(item.quantity - 1, 0))
+              }
+            >
+              <Text className="text-lg font-bold text-gray-700 pb-0.5">−</Text>
+            </TouchableOpacity>
+
+            <Text className="min-w-[28px] text-center text-base font-bold text-gray-900 mx-2">
+              {item.quantity}
+            </Text>
+
+            <TouchableOpacity
+              className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 justify-center items-center active:bg-gray-200"
+              onPress={() =>
+                item.id && updateQuantity(item.id, item.quantity + 1)
+              }
+            >
+              <Text className="text-lg font-bold text-gray-700 pb-0.5">＋</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            className="mt-2 py-2 px-3 rounded-lg bg-blue-600 active:bg-blue-700 items-center"
+            onPress={() => {
+              if (item.id) {
+                const menuItem = menuItems.find((mi) => mi.name === item.name);
+                if (menuItem?.id) {
+                  router.push({
+                    pathname: "/item/[itemId]",
+                    params: buildItemScreenParams(menuItem, {
+                      orderType: order.orderType ?? OrderType.TakeOut,
+                      orderItemId: item.id,
+                    }),
+                  });
+                }
+              }
+            }}
+          >
+            <Text className="text-white font-semibold text-medium">Edit</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {order.orderType === OrderType.DineIn && (
+        <View className="mt-3 pt-3 border-t border-gray-100">
           <SpecialFlagsSelector
             selected={getSelectedFlag()}
             onChange={handleFlagChange}
           />
-        )}
-      </View>
-
-      {/* Quantity Stepper and Edit Button */}
-      <View className="items-end">
-        <View className="flex-row items-center mt-1 mb-2">
-          <TouchableOpacity
-            className="w-10 h-10 rounded-full bg-gray-200 justify-center items-center mr-4"
-            onPress={() =>
-              item.id && updateQuantity(item.id, Math.max(item.quantity - 1, 0))
-            }
-          >
-            <Text className="text-2xl font-bold">−</Text>
-          </TouchableOpacity>
-
-          <Text className="text-xl font-semibold">{item.quantity}</Text>
-
-          <TouchableOpacity
-            className="w-10 h-10 rounded-full bg-gray-200 justify-center items-center ml-4"
-            onPress={() =>
-              item.id && updateQuantity(item.id, item.quantity + 1)
-            }
-          >
-            <Text className="text-2xl font-bold">＋</Text>
-          </TouchableOpacity>
         </View>
-
-        {/* Edit Item Button */}
-        <TouchableOpacity
-          className="bg-blue-500 px-4 py-2 rounded-lg"
-          onPress={() => {
-            if (item.id) {
-              // Find menu item by name
-              const menuItem = menuItems.find((mi) => mi.name === item.name);
-              if (menuItem?.id) {
-                router.push({
-                  pathname: "/item/[itemId]",
-                  params: buildItemScreenParams(menuItem, {
-                    orderType: order.orderType ?? OrderType.TakeOut,
-                    orderItemId: item.id,
-                  }),
-                });
-              }
-            }
-          }}
-        >
-          <Text className="text-white font-semibold text-sm">Edit Item</Text>
-        </TouchableOpacity>
-      </View>
+      )}
     </View>
   );
 }

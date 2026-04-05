@@ -507,10 +507,12 @@ export default function Item() {
           <AddExtraEditor extras={extras} onChange={setExtras} />
           <ItemChangeEditor changes={changes} onChange={setChanges} />
           {orderTypeStr === OrderType.DineIn && (
-            <SpecialFlagsSelector
-              selected={specialFlag}
-              onChange={setSpecialFlag}
-            />
+            <View className="mt-3">
+              <SpecialFlagsSelector
+                selected={specialFlag}
+                onChange={setSpecialFlag}
+              />
+            </View>
           )}
 
           {/* Footer at bottom of scrollable content */}
