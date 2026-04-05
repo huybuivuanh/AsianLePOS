@@ -5,6 +5,7 @@ import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrderStore } from "@/stores/useOrderStore";
 import Header from "@/ui/Header";
+import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import { generateFirestoreId, showAlert } from "@/utils/helpers";
 import { useRouter, type Href } from "expo-router";
 import React, { useState } from "react";
@@ -66,7 +67,12 @@ export default function ReviewOrder() {
     <SafeAreaViewWrapper className="flex-1 bg-white">
       {/* Header */}
       <View className="pb-4">
-        <Header title="Review Order" onBack={() => router.back()} />
+        <Header
+          title="Review Order"
+          onBack={() => {
+            if (!submitting) router.back();
+          }}
+        />
       </View>
 
       <KeyboardAvoidingView
@@ -89,7 +95,10 @@ export default function ReviewOrder() {
           <View className="flex-row justify-between items-center">
             <TouchableOpacity
               onPress={() => setFooterVisible(!footerVisible)}
-              className="bg-orange-300 py-4 px-4 rounded-lg mx-4 mb-2 items-center flex-1 ml-2"
+              disabled={submitting}
+              className={`bg-orange-300 py-4 px-4 rounded-lg mx-4 mb-2 items-center flex-1 ml-2 ${
+                submitting ? "opacity-50" : ""
+              }`}
             >
               <Text className="text-gray-800 font-medium">
                 {footerVisible ? "Hide Submit Section" : "Show Submit Section"}
@@ -98,7 +107,10 @@ export default function ReviewOrder() {
 
             <TouchableOpacity
               onPress={clearOrder}
-              className="bg-orange-300 py-4 px-4 rounded-lg mx-4 mb-2 items-center flex-1 mr-2"
+              disabled={submitting}
+              className={`bg-orange-300 py-4 px-4 rounded-lg mx-4 mb-2 items-center flex-1 mr-2 ${
+                submitting ? "opacity-50" : ""
+              }`}
             >
               <Text className="text-gray-800 font-medium">Clear Order</Text>
             </TouchableOpacity>
@@ -114,6 +126,11 @@ export default function ReviewOrder() {
           />
         )}
       </KeyboardAvoidingView>
+
+      <FullScreenLoadingOverlay
+        visible={submitting}
+        title="Submitting order…"
+      />
     </SafeAreaViewWrapper>
   );
 }

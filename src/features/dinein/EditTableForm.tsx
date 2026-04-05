@@ -2,6 +2,7 @@ import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore"
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { TableStatus } from "@/types/enums";
+import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import React, { useEffect, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
@@ -145,6 +146,11 @@ export default function EditTableForm({
           </Text>
         </TouchableOpacity>
       </View>
+
+      <FullScreenLoadingOverlay
+        visible={submitting}
+        title="Saving table…"
+      />
     </View>
   );
 }

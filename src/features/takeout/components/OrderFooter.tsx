@@ -1,6 +1,6 @@
 import { useOrderStore } from "@/stores/useOrderStore";
 import React from "react";
-import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import CustomerInfoForm from "./CustomerInfoForm";
 import ReadyTimeSelector from "./ReadyTimeSelector";
 
@@ -35,15 +35,13 @@ export default function OrderFooter({
           disabled ? "bg-gray-300" : "bg-gray-800"
         }`}
       >
-        {submitting ? (
-          <ActivityIndicator color="white" />
-        ) : (
-          <Text className="text-white font-bold text-base">
-            {isUpdatingExistingOrder
+        <Text className="text-white font-bold text-base">
+          {submitting
+            ? "Submitting…"
+            : isUpdatingExistingOrder
               ? `Submit Update - $${taxBreakDown?.total.toFixed(2) ?? "0.00"}`
               : ` Submit ${totalItems} Item(s) - $${taxBreakDown?.total.toFixed(2) ?? "0.00"}`}
-          </Text>
-        )}
+        </Text>
       </TouchableOpacity>
     </View>
   );

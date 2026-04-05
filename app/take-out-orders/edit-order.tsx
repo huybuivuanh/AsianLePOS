@@ -5,6 +5,7 @@ import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrderStore } from "@/stores/useOrderStore";
 import Header from "@/ui/Header";
+import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import { showAlert } from "@/utils/helpers";
 import { useRouter, type Href } from "expo-router";
 import React, { useState } from "react";
@@ -64,6 +65,7 @@ export default function EditOrder() {
       <Header
         title="Edit Order"
         onBack={() => {
+          if (submitting) return;
           clearOrder();
           router.back();
         }}
@@ -79,6 +81,7 @@ export default function EditOrder() {
           <TouchableOpacity
             className="bg-orange-400 px-4 py-3 rounded-full w-80 mb-4 items-center"
             onPress={handleAddItem}
+            disabled={submitting}
           >
             <Text className="text-white font-semibold">Add Item</Text>
           </TouchableOpacity>
@@ -97,7 +100,10 @@ export default function EditOrder() {
         {order.orderItems && order.orderItems.length > 0 && (
           <TouchableOpacity
             onPress={() => setFooterVisible(!footerVisible)}
-            className="bg-orange-300 py-4 px-4 rounded-lg mx-4 mb-2 items-center"
+            disabled={submitting}
+            className={`bg-orange-300 py-4 px-4 rounded-lg mx-4 mb-2 items-center ${
+              submitting ? "opacity-50" : ""
+            }`}
           >
             <Text className="text-gray-800 font-medium">
               {footerVisible ? "Hide Submit Section" : "Show Submit Section"}
@@ -114,6 +120,11 @@ export default function EditOrder() {
           />
         )}
       </KeyboardAvoidingView>
+
+      <FullScreenLoadingOverlay
+        visible={submitting}
+        title="Saving order…"
+      />
     </SafeAreaViewWrapper>
   );
 }

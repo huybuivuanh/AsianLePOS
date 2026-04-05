@@ -12,6 +12,7 @@ import {
   TableStatus,
 } from "@/types/enums";
 import Header from "@/ui/Header";
+import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import {
   calculateTaxBreakdown,
   generateFirestoreId,
@@ -21,7 +22,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { doc, Timestamp, writeBatch } from "firebase/firestore";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Text,
@@ -116,7 +116,12 @@ export default function ReviewDineInOrder() {
     <SafeAreaViewWrapper className="flex-1 bg-white">
       {/* Header */}
       <View className="pb-4">
-        <Header title="Review Order" onBack={() => router.back()} />
+        <Header
+          title="Review Order"
+          onBack={() => {
+            if (!submitting) router.back();
+          }}
+        />
       </View>
 
       <KeyboardAvoidingView
@@ -139,7 +144,10 @@ export default function ReviewDineInOrder() {
           <View className="flex-row justify-between items-center px-4 mb-2">
             <TouchableOpacity
               onPress={clearOrder}
-              className="flex-1 mr-2 bg-orange-400 py-4 rounded-lg items-center"
+              disabled={submitting}
+              className={`flex-1 mr-2 bg-orange-400 py-4 rounded-lg items-center ${
+                submitting ? "opacity-50" : ""
+              }`}
             >
               <Text className="text-white font-bold text-base">
                 Clear Order
@@ -153,17 +161,20 @@ export default function ReviewDineInOrder() {
                 isSubmitDisabled ? "opacity-50" : ""
               }`}
             >
-              {submitting ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text className="text-white font-bold text-base">
-                  {`Submit ${getTotalItems()} Item(s) - $${taxBreakDown?.total.toFixed(2) ?? "0.00"}`}
-                </Text>
-              )}
+              <Text className="text-white font-bold text-base">
+                {submitting
+                  ? "Submitting…"
+                  : `Submit ${getTotalItems()} Item(s) - $${taxBreakDown?.total.toFixed(2) ?? "0.00"}`}
+              </Text>
             </TouchableOpacity>
           </View>
         )}
       </KeyboardAvoidingView>
+
+      <FullScreenLoadingOverlay
+        visible={submitting}
+        title="Submitting order…"
+      />
     </SafeAreaViewWrapper>
   );
 }

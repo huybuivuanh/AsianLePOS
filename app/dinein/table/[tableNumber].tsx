@@ -5,6 +5,7 @@ import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { DiscountType, OrderType } from "@/types/enums";
 import Header from "@/ui/Header";
+import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import { formatTimeOnly, showAlert } from "@/utils/helpers";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { Check } from "lucide-react-native";
@@ -18,6 +19,9 @@ export default function TablePage() {
     state.tables.find((t) => t.tableNumber === tableNumber),
   );
   const [order, setOrder] = useState<Partial<DineInOrder> | null>(null);
+  const [actionOverlay, setActionOverlay] = useState<{
+    title: string;
+  } | null>(null);
 
   const { activeDineInOrders, loading: ordersLoading } =
     useActiveDineInOrdersStore();
@@ -59,39 +63,53 @@ export default function TablePage() {
     if (!order) return;
 
     try {
+      setActionOverlay({ title: "Cancelling order…" });
       await cancelOrder(order);
       setOrder(null);
     } catch (error: any) {
       console.log("Failed to cancel order:", error);
+    } finally {
+      setActionOverlay(null);
     }
   };
 
   const handleCompleteOrder = async () => {
     if (!order) return;
     try {
+      setActionOverlay({ title: "Completing order…" });
       await completeOrder(order);
       setOrder(null);
       router.replace("/tables");
     } catch (err) {
       console.error("Failed to complete order:", err);
+    } finally {
+      setActionOverlay(null);
     }
   };
 
   const handlePrint = async () => {
     if (!order) return;
     try {
+      setActionOverlay({ title: "Sending to printer…" });
       await submitToPrintQueue(order);
     } catch (error) {
       console.error("❌ Error submitting to print queue:", error);
+    } finally {
+      setActionOverlay(null);
     }
   };
 
   const handleMarkAsPaid = async (paid: boolean) => {
     if (!order) return;
     try {
+      setActionOverlay({
+        title: paid ? "Marking as paid…" : "Updating payment…",
+      });
       await markOrderAsPaid(order, paid);
     } catch (error) {
       console.error("❌ Error marking order as paid:", error);
+    } finally {
+      setActionOverlay(null);
     }
   };
 
@@ -103,11 +121,14 @@ export default function TablePage() {
     } as unknown as Href);
   };
 
+  const actionBusy = Boolean(actionOverlay);
+
   return (
     <SafeAreaViewWrapper className="flex-1 bg-gray-100">
       <Header
         title={`Table ${tableNumber}`}
         onBack={() => {
+          if (actionBusy) return;
           router.replace("/tables");
         }}
       />
@@ -261,7 +282,10 @@ export default function TablePage() {
                 }
               }}
               activeOpacity={0.7}
-              className="bg-orange-500 px-2 py-3 rounded-lg items-center justify-center flex-1 min-w-0"
+              disabled={actionBusy}
+              className={`bg-orange-500 px-2 py-3 rounded-lg items-center justify-center flex-1 min-w-0 ${
+                actionBusy ? "opacity-50" : ""
+              }`}
             >
               <Text className="text-white text-sm font-semibold text-center">
                 {order ? "Edit Order" : "Take Order"}
@@ -271,9 +295,9 @@ export default function TablePage() {
             <TouchableOpacity
               onPress={handleSeeOrder}
               activeOpacity={0.7}
-              disabled={!order?.id}
+              disabled={!order?.id || actionBusy}
               className={`px-2 py-3 rounded-lg items-center justify-center flex-1 min-w-0 ${
-                order?.id ? "bg-purple-600" : "bg-purple-300"
+                order?.id && !actionBusy ? "bg-purple-600" : "bg-purple-300"
               }`}
             >
               <Text className="text-white text-sm font-semibold text-center">
@@ -284,9 +308,9 @@ export default function TablePage() {
             <TouchableOpacity
               onPress={handlePrint}
               activeOpacity={0.7}
-              disabled={!order}
+              disabled={!order || actionBusy}
               className={`px-2 py-3 rounded-lg items-center justify-center flex-1 min-w-0 ${
-                order ? "bg-blue-500" : "bg-blue-300"
+                order && !actionBusy ? "bg-blue-500" : "bg-blue-300"
               }`}
             >
               <View className="flex-row items-center justify-center">
@@ -308,9 +332,9 @@ export default function TablePage() {
                 } as Href);
               }}
               activeOpacity={0.7}
-              disabled={!order}
+              disabled={!order || actionBusy}
               className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 ${
-                order ? "bg-teal-500" : "bg-teal-300"
+                order && !actionBusy ? "bg-teal-500" : "bg-teal-300"
               }`}
             >
               <Text className="text-white text-sm font-semibold text-center">
@@ -332,9 +356,9 @@ export default function TablePage() {
             <TouchableOpacity
               onPress={handlePrint}
               activeOpacity={0.7}
-              disabled={!order}
+              disabled={!order || actionBusy}
               className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 ${
-                order ? "bg-sky-500" : "bg-sky-300"
+                order && !actionBusy ? "bg-sky-500" : "bg-sky-300"
               }`}
             >
               <Text className="text-white text-sm font-semibold text-center">
@@ -348,9 +372,9 @@ export default function TablePage() {
               onPress={handleCancelOrder}
               activeOpacity={0.7}
               className={`${
-                order ? "bg-red-500" : "bg-red-300"
+                order && !actionBusy ? "bg-red-500" : "bg-red-300"
               } px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0`}
-              disabled={!order}
+              disabled={!order || actionBusy}
             >
               <Text className="text-white text-sm font-semibold text-center">
                 Cancel
@@ -359,11 +383,11 @@ export default function TablePage() {
             <TouchableOpacity
               onPress={() => handleMarkAsPaid(!order?.paid)}
               activeOpacity={0.7}
-              disabled={!order}
+              disabled={!order || actionBusy}
               className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 ${
                 order?.paid
                   ? "bg-gray-500"
-                  : order
+                  : order && !actionBusy
                     ? "bg-pink-500"
                     : "bg-gray-300"
               }`}
@@ -376,9 +400,9 @@ export default function TablePage() {
             <TouchableOpacity
               onPress={handleCompleteOrder}
               activeOpacity={0.7}
-              disabled={!order}
+              disabled={!order || actionBusy}
               className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 ${
-                order ? "bg-green-500" : "bg-green-200"
+                order && !actionBusy ? "bg-green-500" : "bg-green-200"
               }`}
             >
               <Text className="text-white text-sm font-semibold text-center">
@@ -388,6 +412,11 @@ export default function TablePage() {
           </View>
         </View>
       </View>
+
+      <FullScreenLoadingOverlay
+        visible={Boolean(actionOverlay)}
+        title={actionOverlay?.title ?? "Please wait…"}
+      />
     </SafeAreaViewWrapper>
   );
 }

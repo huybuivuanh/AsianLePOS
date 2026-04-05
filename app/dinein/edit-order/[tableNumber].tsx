@@ -6,12 +6,12 @@ import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { OrderStatus } from "@/types/enums";
 import Header from "@/ui/Header";
+import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import { convertOrderTimestamps, showAlert } from "@/utils/helpers";
 import DiscountButtonModalAndSummary from "@/features/order/components/DiscountButtonModalAndSummary";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Text,
@@ -90,6 +90,7 @@ export default function EditDinInOrder() {
       <Header
         title="Edit Order"
         onBack={() => {
+          if (submitting) return;
           clearOrder();
           router.back();
         }}
@@ -104,6 +105,7 @@ export default function EditDinInOrder() {
           <TouchableOpacity
             className="bg-orange-400 px-4 py-3 rounded-full w-80 mb-4 items-center"
             onPress={handleAddItem}
+            disabled={submitting}
           >
             <Text className="text-white font-semibold">Add Item</Text>
           </TouchableOpacity>
@@ -125,16 +127,19 @@ export default function EditDinInOrder() {
               isSubmitDisabled ? "opacity-50" : ""
             }`}
           >
-            {submitting ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text className="text-white font-bold text-base">
-                {`Submit Update - $${taxBreakDown?.total.toFixed(2) ?? "0.00"}`}
-              </Text>
-            )}
+            <Text className="text-white font-bold text-base">
+              {submitting
+                ? "Saving…"
+                : `Submit Update - $${taxBreakDown?.total.toFixed(2) ?? "0.00"}`}
+            </Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      <FullScreenLoadingOverlay
+        visible={submitting}
+        title="Saving order…"
+      />
     </SafeAreaViewWrapper>
   );
 }

@@ -4,6 +4,7 @@ import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { TableStatus } from "@/types/enums";
 import Header from "@/ui/Header";
+import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import { confirmAlert, showAlert } from "@/utils/helpers";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
@@ -81,7 +82,12 @@ export default function ChangeTableScreen() {
 
   return (
     <SafeAreaViewWrapper className="flex-1 bg-gray-100">
-      <Header title="Change table" onBack={() => router.back()} />
+      <Header
+        title="Change table"
+        onBack={() => {
+          if (!submitting) router.back();
+        }}
+      />
       {!order && (
         <View className="px-4 py-2 flex-row items-center">
           <ActivityIndicator size="small" color="#6b7280" />
@@ -144,6 +150,12 @@ export default function ChangeTableScreen() {
             </TouchableOpacity>
           );
         }}
+      />
+
+      <FullScreenLoadingOverlay
+        visible={submitting}
+        title="Updating tables…"
+        subtitle="This can take a few seconds."
       />
     </SafeAreaViewWrapper>
   );
