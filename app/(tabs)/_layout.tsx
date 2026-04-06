@@ -5,6 +5,7 @@ import { useDineInOrdersStore } from "@/stores/useDineInOrdersStore";
 import { loadCachedMenu, useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
+import { useCustomersStore } from "@/stores/useCustomersStore";
 import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
@@ -26,6 +27,8 @@ export default function TabsLayout() {
   const { subscribeToActiveDineInOrders, clearData: clearActiveDineIn } =
     useActiveDineInOrdersStore();
   const { subscribeToTables, clearData: clearTables } = useTableStore();
+  const { subscribeToCustomers, clearData: clearCustomers } =
+    useCustomersStore();
   const { clearOrder } = useOrderStore();
 
   // Redirect to login if not authenticated and clear data
@@ -37,6 +40,7 @@ export default function TabsLayout() {
       clearDineInOrdersTab();
       clearActiveDineIn();
       clearTables();
+      clearCustomers();
       clearOrder();
       router.push("/login");
     }
@@ -49,6 +53,7 @@ export default function TabsLayout() {
     clearDineInOrdersTab,
     clearActiveDineIn,
     clearTables,
+    clearCustomers,
     clearOrder,
   ]);
 
@@ -68,6 +73,7 @@ export default function TabsLayout() {
       const unsubscribeTakeOut = subscribeToTakeOutOrders();
       const unsubscribeDineInTab = subscribeToDineInOrders();
       const unsubscribeActiveDineIn = subscribeToActiveDineInOrders();
+      const unsubscribeCustomers = subscribeToCustomers();
 
       // ✅ Handle async subscribeToTables
       const unsubscribeTables = await subscribeToTables();
@@ -78,6 +84,7 @@ export default function TabsLayout() {
         unsubscribeTakeOut?.();
         unsubscribeDineInTab?.();
         unsubscribeActiveDineIn?.();
+        unsubscribeCustomers?.();
         unsubscribeTables?.();
         return;
       }
@@ -87,6 +94,7 @@ export default function TabsLayout() {
         unsubscribeTakeOut?.();
         unsubscribeDineInTab?.();
         unsubscribeActiveDineIn?.();
+        unsubscribeCustomers?.();
         unsubscribeTables?.();
       };
     };
@@ -107,6 +115,7 @@ export default function TabsLayout() {
     subscribeToTakeOutOrders,
     subscribeToDineInOrders,
     subscribeToActiveDineInOrders,
+    subscribeToCustomers,
     subscribeToTables,
   ]);
 

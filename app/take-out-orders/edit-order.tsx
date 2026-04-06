@@ -3,6 +3,7 @@ import DiscountButtonModalAndSummary from "@/features/order/components/DiscountB
 import { OrderFooter } from "@/features/takeout";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useAuth } from "@/providers/AuthProvider";
+import { useCustomersStore } from "@/stores/useCustomersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import Header from "@/ui/Header";
@@ -38,6 +39,7 @@ export default function EditOrder() {
 
     try {
       setSubmitting(true);
+      await useCustomersStore.getState().syncTakeOutCustomerFromCart();
       // Create a clean order object with only defined values
       // Use conditional spreading for ALL optional fields to avoid undefined values
       await updateOrderOnFirestore({ ...order });

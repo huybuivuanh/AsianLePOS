@@ -3,6 +3,7 @@ import DiscountButtonModalAndSummary from "@/features/order/components/DiscountB
 import { OrderFooter } from "@/features/takeout";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
+import { useCustomersStore } from "@/stores/useCustomersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { OrderStatus, OrderType } from "@/types/enums";
@@ -93,6 +94,7 @@ export default function ChangeDineInToTakeOutScreen() {
 
     try {
       setSubmitting(true);
+      await useCustomersStore.getState().syncTakeOutCustomerFromCart();
       await convertDineInOrderToTakeOut({
         orderId: currentOrder.id,
         tableNumber,

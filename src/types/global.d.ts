@@ -128,4 +128,11 @@ declare global {
     guests: number;
     currentOrderId: string | null;
   }
+
+  interface Customer {
+    id?: string;
+    name: string;
+    phone: string;
+    createdAt: TimeStamp;
+  }
 }
