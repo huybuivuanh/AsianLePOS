@@ -29,6 +29,7 @@ declare global {
     multipleOptionQuantity: boolean;
     optionIds?: string[];
     itemIds?: string[];
+    defaultOptionId?: string;
     createdAt: Timestamp;
   }
 

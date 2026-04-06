@@ -10,7 +10,7 @@ import { OrderType } from "@/types/enums";
 import Header from "@/ui/Header";
 import { generateFirestoreId, showAlert } from "@/utils/helpers";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -90,6 +90,55 @@ export default function Item() {
       return null;
     },
   );
+
+  const prevItemIdForDefaultsRef = useRef<string | undefined>(undefined);
+
+  // Pre-select default options when adding a new item (after menu data is ready).
+  useEffect(() => {
+    if (isEditMode || !item?.id) return;
+    if (!item.optionGroupIds?.length || !optionGroups.length || !options.length) {
+      return;
+    }
+
+    const switchedItem = prevItemIdForDefaultsRef.current !== item.id;
+    if (switchedItem) {
+      prevItemIdForDefaultsRef.current = item.id;
+    }
+
+    setSelectedOptions((prev) => {
+      const allowed = new Set(item.optionGroupIds!);
+      let next: Record<string, Record<string, number>>;
+
+      if (switchedItem) {
+        next = {};
+        for (const gid of Object.keys(prev)) {
+          if (allowed.has(gid)) next[gid] = { ...prev[gid] };
+        }
+      } else {
+        next = { ...prev };
+      }
+
+      const itemGroups = item.optionGroupIds!
+        .map((id) => optionGroups.find((g) => g.id === id))
+        .filter(Boolean) as OptionGroup[];
+
+      let changed = switchedItem;
+
+      for (const group of itemGroups) {
+        const gid = group.id;
+        if (!gid) continue;
+        const defaultId = group.defaultOptionId;
+        if (!defaultId || !group.optionIds?.includes(defaultId)) continue;
+        const existing = next[gid];
+        if (existing && Object.keys(existing).length > 0) continue;
+        if (!options.some((o) => o.id === defaultId)) continue;
+        next[gid] = { [defaultId]: 1 };
+        changed = true;
+      }
+
+      return changed ? next : prev;
+    });
+  }, [isEditMode, item?.id, item?.optionGroupIds, optionGroups, options]);
 
   // Sync form state when existingOrderItem changes (for edit mode)
   useEffect(() => {
@@ -290,21 +339,24 @@ export default function Item() {
       }
     }
 
+    // Stable order: follow item.optionGroupIds (first group → first entries in order.options).
     const optionsToSubmit: OrderItemOption[] = [];
-    Object.entries(selectedOptions).forEach(([groupId, optionQuantities]) => {
-      Object.entries(optionQuantities).forEach(([optionId, quantity]) => {
-        if (quantity > 0) {
-          const option = options.find((o) => o.id === optionId);
-          if (option) {
-            optionsToSubmit.push({
-              name: option.name,
-              price: option.price,
-              quantity: quantity,
-            });
-          }
+    for (const group of groups) {
+      const gid = group.id!;
+      const optionQuantities = selectedOptions[gid];
+      if (!optionQuantities) continue;
+      for (const [optionId, quantity] of Object.entries(optionQuantities)) {
+        if (quantity <= 0) continue;
+        const option = options.find((o) => o.id === optionId);
+        if (option) {
+          optionsToSubmit.push({
+            name: option.name,
+            price: option.price,
+            quantity,
+          });
         }
-      });
-    });
+      }
+    }
 
     const extrasTotal = extras.reduce((sum, e) => sum + (e.price || 0), 0);
     const changesTotal = changes.reduce((sum, c) => sum + (c.price || 0), 0);
