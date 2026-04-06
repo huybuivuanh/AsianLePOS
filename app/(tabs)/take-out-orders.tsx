@@ -1,3 +1,4 @@
+import CashPaymentModal from "@/features/dinein/CashPaymentModal";
 import OrderItemsList from "@/features/order/components/OrderItemsList";
 import OrderTaxBreakdown from "@/features/order/components/OrderTaxBreakdown";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
@@ -16,7 +17,7 @@ import {
   takeoutScheduledAt,
 } from "@/utils/helpers";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -47,6 +48,9 @@ export default function TakeOutOrdersTab() {
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(
     new Set(),
   );
+  const [cashPaymentOrderId, setCashPaymentOrderId] = useState<string | null>(
+    null,
+  );
   const router = useRouter();
   const {
     setOrder,
@@ -66,6 +70,13 @@ export default function TakeOutOrdersTab() {
     setExpandedOrderId(orderIdParam);
     void refreshTakeOutOrders();
   }, [orderIdParam, refreshTakeOutOrders]);
+
+  const cashPaymentModalTotal = useMemo(() => {
+    if (!cashPaymentOrderId) return 0;
+    const o = takeOutOrders.find((x) => x.id === cashPaymentOrderId);
+    if (!o) return 0;
+    return resolveTaxBreakdown(o)?.total ?? 0;
+  }, [cashPaymentOrderId, takeOutOrders]);
 
   const toggleExpand = (id: string) => {
     setExpandedOrderId((prev) => (prev === id ? null : id));
@@ -100,6 +111,7 @@ export default function TakeOutOrdersTab() {
       setSelectionMode(null);
       setSelectedItemIds(new Set());
     } else {
+      setCashPaymentOrderId(null);
       setSelectionMode(orderId);
       setSelectedItemIds(new Set());
     }
@@ -348,7 +360,7 @@ export default function TakeOutOrdersTab() {
 
                 <View className="flex-row justify-between mt-3">
                   <TouchableOpacity
-                    className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 bg-sky-500 ${
+                    className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 bg-sky-500 mr-2 ${
                       item.status !== OrderStatus.InProgress ? "opacity-50" : ""
                     }`}
                     disabled={item.status !== OrderStatus.InProgress || !item.id}
@@ -362,6 +374,17 @@ export default function TakeOutOrdersTab() {
                   >
                     <Text className="text-white font-semibold text-center text-sm">
                       Change Type
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-yellow-600 px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 ml-2"
+                    onPress={() => {
+                      if (!item.id) return;
+                      setCashPaymentOrderId(item.id);
+                    }}
+                  >
+                    <Text className="text-white font-semibold text-center text-sm">
+                      Cash payment
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -453,6 +476,12 @@ export default function TakeOutOrdersTab() {
           }
         />
       )}
+
+      <CashPaymentModal
+        visible={cashPaymentOrderId !== null}
+        onClose={() => setCashPaymentOrderId(null)}
+        orderTotal={cashPaymentModalTotal}
+      />
     </SafeAreaViewWrapper>
   );
 }

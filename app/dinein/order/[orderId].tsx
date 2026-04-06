@@ -1,3 +1,4 @@
+import CashPaymentModal from "@/features/dinein/CashPaymentModal";
 import OrderItemsList from "@/features/order/components/OrderItemsList";
 import OrderTaxBreakdown from "@/features/order/components/OrderTaxBreakdown";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
@@ -35,6 +36,7 @@ export default function DineInOrderDetails() {
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(
     () => new Set(),
   );
+  const [cashPaymentModalVisible, setCashPaymentModalVisible] = useState(false);
 
   const { submitToPrintQueue, submitSelectedItemsToPrintQueue } =
     useOrderStore();
@@ -84,6 +86,10 @@ export default function DineInOrderDetails() {
     }
     return calculateTaxBreakdown(selectedItemsTotal, DiscountType.None, 0);
   }, [selectedItemsTotal]);
+
+  useEffect(() => {
+    if (!selectionMode) setCashPaymentModalVisible(false);
+  }, [selectionMode]);
 
   const toggleSelectionMode = () => {
     setSelectionMode((p) => !p);
@@ -260,14 +266,27 @@ export default function DineInOrderDetails() {
                     </Text>
                   </TouchableOpacity>
                 </View>
-                <TouchableOpacity
-                  className="bg-gray-600 px-4 py-3 rounded-lg items-center justify-center mt-2"
-                  onPress={toggleSelectionMode}
-                >
-                  <Text className="text-white font-semibold text-center">
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
+                <View className="flex-row mt-2">
+                  <TouchableOpacity
+                    className="bg-red-600 px-3 py-3 rounded-lg items-center justify-center flex-1 mr-1.5"
+                    onPress={toggleSelectionMode}
+                  >
+                    <Text className="text-white font-semibold text-center text-sm">
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className={`bg-yellow-600 px-3 py-3 rounded-lg items-center justify-center flex-1 ml-1.5 ${
+                      selectedItemIds.size === 0 ? "opacity-50" : "opacity-100"
+                    }`}
+                    onPress={() => setCashPaymentModalVisible(true)}
+                    disabled={selectedItemIds.size === 0}
+                  >
+                    <Text className="text-white font-semibold text-center text-sm">
+                      Cash payment (selected)
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </>
             ) : (
               <TouchableOpacity
@@ -282,6 +301,12 @@ export default function DineInOrderDetails() {
           </View>
         </View>
       </ScrollView>
+
+      <CashPaymentModal
+        visible={cashPaymentModalVisible}
+        onClose={() => setCashPaymentModalVisible(false)}
+        orderTotal={selectedItemsTaxBreakDown.total}
+      />
     </SafeAreaViewWrapper>
   );
 }

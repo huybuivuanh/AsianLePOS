@@ -1,3 +1,4 @@
+import CashPaymentModal from "@/features/dinein/CashPaymentModal";
 import TableInfoCard from "@/features/dinein/TableInfoCard";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
@@ -10,7 +11,12 @@ import { formatTimeOnly, showAlert } from "@/utils/helpers";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { Check } from "lucide-react-native";
 import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function TablePage() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
@@ -22,6 +28,7 @@ export default function TablePage() {
   const [actionOverlay, setActionOverlay] = useState<{
     title: string;
   } | null>(null);
+  const [cashPaymentModalVisible, setCashPaymentModalVisible] = useState(false);
 
   const { activeDineInOrders, loading: ordersLoading } =
     useActiveDineInOrdersStore();
@@ -123,6 +130,9 @@ export default function TablePage() {
   };
 
   const actionBusy = Boolean(actionOverlay);
+
+  const openCashPaymentModal = () => setCashPaymentModalVisible(true);
+  const closeCashPaymentModal = () => setCashPaymentModalVisible(false);
 
   return (
     <SafeAreaViewWrapper className="flex-1 bg-gray-100">
@@ -344,6 +354,19 @@ export default function TablePage() {
             </TouchableOpacity>
 
             <TouchableOpacity
+              onPress={openCashPaymentModal}
+              activeOpacity={0.7}
+              disabled={!order || actionBusy}
+              className={`px-2 py-3 rounded-lg items-center justify-center flex-1 min-w-0 ${
+                order && !actionBusy ? "bg-yellow-600" : "bg-yellow-300"
+              }`}
+            >
+              <Text className="text-white text-sm font-semibold text-center">
+                Cash Payment
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               onPress={() => {
                 if (!order?.id) return;
                 router.push({
@@ -408,6 +431,12 @@ export default function TablePage() {
           </View>
         </View>
       </View>
+
+      <CashPaymentModal
+        visible={cashPaymentModalVisible}
+        onClose={closeCashPaymentModal}
+        orderTotal={order?.taxBreakDown?.total ?? 0}
+      />
 
       <FullScreenLoadingOverlay
         visible={Boolean(actionOverlay)}
