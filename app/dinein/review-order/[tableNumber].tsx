@@ -13,6 +13,7 @@ import {
 } from "@/types/enums";
 import Header from "@/ui/Header";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
+import { ungroupOrderItems } from "@/utils/groupOrderItems";
 import {
   calculateTaxBreakdown,
   generateFirestoreId,
@@ -82,7 +83,7 @@ export default function ReviewDineInOrder() {
         orderType: OrderType.DineIn,
         tableNumber,
         guests: getTable(tableNumber)?.guests || 0,
-        orderItems: order.orderItems,
+        orderItems: ungroupOrderItems(order.orderItems ?? []),
         taxBreakDown: computedTax,
         status: OrderStatus.InProgress,
         paid: false,

@@ -7,9 +7,10 @@ import {
   TakeOutFulfillmentKind,
 } from "@/types/enums";
 import {
-  calculateTaxBreakdown,
-  orderItemsSubtotal,
-} from "@/utils/helpers";
+  groupSimpleOrderItems,
+  ungroupOrderItems,
+} from "@/utils/groupOrderItems";
+import { calculateTaxBreakdown, orderItemsSubtotal } from "@/utils/helpers";
 import {
   collection,
   doc,
@@ -51,7 +52,7 @@ type OrderState = {
   submitToPrintQueue: (order: OrderDraft) => Promise<void>;
   submitSelectedItemsToPrintQueue: (
     order: OrderDraft,
-    selectedItemIds: string[]
+    selectedItemIds: string[],
   ) => Promise<void>;
   /** Atomically move a dine-in order to another table and update guest count. */
   changeDineInOrderTable: (args: {
@@ -116,10 +117,7 @@ function withRecalculatedTax(order: OrderDraft): OrderDraft {
   };
 }
 
-function mergeOrderDraft(
-  prev: OrderDraft,
-  fields: OrderDraft
-): OrderDraft {
+function mergeOrderDraft(prev: OrderDraft, fields: OrderDraft): OrderDraft {
   const cleanFields: OrderDraft = {};
   Object.entries(fields).forEach(([key, value]) => {
     if (value !== undefined) {
@@ -183,7 +181,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set((state) => ({
       order: mergeOrderDraft(state.order, {
         orderItems: items.map((i) =>
-          i.id === itemId ? { ...i, quantity } : i
+          i.id === itemId ? { ...i, quantity } : i,
         ),
       }),
     }));
@@ -196,7 +194,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   getTotalItems: () => {
     return (get().order.orderItems ?? []).reduce(
       (acc, item) => acc + item.quantity,
-      0
+      0,
     );
   },
 
@@ -289,10 +287,15 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const { type, value } = discountInputsFromOrder(order);
     const taxBreakDown = calculateTaxBreakdown(itemsSubtotal, type, value);
 
+    const itemsForFirestore =
+      order.orderType === OrderType.DineIn
+        ? ungroupOrderItems(order.orderItems ?? [])
+        : groupSimpleOrderItems(order.orderItems ?? []);
+
     const base = {
       id: order.id,
       orderType: order.orderType,
-      orderItems: order.orderItems,
+      orderItems: itemsForFirestore,
       taxBreakDown,
       status: OrderStatus.InProgress,
       paid: false,
@@ -315,7 +318,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const batch = writeBatch(db);
     batch.set(
       doc(db, firestorecollection, order.id!),
-      orderToSubmit as Record<string, unknown>
+      orderToSubmit as Record<string, unknown>,
     );
     await batch.commit();
 
@@ -332,7 +335,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const { type, value } = discountInputsFromOrder(order);
     const taxBreakDown = calculateTaxBreakdown(itemsSubtotal, type, value);
 
-    const cleanOrderItems = (order.orderItems ?? []).map((item) => {
+    const rawItems =
+      order.orderType === OrderType.DineIn
+        ? ungroupOrderItems(order.orderItems ?? [])
+        : (order.orderItems ?? []);
+
+    const cleanOrderItems = rawItems.map((item) => {
       const cleanItem: OrderItem = {
         id: item.id,
         name: item.name,
@@ -445,12 +453,16 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   submitToPrintQueue: async (order: OrderDraft) => {
     if (!order.id) throw new Error("Order ID is required to print.");
     const printQueueRef = doc(collection(db, "printQueue"));
-    await setDoc(printQueueRef, order as Record<string, unknown>);
+    const forPrint: OrderDraft = {
+      ...order,
+      orderItems: groupSimpleOrderItems(order.orderItems ?? []),
+    };
+    await setDoc(printQueueRef, forPrint as Record<string, unknown>);
   },
 
   submitSelectedItemsToPrintQueue: async (
     order: OrderDraft,
-    selectedItemIds: string[]
+    selectedItemIds: string[],
   ) => {
     if (!order.id) throw new Error("Order ID is required to print.");
     if (selectedItemIds.length === 0) {
@@ -459,12 +471,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
     const selectedItems =
       order.orderItems?.filter((item) =>
-        item.id ? selectedItemIds.includes(item.id) : false
+        item.id ? selectedItemIds.includes(item.id) : false,
       ) || [];
 
     const selectedSubtotal = selectedItems.reduce(
       (acc, i) => acc + i.price * i.quantity,
-      0
+      0,
     );
     const selectedTaxBreakDown = calculateTaxBreakdown(
       selectedSubtotal,
@@ -474,7 +486,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
     const partialOrder: OrderDraft = {
       ...order,
-      orderItems: selectedItems,
+      orderItems: groupSimpleOrderItems(selectedItems),
       taxBreakDown: selectedTaxBreakDown,
     };
 
@@ -610,7 +622,9 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
     const draft = get().order;
     if (draft.id !== orderId) {
-      throw new Error("Order was replaced in the editor. Go back and try again.");
+      throw new Error(
+        "Order was replaced in the editor. Go back and try again.",
+      );
     }
 
     const orderItems = draft.orderItems ?? [];
@@ -648,7 +662,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       id: orderId,
       orderType: OrderType.TakeOut,
       staff: data.staff ?? "",
-      orderItems: cleanOrderItems,
+      orderItems: groupSimpleOrderItems(cleanOrderItems),
       taxBreakDown,
       status: OrderStatus.InProgress,
       paid: data.paid ?? false,
@@ -672,11 +686,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     get().clearOrder();
   },
 
-  convertTakeOutOrderToDineIn: async ({
-    orderId,
-    tableNumber,
-    guests,
-  }) => {
+  convertTakeOutOrderToDineIn: async ({ orderId, tableNumber, guests }) => {
     const g = Math.floor(Number(guests));
     if (!Number.isFinite(g) || g < 1) {
       throw new Error("Enter at least one guest.");
@@ -736,7 +746,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       d?.discountValue ?? 0,
     );
 
-    const cleanOrderItems = orderItems.map((item) => {
+    const cleanOrderItems = ungroupOrderItems(orderItems).map((item) => {
       const cleanItem: OrderItem = {
         id: item.id,
         name: item.name,

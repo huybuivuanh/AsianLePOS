@@ -343,17 +343,6 @@ export default function TablePage() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => {}}
-              activeOpacity={0.7}
-              disabled={true}
-              className="px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 bg-white border border-gray-200"
-            >
-              <Text className="text-gray-500 text-sm font-semibold text-center">
-                Place Holder
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
               onPress={() => {
                 if (!order?.id) return;
                 router.push({
