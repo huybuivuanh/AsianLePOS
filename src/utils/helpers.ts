@@ -62,6 +62,14 @@ export const orderItemsSubtotal = (items: OrderItem[] | undefined): number => {
   return (items ?? []).reduce((acc, i) => acc + i.price * i.quantity, 0);
 };
 
+/** Order-level `paid` when there is at least one line and every line has `paid: true`. */
+export const orderPaidFromLineItems = (
+  items: OrderItem[] | undefined,
+): boolean => {
+  const list = items ?? [];
+  return list.length > 0 && list.every((it) => it.paid === true);
+};
+
 /** Subtotal from line items, or taxBreakDown.subTotal when present. */
 export const orderSubtotal = (order: Partial<Order>): number => {
   if (order.taxBreakDown?.subTotal != null) {

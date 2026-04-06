@@ -56,6 +56,7 @@ declare global {
     appetizer: boolean;
     kitchenType: KitchenType;
     instructions?: string;
+    paid: boolean;
   }
 
   interface ItemChange {

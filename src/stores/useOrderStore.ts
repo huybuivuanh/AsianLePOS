@@ -10,7 +10,11 @@ import {
   groupSimpleOrderItems,
   ungroupOrderItems,
 } from "@/utils/groupOrderItems";
-import { calculateTaxBreakdown, orderItemsSubtotal } from "@/utils/helpers";
+import {
+  calculateTaxBreakdown,
+  orderItemsSubtotal,
+  orderPaidFromLineItems,
+} from "@/utils/helpers";
 import {
   collection,
   doc,
@@ -223,6 +227,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
             togo: fields.togo ?? item.togo,
             appetizer: fields.appetizer ?? item.appetizer,
             kitchenType: fields.kitchenType ?? item.kitchenType,
+            paid: fields.paid ?? item.paid ?? false,
             ...(fields.instructions !== undefined
               ? fields.instructions.trim()
                 ? { instructions: fields.instructions.trim() }
@@ -349,6 +354,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         togo: item.togo,
         appetizer: item.appetizer,
         kitchenType: item.kitchenType,
+        paid: item.paid ?? false,
         options: item.options ?? [],
         extras: item.extras ?? [],
         changes: item.changes ?? [],
@@ -363,7 +369,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       orderItems: cleanOrderItems,
       taxBreakDown,
       status: order.status,
-      paid: order.paid ?? false,
+      paid:
+        order.orderType === OrderType.DineIn
+          ? orderPaidFromLineItems(cleanOrderItems)
+          : (order.paid ?? false),
       printed: order.printed ?? false,
       staff: order.staff,
       ...(order.createdAt && { createdAt: order.createdAt }),
@@ -650,6 +659,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         togo: item.togo,
         appetizer: item.appetizer,
         kitchenType: item.kitchenType,
+        paid: item.paid ?? false,
         options: item.options ?? [],
         extras: item.extras ?? [],
         changes: item.changes ?? [],
@@ -755,6 +765,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         togo: item.togo,
         appetizer: item.appetizer,
         kitchenType: item.kitchenType,
+        paid: item.paid ?? false,
         options: item.options ?? [],
         extras: item.extras ?? [],
         changes: item.changes ?? [],
@@ -770,7 +781,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       orderItems: cleanOrderItems,
       taxBreakDown,
       status: OrderStatus.InProgress,
-      paid: data.paid ?? false,
+      paid: orderPaidFromLineItems(cleanOrderItems),
       printed: data.printed ?? false,
       createdAt: data.createdAt,
       tableNumber,

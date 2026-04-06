@@ -8,12 +8,13 @@ import Header from "@/ui/Header";
 import {
   calculateTaxBreakdown,
   EMPTY_TAX_BREAKDOWN,
+  orderPaidFromLineItems,
   orderSubtotal,
   resolveTaxBreakdown,
 } from "@/utils/helpers";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { doc, onSnapshot } from "firebase/firestore";
-import React, { useEffect, useMemo, useState } from "react";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -118,6 +119,42 @@ export default function DineInOrderDetails() {
     }
   };
 
+  const handleToggleLinePaid = useCallback(
+    async (itemId: string, nextPaid: boolean) => {
+      if (!order || !orderIdStr || !order.orderItems?.length) return;
+      try {
+        const nextItems = order.orderItems.map((it) =>
+          it.id === itemId ? { ...it, paid: nextPaid } : it,
+        );
+        await updateDoc(doc(db, "dineInOrders", orderIdStr), {
+          orderItems: nextItems,
+          paid: orderPaidFromLineItems(nextItems),
+        });
+      } catch (e) {
+        console.error("❌ Error updating line paid state:", e);
+      }
+    },
+    [order, orderIdStr],
+  );
+
+  const handleMarkSelectedPaid = async () => {
+    if (!order || !orderIdStr || selectedItemIds.size === 0) return;
+    const items = order.orderItems ?? [];
+    try {
+      const nextItems = items.map((it) =>
+        it.id && selectedItemIds.has(it.id) ? { ...it, paid: true } : it,
+      );
+      await updateDoc(doc(db, "dineInOrders", orderIdStr), {
+        orderItems: nextItems,
+        paid: orderPaidFromLineItems(nextItems),
+      });
+      setSelectionMode(false);
+      setSelectedItemIds(new Set());
+    } catch (e) {
+      console.error("❌ Error marking selected items paid:", e);
+    }
+  };
+
   if (loading) {
     return (
       <SafeAreaViewWrapper className="flex-1 justify-center items-center bg-white">
@@ -182,6 +219,8 @@ export default function DineInOrderDetails() {
             selectionMode={selectionMode ? order.id! : null}
             selectedItemIds={selectedItemIds}
             onToggleItemSelection={toggleItemSelection}
+            linePaidToggleEnabled
+            onToggleLinePaid={handleToggleLinePaid}
           />
 
           {taxBreakDown && (
@@ -194,22 +233,35 @@ export default function DineInOrderDetails() {
             />
           )}
 
-          <View className="flex-row justify-between mt-3">
+          <View className="mt-3">
             {selectionMode ? (
               <>
+                <View className="flex-row">
+                  <TouchableOpacity
+                    className={`bg-green-600 px-3 py-3 rounded-lg items-center justify-center flex-1 mr-1.5 ${
+                      selectedItemIds.size === 0 ? "opacity-50" : "opacity-100"
+                    }`}
+                    onPress={handlePrintSelected}
+                    disabled={selectedItemIds.size === 0}
+                  >
+                    <Text className="text-white font-semibold text-center text-sm">
+                      Print Selected ({selectedItemIds.size})
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className={`bg-emerald-700 px-3 py-3 rounded-lg items-center justify-center flex-1 ml-1.5 ${
+                      selectedItemIds.size === 0 ? "opacity-50" : "opacity-100"
+                    }`}
+                    onPress={handleMarkSelectedPaid}
+                    disabled={selectedItemIds.size === 0}
+                  >
+                    <Text className="text-white font-semibold text-center text-sm">
+                      Mark Paid
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                 <TouchableOpacity
-                  className={`bg-green-600 px-4 py-3 rounded-lg items-center justify-center flex-1 mr-2 ${
-                    selectedItemIds.size === 0 ? "opacity-50" : "opacity-100"
-                  }`}
-                  onPress={handlePrintSelected}
-                  disabled={selectedItemIds.size === 0}
-                >
-                  <Text className="text-white font-semibold text-center">
-                    Print Selected ({selectedItemIds.size})
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className="bg-gray-600 px-4 py-3 rounded-lg items-center justify-center flex-1 ml-2"
+                  className="bg-gray-600 px-4 py-3 rounded-lg items-center justify-center mt-2"
                   onPress={toggleSelectionMode}
                 >
                   <Text className="text-white font-semibold text-center">
@@ -219,7 +271,7 @@ export default function DineInOrderDetails() {
               </>
             ) : (
               <TouchableOpacity
-                className="bg-blue-600 px-4 py-3 rounded-lg items-center justify-center flex-1"
+                className="bg-blue-600 px-4 py-3 rounded-lg items-center justify-center w-full"
                 onPress={handlePrintAll}
               >
                 <Text className="text-white font-semibold text-center">

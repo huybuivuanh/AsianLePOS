@@ -51,6 +51,7 @@ function mergeGroupKey(item: OrderItem): string {
     item.kitchenType,
     item.togo ? "1" : "0",
     item.appetizer ? "1" : "0",
+    item.paid ? "1" : "0",
     normalizeOptionsKey(item.options),
   ];
   return parts.join("\0");
@@ -70,6 +71,7 @@ function buildMergedLine(template: OrderItem, totalQuantity: number): OrderItem 
     kitchenType: template.kitchenType,
     togo: template.togo,
     appetizer: template.appetizer,
+    paid: template.paid,
     ...(options ? { options } : {}),
   };
 }

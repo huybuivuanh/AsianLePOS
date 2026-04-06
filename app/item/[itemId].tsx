@@ -338,6 +338,7 @@ export default function Item() {
         togo: specialFlag === "toGo",
         appetizer: specialFlag === "appetizer",
         kitchenType: item.kitchenType,
+        paid: false,
         price: orderItemPrice,
         quantity,
         ...(instructions !== "" && { instructions }),
