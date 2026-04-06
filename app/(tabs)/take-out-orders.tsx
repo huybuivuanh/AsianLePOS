@@ -274,6 +274,7 @@ export default function TakeOutOrdersTab() {
               selectionMode={selectionMode}
               selectedItemIds={selectedItemIds}
               onToggleItemSelection={handleToggleItemSelection}
+              showSectionHeaders={false}
             />
 
             {/* Tax breakdown */}

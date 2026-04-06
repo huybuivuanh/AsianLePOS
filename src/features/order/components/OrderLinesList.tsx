@@ -7,6 +7,10 @@ type Props = {
   emptyMessage?: string;
 };
 
+/**
+ * Cart / builder: preserves **array order** (order items were added) so staff can
+ * read the ticket back to the customer in sequence.
+ */
 export default function OrderLinesList({
   orderItems,
   emptyMessage = "Your order is empty.",
@@ -20,7 +24,10 @@ export default function OrderLinesList({
   return (
     <>
       {orderItems.map((item, index) => (
-        <OrderItemCard key={`${item.id}-${index}`} item={item} />
+        <OrderItemCard
+          key={`${item.id ?? "line"}-${index}`}
+          item={item}
+        />
       ))}
     </>
   );

@@ -84,7 +84,6 @@ declare global {
     total: number;
   }
 
-  /** String-literal `kind` so TypeScript narrows the union (matches enum values). */
   type TakeOutFulfillment =
     | {
         kind: "immediate";
