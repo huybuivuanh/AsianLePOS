@@ -69,6 +69,7 @@ export default function TablePage() {
     } catch (error: any) {
       console.log("Failed to cancel order:", error);
     } finally {
+      router.replace("/tables");
       setActionOverlay(null);
     }
   };
