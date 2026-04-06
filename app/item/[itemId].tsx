@@ -9,6 +9,11 @@ import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enums";
 import Header from "@/ui/Header";
 import { generateFirestoreId, showAlert } from "@/utils/helpers";
+import {
+  appendOrderItemOptionsForGroup,
+  getItemOptionGroupsInDisplayOrder,
+  getMenuItemOptionGroupIdSet,
+} from "@/utils/menuOrdering";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -55,9 +60,7 @@ export default function Item() {
       return {};
     const selected: Record<string, Record<string, number>> = {};
     // Only check groups that belong to this item
-    const itemGroups = item.optionGroupIds
-      .map((id) => optionGroups.find((g) => g.id === id))
-      .filter(Boolean) as OptionGroup[];
+    const itemGroups = getItemOptionGroupsInDisplayOrder(item, optionGroups);
 
     existingOrderItem.options.forEach((opt) => {
       // Find matching option by name and price
@@ -106,7 +109,7 @@ export default function Item() {
     }
 
     setSelectedOptions((prev) => {
-      const allowed = new Set(item.optionGroupIds!);
+      const allowed = getMenuItemOptionGroupIdSet(item);
       let next: Record<string, Record<string, number>>;
 
       if (switchedItem) {
@@ -118,9 +121,7 @@ export default function Item() {
         next = { ...prev };
       }
 
-      const itemGroups = item.optionGroupIds!
-        .map((id) => optionGroups.find((g) => g.id === id))
-        .filter(Boolean) as OptionGroup[];
+      const itemGroups = getItemOptionGroupsInDisplayOrder(item, optionGroups);
 
       let changed = switchedItem;
 
@@ -138,7 +139,7 @@ export default function Item() {
 
       return changed ? next : prev;
     });
-  }, [isEditMode, item?.id, item?.optionGroupIds, optionGroups, options]);
+  }, [isEditMode, item, optionGroups, options]);
 
   // Sync form state when existingOrderItem changes (for edit mode)
   useEffect(() => {
@@ -165,9 +166,10 @@ export default function Item() {
       ) {
         const selected: Record<string, Record<string, number>> = {};
         // Only check groups that belong to this item
-        const itemGroups = item.optionGroupIds
-          .map((id) => optionGroups.find((g) => g.id === id))
-          .filter(Boolean) as OptionGroup[];
+        const itemGroups = getItemOptionGroupsInDisplayOrder(
+          item,
+          optionGroups,
+        );
 
         existingOrderItem.options.forEach((opt) => {
           // Find matching option by name and price
@@ -190,13 +192,7 @@ export default function Item() {
         setSelectedOptions({});
       }
     }
-  }, [
-    existingOrderItem,
-    isEditMode,
-    optionGroups,
-    options,
-    item?.optionGroupIds,
-  ]);
+  }, [existingOrderItem, isEditMode, optionGroups, options, item]);
 
   if (!item)
     return (
@@ -324,10 +320,7 @@ export default function Item() {
   const handleSubmit = () => {
     if (!options || !optionGroups) return;
 
-    const groups =
-      (item.optionGroupIds
-        ?.map((id) => optionGroups.find((g) => g.id === id))
-        .filter(Boolean) as OptionGroup[]) || [];
+    const groups = getItemOptionGroupsInDisplayOrder(item, optionGroups);
 
     for (const group of groups) {
       const selectedCount = Object.values(
@@ -339,23 +332,15 @@ export default function Item() {
       }
     }
 
-    // Stable order: follow item.optionGroupIds (first group → first entries in order.options).
+    // Group order = MenuItem.optionGroupIds[].order; within group = optionIds order.
     const optionsToSubmit: OrderItemOption[] = [];
     for (const group of groups) {
-      const gid = group.id!;
-      const optionQuantities = selectedOptions[gid];
-      if (!optionQuantities) continue;
-      for (const [optionId, quantity] of Object.entries(optionQuantities)) {
-        if (quantity <= 0) continue;
-        const option = options.find((o) => o.id === optionId);
-        if (option) {
-          optionsToSubmit.push({
-            name: option.name,
-            price: option.price,
-            quantity,
-          });
-        }
-      }
+      appendOrderItemOptionsForGroup(
+        optionsToSubmit,
+        group,
+        selectedOptions[group.id!],
+        options,
+      );
     }
 
     const extrasTotal = extras.reduce((sum, e) => sum + (e.price || 0), 0);
@@ -444,12 +429,8 @@ export default function Item() {
             onSubmitEditing={() => Keyboard.dismiss()}
           />
 
-          {/* Option Groups */}
-          {item.optionGroupIds?.map((groupId) => {
-            const group = optionGroups.find((g) => g.id === groupId);
-            if (!group) return null;
-
-            return (
+          {/* Option groups: per-item OptionGroupId.order (same as saved orderItem.options) */}
+          {getItemOptionGroupsInDisplayOrder(item, optionGroups).map((group) => (
               <View key={group.id} className="mb-4">
                 <View className="flex-row items-center mb-3">
                   <Text className="text-2xl font-semibold text-gray-800">
@@ -463,17 +444,13 @@ export default function Item() {
                 </View>
 
                 {(() => {
+                  // Same order as group.optionIds (matches orderItem.options / kitchen ticket).
                   const normalizedOptions =
                     (group.optionIds ?? [])
                       .map((optionId) =>
                         options.find((o) => o.id === optionId),
                       )
                       .filter(Boolean) as ItemOption[];
-
-                  // Sort by display name (option ids alone can't be alphabetized)
-                  normalizedOptions.sort((a, b) =>
-                    a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
-                  );
 
                   return normalizedOptions.map((option) => {
                     const optionQuantity =
@@ -554,8 +531,7 @@ export default function Item() {
                   });
                 })()}
               </View>
-            );
-          })}
+          ))}
 
           <AddExtraEditor extras={extras} onChange={setExtras} />
           <ItemChangeEditor changes={changes} onChange={setChanges} />

@@ -11,11 +11,16 @@ declare global {
     createdAt: Timestamp;
   }
 
+  interface OptionGroupId {
+    optionGroupId: string;
+    order: number;
+  }
+
   interface MenuItem {
     id?: string;
     name: string;
     price: number;
-    optionGroupIds?: string[];
+    optionGroupIds?: OptionGroupId[];
     categoryIds?: string[];
     kitchenType: KitchenType;
     createdAt: Timestamp;
