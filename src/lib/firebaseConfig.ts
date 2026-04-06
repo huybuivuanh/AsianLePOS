@@ -10,15 +10,44 @@ import {
 import { getFirestore } from "firebase/firestore";
 import { Platform } from "react-native";
 
-// Public Firebase config
+function requiredEnvVar(label: string, value: string | undefined): string {
+  if (!value) {
+    throw new Error(
+      `Missing ${label}. Add it to a root .env file (see .env.example) and restart Expo.`,
+    );
+  }
+  return value;
+}
+
+// Public Firebase client config — still bundled in the app; .env keeps it out of git.
 const firebaseConfig = {
-  apiKey: "AIzaSyBF5rK8BlqdVpjI90Kkx2INa5Zk5L3RmZA",
-  authDomain: "asianlepos.firebaseapp.com",
-  projectId: "asianlepos",
-  storageBucket: "asianlepos.firebasestorage.app",
-  messagingSenderId: "173502388712",
-  appId: "1:173502388712:web:234143e63b050935f72c5d",
-  measurementId: "G-ZB1DGHFBFR",
+  apiKey: requiredEnvVar(
+    "EXPO_PUBLIC_FIREBASE_API_KEY",
+    process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  ),
+  authDomain: requiredEnvVar(
+    "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN",
+    process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  ),
+  projectId: requiredEnvVar(
+    "EXPO_PUBLIC_FIREBASE_PROJECT_ID",
+    process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  ),
+  storageBucket: requiredEnvVar(
+    "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET",
+    process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  ),
+  messagingSenderId: requiredEnvVar(
+    "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",
+    process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  ),
+  appId: requiredEnvVar(
+    "EXPO_PUBLIC_FIREBASE_APP_ID",
+    process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+  ),
+  ...(process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID
+    ? { measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID }
+    : {}),
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();

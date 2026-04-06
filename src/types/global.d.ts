@@ -1,3 +1,5 @@
+import type { Timestamp } from "firebase/firestore";
+
 export {};
 
 declare global {
@@ -6,7 +8,7 @@ declare global {
     name: string;
     itemIds?: string[];
     order: number;
-    createdAt: TimeStamp;
+    createdAt: Timestamp;
   }
 
   interface MenuItem {
@@ -16,7 +18,7 @@ declare global {
     optionGroupIds?: string[];
     categoryIds?: string[];
     kitchenType: KitchenType;
-    createdAt: TimeStamp;
+    createdAt: Timestamp;
   }
 
   interface OptionGroup {
@@ -24,10 +26,10 @@ declare global {
     name: string;
     minSelection: number;
     maxSelection: number;
-    multipleSelection?: boolean;
+    multipleOptionQuantity: boolean;
     optionIds?: string[];
     itemIds?: string[];
-    createdAt: TimeStamp;
+    createdAt: Timestamp;
   }
 
   interface ItemOption {
@@ -35,7 +37,7 @@ declare global {
     name: string;
     price: number;
     groupIds?: string[];
-    createdAt: TimeStamp;
+    createdAt: Timestamp;
   }
 
   interface OrderItemOption {
@@ -92,7 +94,7 @@ declare global {
       }
     | {
         kind: "scheduled";
-        scheduledAt: TimeStamp;
+        scheduledAt: Timestamp;
       };
 
   interface Order {
@@ -104,7 +106,7 @@ declare global {
     status: OrderStatus;
     paid: boolean;
     printed: boolean;
-    createdAt: TimeStamp;
+    createdAt: Timestamp;
   }
 
   interface TakeOutOrder extends Order {
@@ -133,6 +135,6 @@ declare global {
     id?: string;
     name: string;
     phone: string;
-    createdAt: TimeStamp;
+    createdAt: Timestamp;
   }
 }

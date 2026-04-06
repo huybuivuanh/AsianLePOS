@@ -160,7 +160,7 @@ export default function Item() {
     setSelectedOptions((prev) => {
       const current = prev[group.id!] || {};
 
-      if (group.multipleSelection) {
+      if (group.multipleOptionQuantity) {
         const currentQty = current[option.id!] || 0;
         if (currentQty > 0) {
           const updated = { ...current };
@@ -191,7 +191,7 @@ export default function Item() {
         };
       }
 
-      // For non-multiple selection groups
+      // Groups without per-option quantity (multipleOptionQuantity false)
       if (group.maxSelection === 1) {
         // If clicking the already selected option, deselect it
         if (current[option.id!]) {
@@ -449,8 +449,8 @@ export default function Item() {
                             </Text>
                           </TouchableOpacity>
 
-                          {/* Quantity Stepper for multipleSelection groups */}
-                          {group.multipleSelection && (
+                          {/* Quantity Stepper when multipleOptionQuantity */}
+                          {group.multipleOptionQuantity && (
                             <View className="flex-row items-center ml-3">
                               <TouchableOpacity
                                 onPress={() =>

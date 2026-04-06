@@ -1,8 +1,9 @@
 export enum KitchenType {
-  A = "A",
-  B = "B",
-  C = "C",
-  Z = "Z",
+  DeepFry = "Deep Fry",
+  StirFry = "Stir Fry",
+  Other = "Other",
+  Both = "Both",
+  Drink = "Drink",
 }
 
 export enum OrderStatus {
