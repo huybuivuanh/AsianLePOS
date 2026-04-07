@@ -184,7 +184,7 @@ export default function OrderItemsList({
           {showPaidBtn ? (
             <TouchableOpacity
               onPress={() => onToggleLinePaid!(orderItem.id!, !linePaid)}
-              className={`ml-1 justify-center self-center rounded-lg px-2.5 py-2 ${
+              className={`ml-3 justify-center self-center rounded-lg px-2.5 py-2 ${
                 linePaid ? "bg-emerald-600" : "bg-stone-200"
               }`}
               activeOpacity={0.75}

@@ -1,4 +1,5 @@
 import { db } from "@/lib/firebaseConfig";
+import { useTableStore } from "@/stores/useTableStore";
 import {
   DiscountType,
   OrderStatus,
@@ -23,7 +24,6 @@ import {
   Timestamp,
   writeBatch,
 } from "firebase/firestore";
-import { useTableStore } from "@/stores/useTableStore";
 import { create } from "zustand";
 
 /**
@@ -344,7 +344,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const rawItems =
       order.orderType === OrderType.DineIn
         ? ungroupOrderItems(order.orderItems ?? [])
-        : (order.orderItems ?? []);
+        : groupSimpleOrderItems(order.orderItems ?? []);
 
     const cleanOrderItems = rawItems.map((item) => {
       const cleanItem: OrderItem = {

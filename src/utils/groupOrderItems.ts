@@ -1,3 +1,4 @@
+import { KitchenType } from "@/types/enums";
 import { generateFirestoreId } from "./helpers";
 
 /**
@@ -47,7 +48,7 @@ function normalizeOptionsKey(options: OrderItemOption[] | undefined): string {
 function mergeGroupKey(item: OrderItem): string {
   const parts = [
     item.name,
-    String(item.price),
+    String(roundMoney2(item.price)),
     item.kitchenType,
     item.togo ? "1" : "0",
     item.appetizer ? "1" : "0",
@@ -57,7 +58,10 @@ function mergeGroupKey(item: OrderItem): string {
   return parts.join("\0");
 }
 
-function buildMergedLine(template: OrderItem, totalQuantity: number): OrderItem {
+function buildMergedLine(
+  template: OrderItem,
+  totalQuantity: number,
+): OrderItem {
   const options =
     template.options && template.options.length > 0
       ? template.options.map((o) => ({ ...o }))
@@ -66,7 +70,7 @@ function buildMergedLine(template: OrderItem, totalQuantity: number): OrderItem 
   return {
     id: template.id,
     name: template.name,
-    price: template.price,
+    price: roundMoney2(template.price),
     quantity: totalQuantity,
     kitchenType: template.kitchenType,
     togo: template.togo,
@@ -136,13 +140,77 @@ function cloneOrderItemWithQuantity(
     ...item,
     id,
     quantity,
+    price: roundMoney2(item.price),
     ...(options ? { options } : {}),
+  };
+}
+
+/** Matches `item/[itemId].tsx`: sum of option premiums on the line. */
+function optionPremiumSum(options: OrderItemOption[] | undefined): number {
+  if (!options?.length) return 0;
+  return options.reduce(
+    (acc, o) => acc + (o.price || 0) * Math.max(0, Number(o.quantity) || 0),
+    0,
+  );
+}
+
+function roundMoney2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+/** Each option becomes `max(1, floor(qty))` entries with `quantity: 1`, preserving option order. */
+function expandOptionQuantitiesToOnes(
+  options: OrderItemOption[],
+): OrderItemOption[] {
+  const out: OrderItemOption[] = [];
+  for (const o of options) {
+    const raw = Number(o.quantity);
+    const n = Math.floor(raw);
+    const count = Number.isFinite(raw) && n >= 1 ? n : 1;
+    for (let i = 0; i < count; i++) {
+      out.push({ ...o, quantity: 1 });
+    }
+  }
+  return out;
+}
+
+function drinkNeedsOptionQuantityUngroup(item: OrderItem): boolean {
+  return (
+    item.kitchenType === KitchenType.Drink &&
+    Boolean(item.options?.some((o) => Number(o.quantity) > 1))
+  );
+}
+
+function cloneOrderItemWithQuantityAndOptions(
+  item: OrderItem,
+  quantity: number,
+  options: OrderItemOption[] | undefined,
+  id: string | undefined,
+  unitPrice?: number,
+): OrderItem {
+  const nextPrice = unitPrice !== undefined ? unitPrice : item.price;
+  return {
+    ...item,
+    id,
+    quantity,
+    price: roundMoney2(nextPrice),
+    ...(options && options.length > 0
+      ? { options: options.map((o) => ({ ...o })) }
+      : {}),
   };
 }
 
 /**
  * Inverse of grouping on **quantity only**: each line with `quantity > 1` becomes that many
  * lines with `quantity: 1` (same name, price, options, flags, instructions, changes, extras).
+ *
+ * **Drink + option quantity > 1:** first expand each option into `quantity` copies with
+ * `quantity: 1` (order preserved). Then emit `lineQuantity × expandedOptions.length` rows:
+ * for each expanded option in order, repeat `lineQuantity` times with that single option
+ * (e.g. 2× pop, [1× pepsi, 2× coke] → 2× pepsi, 4× coke lines → 6 rows).
+ * **Unit price** on each split row: `(item.price − Σ option premiums) / expandedSlots + that
+ * option’s unit price`, so line subtotals match `quantity × item.price` (menu + extras + changes
+ * share the non-option remainder evenly per option slot).
  *
  * - **Order** is preserved: splits for a line are emitted in place, then the rest of the list.
  * - **Ids**: first split keeps `item.id` when it was set; additional splits get new Firestore ids.
@@ -160,6 +228,34 @@ export function ungroupOrderItems(items: OrderItem[]): OrderItem[] {
 
     if (!Number.isFinite(raw) || q < 1) {
       out.push(cloneOrderItemWithQuantity(item, item.quantity, item.id));
+      continue;
+    }
+
+    if (drinkNeedsOptionQuantityUngroup(item) && item.options?.length) {
+      const expanded = expandOptionQuantitiesToOnes(item.options);
+      const n = expanded.length;
+      const origPrem = optionPremiumSum(item.options);
+      const remainder = item.price - origPrem;
+      const perSlotBase = n > 0 ? remainder / n : item.price;
+      const hasLineId = item.id != null && item.id !== "";
+      let emitted = 0;
+      for (const opt of expanded) {
+        const lineUnitPrice = roundMoney2(perSlotBase + (opt.price || 0));
+        for (let i = 0; i < q; i++) {
+          const id =
+            hasLineId && emitted === 0 ? item.id : generateFirestoreId();
+          emitted += 1;
+          out.push(
+            cloneOrderItemWithQuantityAndOptions(
+              item,
+              1,
+              [opt],
+              id,
+              lineUnitPrice,
+            ),
+          );
+        }
+      }
       continue;
     }
 
