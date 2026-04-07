@@ -23,6 +23,7 @@ import {
   Timestamp,
   writeBatch,
 } from "firebase/firestore";
+import { useTableStore } from "@/stores/useTableStore";
 import { create } from "zustand";
 
 /**
@@ -410,7 +411,15 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     });
 
     if (order.orderType === OrderType.DineIn && order.tableNumber) {
-      const tableRef = doc(db, "tables", order.tableNumber);
+      const tableDocId = useTableStore
+        .getState()
+        .getTableDocId(order.tableNumber);
+      if (!tableDocId) {
+        throw new Error(
+          "Cannot find table in app. Open the Tables tab to sync, then try again.",
+        );
+      }
+      const tableRef = doc(db, "tables", tableDocId);
       batch.update(tableRef, {
         status: TableStatus.Open,
         currentOrderId: null,
@@ -436,7 +445,15 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     });
 
     if (order.orderType === OrderType.DineIn && order.tableNumber) {
-      const tableRef = doc(db, "tables", order.tableNumber);
+      const tableDocId = useTableStore
+        .getState()
+        .getTableDocId(order.tableNumber);
+      if (!tableDocId) {
+        throw new Error(
+          "Cannot find table in app. Open the Tables tab to sync, then try again.",
+        );
+      }
+      const tableRef = doc(db, "tables", tableDocId);
       batch.update(tableRef, {
         status: TableStatus.Open,
         currentOrderId: null,
@@ -530,8 +547,16 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const rawGuests = Math.floor(Number(orderData.guests ?? 0));
     const g = rawGuests >= 1 ? rawGuests : 1;
 
-    const oldTableRef = doc(db, "tables", actualFrom);
-    const newTableRef = doc(db, "tables", toTableNumber);
+    const fromDocId = useTableStore.getState().getTableDocId(actualFrom);
+    const toDocId = useTableStore.getState().getTableDocId(toTableNumber);
+    if (!fromDocId || !toDocId) {
+      throw new Error(
+        "Cannot find table in app. Open the Tables tab to sync, then try again.",
+      );
+    }
+
+    const oldTableRef = doc(db, "tables", fromDocId);
+    const newTableRef = doc(db, "tables", toDocId);
 
     const [oldTableSnap, newTableSnap] = await Promise.all([
       getDoc(oldTableRef),
@@ -542,8 +567,14 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       throw new Error("Table not found.");
     }
 
-    const oldT = oldTableSnap.data() as Table;
-    const newT = newTableSnap.data() as Table;
+    const oldT = {
+      ...(oldTableSnap.data() as Table),
+      id: oldTableSnap.id,
+    };
+    const newT = {
+      ...(newTableSnap.data() as Table),
+      id: newTableSnap.id,
+    };
 
     if (oldT.currentOrderId !== orderId) {
       throw new Error(
@@ -588,7 +619,13 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }
 
     const orderRef = doc(db, "dineInOrders", orderId);
-    const tableRef = doc(db, "tables", tableNumber);
+    const tableDocId = useTableStore.getState().getTableDocId(tableNumber);
+    if (!tableDocId) {
+      throw new Error(
+        "Cannot find table in app. Open the Tables tab to sync, then try again.",
+      );
+    }
+    const tableRef = doc(db, "tables", tableDocId);
 
     const [orderSnap, tableSnap] = await Promise.all([
       getDoc(orderRef),
@@ -624,7 +661,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       throw new Error("Order is not on this table.");
     }
 
-    const tableData = tableSnap.data() as Table;
+    const tableData: Table = {
+      ...(tableSnap.data() as Table),
+      id: tableSnap.id,
+    };
     if (tableData.currentOrderId !== orderId) {
       throw new Error("This order is no longer on this table.");
     }
@@ -703,7 +743,13 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }
 
     const takeOutRef = doc(db, "takeOutOrders", orderId);
-    const tableRef = doc(db, "tables", tableNumber);
+    const tableDocId = useTableStore.getState().getTableDocId(tableNumber);
+    if (!tableDocId) {
+      throw new Error(
+        "Cannot find table in app. Open the Tables tab to sync, then try again.",
+      );
+    }
+    const tableRef = doc(db, "tables", tableDocId);
 
     const [orderSnap, tableSnap] = await Promise.all([
       getDoc(takeOutRef),
@@ -735,7 +781,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       throw new Error("Only in-progress orders can be converted.");
     }
 
-    const tableData = tableSnap.data() as Table;
+    const tableData: Table = {
+      ...(tableSnap.data() as Table),
+      id: tableSnap.id,
+    };
     if (tableData.status !== TableStatus.Open) {
       throw new Error("That table is not available. Choose another.");
     }

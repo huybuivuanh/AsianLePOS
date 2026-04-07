@@ -40,11 +40,20 @@ export default function ReviewDineInOrder() {
 
   const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
-  const { getTable } = useTableStore();
+  const { getTable, getTableDocId } = useTableStore();
 
   const handleSubmit = async () => {
     if (!user) {
       showAlert("Error", "You must be logged in to submit an order.");
+      return;
+    }
+
+    const tableDocId = getTableDocId(tableNumber as string);
+    if (!tableDocId) {
+      showAlert(
+        "Error",
+        "Table not loaded. Open the Tables tab first, then try again.",
+      );
       return;
     }
 
@@ -60,7 +69,7 @@ export default function ReviewDineInOrder() {
       const batch = writeBatch(db);
 
       // Update table
-      const tableRef = doc(db, "tables", tableNumber);
+      const tableRef = doc(db, "tables", tableDocId);
       batch.update(tableRef, {
         currentOrderId: orderId,
         status: TableStatus.Occupied,

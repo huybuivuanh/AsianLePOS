@@ -60,7 +60,7 @@ export default function EditTableForm({
   const handleSubmit = async () => {
     try {
       setSubmitting(true);
-      await updateTable(tableNumber, {
+      await updateTable(table.id, {
         guests,
         status,
       });

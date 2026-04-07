@@ -317,7 +317,12 @@ export default function DineInOrdersTab() {
         </View>
       ) : (
         <FlatList
-          style={{ flex: 1, width: "100%", alignSelf: "stretch" }}
+          style={{
+            flex: 1,
+            width: "100%",
+            alignSelf: "stretch",
+            paddingTop: 6,
+          }}
           contentContainerStyle={{
             flexGrow: 1,
             alignSelf: "stretch",

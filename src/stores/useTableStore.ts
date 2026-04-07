@@ -6,9 +6,11 @@ import { db } from "../lib/firebaseConfig";
 type TableStore = {
   tables: Table[];
   getTable: (tableNumber: string) => Table | undefined;
+  /** Resolve Firestore doc id for a display/route `tableNumber`; undefined if not in cache. */
+  getTableDocId: (tableNumber: string) => string | undefined;
 
-  // Firestore update
-  updateTable: (tableNumber: string, data: Partial<Table>) => Promise<void>;
+  /** Firestore path `tables/{tableDocId}`. */
+  updateTable: (tableDocId: string, data: Partial<Table>) => Promise<void>;
 
   subscribeToTables: () => Promise<() => void>;
   clearData: () => void;
@@ -20,13 +22,15 @@ export const useTableStore = create<TableStore>((set, get) => ({
   getTable: (tableNumber) =>
     get().tables.find((t) => t.tableNumber === tableNumber),
 
-  // ✅ Firestore update (called on Submit)
-  updateTable: async (tableNumber, data) => {
-    const tableRef = doc(db, "tables", tableNumber);
+  getTableDocId: (tableNumber) =>
+    get().tables.find((t) => t.tableNumber === tableNumber)?.id,
+
+  updateTable: async (tableDocId, data) => {
+    const tableRef = doc(db, "tables", tableDocId);
     await updateDoc(tableRef, data);
     set((state) => ({
       tables: state.tables.map((t) =>
-        t.tableNumber === tableNumber ? { ...t, ...data } : t,
+        t.id === tableDocId ? { ...t, ...data } : t,
       ),
     }));
   },
@@ -34,10 +38,14 @@ export const useTableStore = create<TableStore>((set, get) => ({
   subscribeToTables: async () => {
     const tablesRef = collection(db, "tables");
     const unsubscribe = onSnapshot(tablesRef, (snapshot) => {
-      const tablesData: Table[] = snapshot.docs.map((doc) => ({
-        ...(doc.data() as Table),
-        id: doc.id as string,
-      }));
+      const tablesData: Table[] = snapshot.docs.map((docSnap) => {
+        const raw = docSnap.data() as Partial<Table>;
+        return {
+          ...raw,
+          id: docSnap.id,
+          tableNumber: raw.tableNumber ?? docSnap.id,
+        } as Table;
+      });
       const sortedTables = sortTables(tablesData);
       set({ tables: sortedTables });
     });

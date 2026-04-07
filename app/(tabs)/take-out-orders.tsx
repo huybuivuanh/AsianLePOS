@@ -363,7 +363,9 @@ export default function TakeOutOrdersTab() {
                     className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 bg-sky-500 mr-2 ${
                       item.status !== OrderStatus.InProgress ? "opacity-50" : ""
                     }`}
-                    disabled={item.status !== OrderStatus.InProgress || !item.id}
+                    disabled={
+                      item.status !== OrderStatus.InProgress || !item.id
+                    }
                     onPress={() => {
                       if (!item.id) return;
                       router.push({
@@ -444,7 +446,12 @@ export default function TakeOutOrdersTab() {
         </View>
       ) : (
         <FlatList
-          style={{ flex: 1, width: "100%", alignSelf: "stretch" }}
+          style={{
+            flex: 1,
+            width: "100%",
+            alignSelf: "stretch",
+            paddingTop: 6,
+          }}
           contentContainerStyle={{
             flexGrow: 1,
             alignSelf: "stretch",
