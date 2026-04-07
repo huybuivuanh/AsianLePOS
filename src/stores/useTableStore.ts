@@ -1,13 +1,5 @@
-import { TableStatus } from "@/types/enums";
 import { sortTables } from "@/utils/helpers";
-import {
-  collection,
-  doc,
-  getDocs,
-  onSnapshot,
-  updateDoc,
-  writeBatch,
-} from "firebase/firestore";
+import { collection, doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { create } from "zustand";
 import { db } from "../lib/firebaseConfig";
 
@@ -19,7 +11,6 @@ type TableStore = {
   updateTable: (tableNumber: string, data: Partial<Table>) => Promise<void>;
 
   subscribeToTables: () => Promise<() => void>;
-  initializeTables: () => Promise<void>;
   clearData: () => void;
 };
 
@@ -35,38 +26,17 @@ export const useTableStore = create<TableStore>((set, get) => ({
     await updateDoc(tableRef, data);
     set((state) => ({
       tables: state.tables.map((t) =>
-        t.tableNumber === tableNumber ? { ...t, ...data } : t
+        t.tableNumber === tableNumber ? { ...t, ...data } : t,
       ),
     }));
   },
 
-  initializeTables: async () => {
-    const tablesRef = collection(db, "tables");
-    const snapshot = await getDocs(tablesRef);
-    if (snapshot.empty) {
-      // Use batch write for atomic initialization - all tables created together or none
-      const batch = writeBatch(db);
-      for (let i = 1; i <= 15; i++) {
-        const tableDoc = doc(db, "tables", i.toString());
-        batch.set(tableDoc, {
-          tableNumber: i.toString(),
-          status: TableStatus.Open,
-          guests: 0,
-          currentOrderId: undefined,
-        });
-      }
-      await batch.commit();
-      console.log("✅ Initialized 15 tables in Firestore");
-    }
-  },
-
   subscribeToTables: async () => {
-    await get().initializeTables();
     const tablesRef = collection(db, "tables");
     const unsubscribe = onSnapshot(tablesRef, (snapshot) => {
       const tablesData: Table[] = snapshot.docs.map((doc) => ({
         ...(doc.data() as Table),
-        tableNumber: doc.id,
+        id: doc.id as string,
       }));
       const sortedTables = sortTables(tablesData);
       set({ tables: sortedTables });

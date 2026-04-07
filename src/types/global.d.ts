@@ -131,6 +131,7 @@ declare global {
   type AnyOrder = TakeOutOrder | DineInOrder;
 
   interface Table {
+    id?: string;
     tableNumber: string;
     status: TableStatus;
     guests: number;
