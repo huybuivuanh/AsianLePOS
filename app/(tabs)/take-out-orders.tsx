@@ -20,12 +20,11 @@ import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  FlatList,
-  Platform,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 
 export default function TakeOutOrdersTab() {
   const {
@@ -445,9 +444,10 @@ export default function TakeOutOrdersTab() {
           <Text className="text-gray-500">No takeout orders yet.</Text>
         </View>
       ) : (
-        <FlatList
+        <FlashList
           style={{
             flex: 1,
+            minHeight: 0,
             width: "100%",
             alignSelf: "stretch",
             paddingTop: 6,
@@ -459,13 +459,13 @@ export default function TakeOutOrdersTab() {
           }}
           keyboardShouldPersistTaps="always"
           data={takeOutOrders}
-          keyExtractor={(item) => item.id!}
+          keyExtractor={(item, index) => item.id ?? `order-${index}`}
           renderItem={renderOrder}
-          removeClippedSubviews={Platform.OS !== "web"}
-          maxToRenderPerBatch={10}
-          windowSize={10}
-          initialNumToRender={10}
-          updateCellsBatchingPeriod={50}
+          extraData={{
+            expandedOrderId,
+            selectionMode,
+            selectedItemIdsSize: selectedItemIds.size,
+          }}
           refreshing={loading}
           onRefresh={refreshTakeOutOrders}
           onEndReached={() => {

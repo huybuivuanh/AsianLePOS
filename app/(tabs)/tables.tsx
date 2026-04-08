@@ -6,14 +6,8 @@ import { TableStatus } from "@/types/enums";
 import { useRouter } from "expo-router";
 import { Check, X } from "lucide-react-native";
 import React, { useEffect } from "react";
-import {
-  FlatList,
-  ListRenderItem,
-  Pressable,
-  Text,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import { FlashList, type ListRenderItem } from "@shopify/flash-list";
+import { Pressable, Text, useWindowDimensions, View } from "react-native";
 
 const NUM_COLUMNS = 3;
 /** Matches SafeAreaViewWrapper `p-4` horizontal padding */
@@ -96,18 +90,14 @@ export default function Tables() {
 
   return (
     <SafeAreaViewWrapper className="p-4">
-      <FlatList
+      <FlashList
+        style={{ flex: 1, minHeight: 0, width: "100%", alignSelf: "stretch" }}
         keyboardShouldPersistTaps="always"
         data={tables}
         renderItem={renderItem}
-        keyExtractor={(item) => item.tableNumber}
+        keyExtractor={(item, index) => item.id ?? `${item.tableNumber}-${index}`}
         numColumns={NUM_COLUMNS}
         contentContainerStyle={{ paddingBottom: 16 }}
-        removeClippedSubviews={true}
-        maxToRenderPerBatch={15}
-        windowSize={10}
-        initialNumToRender={15}
-        updateCellsBatchingPeriod={50}
       />
     </SafeAreaViewWrapper>
   );

@@ -15,12 +15,11 @@ import { useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  FlatList,
-  Platform,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 
 export default function DineInOrdersTab() {
   const {
@@ -316,9 +315,10 @@ export default function DineInOrdersTab() {
           <Text className="text-gray-500">No dine in orders yet.</Text>
         </View>
       ) : (
-        <FlatList
+        <FlashList
           style={{
             flex: 1,
+            minHeight: 0,
             width: "100%",
             alignSelf: "stretch",
             paddingTop: 6,
@@ -330,13 +330,13 @@ export default function DineInOrdersTab() {
           }}
           keyboardShouldPersistTaps="always"
           data={dineInOrders}
-          keyExtractor={(item) => item.id!}
+          keyExtractor={(item, index) => item.id ?? `order-${index}`}
           renderItem={renderOrder}
-          removeClippedSubviews={Platform.OS !== "web"}
-          maxToRenderPerBatch={10}
-          windowSize={10}
-          initialNumToRender={10}
-          updateCellsBatchingPeriod={50}
+          extraData={{
+            expandedOrderId,
+            selectionMode,
+            selectedItemIdsSize: selectedItemIds.size,
+          }}
           refreshing={loading}
           onRefresh={refreshDineInOrders}
           onEndReached={() => {

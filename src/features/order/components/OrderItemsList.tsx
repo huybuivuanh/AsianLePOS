@@ -91,16 +91,22 @@ export default function OrderItemsList({
               </View>
             </Pressable>
           )}
-          <Pressable
-            className="min-w-0 flex-1"
-            onPress={
-              isSelectionMode && orderItem.id
-                ? () => onToggleItemSelection(orderItem.id!)
-                : undefined
-            }
-            disabled={!isSelectionMode || !orderItem.id}
-          >
-            <View className="min-w-0 flex-1">
+          {/*
+            RN: Pressable + flex-1 in a row often under-measures height; options then draw
+            outside the bordered card. Flex lives on a wrapping View; the press target sizes to content.
+          */}
+          <View className="min-w-0 flex-1" style={{ alignSelf: "stretch" }}>
+            <TouchableOpacity
+              activeOpacity={isSelectionMode ? 0.85 : 1}
+              disabled={!isSelectionMode || !orderItem.id}
+              onPress={
+                isSelectionMode && orderItem.id
+                  ? () => onToggleItemSelection(orderItem.id!)
+                  : undefined
+              }
+              className="min-w-0"
+            >
+              <View className="min-w-0">
               <View className="flex-row items-baseline justify-between gap-2">
                 <Text
                   className="flex-1 text-lg font-semibold text-stone-900"
@@ -179,8 +185,9 @@ export default function OrderItemsList({
                   </Text>
                 </View>
               ) : null}
-            </View>
-          </Pressable>
+              </View>
+            </TouchableOpacity>
+          </View>
           {showPaidBtn ? (
             <TouchableOpacity
               onPress={() => onToggleLinePaid!(orderItem.id!, !linePaid)}

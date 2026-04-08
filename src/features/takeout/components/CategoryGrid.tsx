@@ -1,10 +1,6 @@
+import { FlashList } from "@shopify/flash-list";
 import React, { useMemo } from "react";
-import {
-  FlatList,
-  Text,
-  TouchableOpacity,
-  useWindowDimensions,
-} from "react-native";
+import { Text, TouchableOpacity, useWindowDimensions } from "react-native";
 import { sortCategoriesByOrder } from "../../../utils/menuOrdering";
 
 type Props = {
@@ -39,36 +35,40 @@ export default function CategoryGrid({ categories, onSelectCategory }: Props) {
   }
 
   return (
-    <FlatList
+    <FlashList
       key={numColumns}
+      style={{ flex: 1, minHeight: 0, width: "100%", alignSelf: "stretch" }}
       data={sorted}
-      keyExtractor={(c) => c.id ?? c.name}
+      keyExtractor={(c, index) => c.id ?? `${c.name}-${index}`}
       numColumns={numColumns}
       keyboardShouldPersistTaps="always"
-      columnWrapperStyle={{ gap: GAP, marginBottom: GAP }}
       contentContainerStyle={{
         paddingBottom: 100,
         paddingHorizontal: H_PADDING,
       }}
-      removeClippedSubviews={true}
-      maxToRenderPerBatch={12}
-      windowSize={7}
-      initialNumToRender={12}
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          onPress={() => onSelectCategory(item)}
-          style={{ width: itemWidth }}
-          className="min-h-[88px] p-3 bg-gray-100 rounded-xl justify-center bg-sky-300"
-          activeOpacity={0.7}
-        >
-          <Text
-            className="text-base font-semibold text-gray-900 text-center"
-            numberOfLines={3}
+      extraData={{ numColumns, itemWidth }}
+      renderItem={({ item, index }) => {
+        const isLastInRow = (index + 1) % numColumns === 0;
+        return (
+          <TouchableOpacity
+            onPress={() => onSelectCategory(item)}
+            style={{
+              width: itemWidth,
+              marginRight: isLastInRow ? 0 : GAP,
+              marginBottom: GAP,
+            }}
+            className="min-h-[88px] p-3 bg-gray-100 rounded-xl justify-center bg-sky-300"
+            activeOpacity={0.7}
           >
-            {item.name}
-          </Text>
-        </TouchableOpacity>
-      )}
+            <Text
+              className="text-base font-semibold text-gray-900 text-center"
+              numberOfLines={3}
+            >
+              {item.name}
+            </Text>
+          </TouchableOpacity>
+        );
+      }}
     />
   );
 }

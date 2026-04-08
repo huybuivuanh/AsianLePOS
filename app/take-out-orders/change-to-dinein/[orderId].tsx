@@ -7,15 +7,8 @@ import Header from "@/ui/Header";
 import { showAlert } from "@/utils/helpers";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
-import {
-  FlatList,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 
 export default function ChangeTakeOutToDineInScreen() {
   const router = useRouter();
@@ -102,12 +95,14 @@ export default function ChangeTakeOutToDineInScreen() {
         Choose an open table, then enter guest count.
       </Text>
 
-      <FlatList
+      <FlashList
+        style={{ flex: 1, minHeight: 0, width: "100%", alignSelf: "stretch" }}
         data={tables}
-        keyExtractor={(t) => t.tableNumber}
+        keyExtractor={(t, index) => t.id ?? `${t.tableNumber}-${index}`}
         numColumns={3}
         contentContainerStyle={{ padding: 8, paddingBottom: 24 }}
         keyboardShouldPersistTaps="handled"
+        extraData={{ submitting, guestModalTable }}
         renderItem={({ item }) => {
           const isSelectable =
             item.status === TableStatus.Open && !item.currentOrderId;

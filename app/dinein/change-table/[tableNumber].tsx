@@ -8,13 +8,8 @@ import Header from "@/ui/Header";
 import { confirmAlert, showAlert } from "@/utils/helpers";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 
 export default function ChangeTableScreen() {
   const router = useRouter();
@@ -95,12 +90,14 @@ export default function ChangeTableScreen() {
         </View>
       )}
 
-      <FlatList
+      <FlashList
+        style={{ flex: 1, minHeight: 0, width: "100%", alignSelf: "stretch" }}
         data={tables}
-        keyExtractor={(t) => t.tableNumber}
+        keyExtractor={(t, index) => t.id ?? `${t.tableNumber}-${index}`}
         numColumns={3}
         contentContainerStyle={{ padding: 8, paddingBottom: 24 }}
         keyboardShouldPersistTaps="handled"
+        extraData={{ submitting, orderIdStr, fromTable }}
         renderItem={({ item }) => {
           const isCurrent = item.tableNumber === fromTable;
           const isOtherOccupied =
