@@ -115,8 +115,8 @@ export default function EditDinInOrder() {
           className="flex-1 px-4"
           keyboardShouldPersistTaps="handled"
         >
-          <OrderLinesList orderItems={order.orderItems} />
           <DiscountButtonModalAndSummary />
+          <OrderLinesList orderItems={order.orderItems} />
         </KeyboardAwareScrollView>
 
         <View className="flex-row justify-between items-center px-4 mb-2">

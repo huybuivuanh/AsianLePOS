@@ -169,10 +169,10 @@ export default function ChangeDineInToTakeOutScreen() {
           className="flex-1 px-4 pt-2"
           keyboardShouldPersistTaps="handled"
         >
-          <OrderLinesList orderItems={order.orderItems} />
           {order.orderItems && order.orderItems.length > 0 && (
             <DiscountButtonModalAndSummary />
           )}
+          <OrderLinesList orderItems={order.orderItems} />
         </KeyboardAwareScrollView>
 
         {order.orderItems && order.orderItems.length > 0 && (

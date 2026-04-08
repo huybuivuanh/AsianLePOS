@@ -5,11 +5,13 @@ import { Timestamp } from "firebase/firestore";
 import React, { useState } from "react";
 import { Platform, Switch, Text, TouchableOpacity, View } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import WebScheduledDateTimeInput from "./WebScheduledDateTimeInput";
 
 const READY_TIMES = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70];
 
 export default function ReadyTimeSelector() {
+  const insets = useSafeAreaInsets();
   const { order, updateOrder } = useOrderStore();
   const [pickerMode, setPickerMode] = useState<"date" | "time" | null>(null);
 
@@ -138,6 +140,10 @@ export default function ReadyTimeSelector() {
                 onConfirm={handleConfirm}
                 onCancel={() => setPickerMode(null)}
                 is24Hour={false}
+                modalStyleIOS={{
+                  justifyContent: "flex-start",
+                  paddingTop: insets.top + 16,
+                }}
               />
             </>
           )}

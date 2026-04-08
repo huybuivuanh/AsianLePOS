@@ -8,15 +8,19 @@ import {
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Keyboard,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function CustomerInfoForm() {
+  const insets = useSafeAreaInsets();
   const { order, updateOrder } = useOrderStore();
   const customers = useCustomersStore((s) => s.customers);
 
@@ -102,13 +106,20 @@ export default function CustomerInfoForm() {
         animationType="fade"
         onRequestClose={onNoSuggestion}
       >
-        <View className="flex-1 justify-center px-5">
-          <Pressable
-            className="absolute inset-0 bg-black/50"
-            onPress={onNoSuggestion}
-            accessibilityLabel="Dismiss customer suggestion"
-          />
-          {matchedCustomer ? (
+        <KeyboardAvoidingView
+          className="flex-1"
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <View
+            className="flex-1 justify-start px-5"
+            style={{ paddingTop: insets.top + 16 }}
+          >
+            <Pressable
+              className="absolute inset-0 bg-black/50"
+              onPress={onNoSuggestion}
+              accessibilityLabel="Dismiss customer suggestion"
+            />
+            {matchedCustomer ? (
             <View className="relative z-10 w-full max-w-md self-center rounded-2xl border border-stone-200 bg-white px-5 py-6 shadow-2xl">
               <Text className="mb-1 text-center text-lg font-bold text-stone-900">
                 Customer found
@@ -146,7 +157,8 @@ export default function CustomerInfoForm() {
               </Text>
             </View>
           ) : null}
-        </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

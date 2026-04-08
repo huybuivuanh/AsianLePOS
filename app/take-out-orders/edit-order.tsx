@@ -94,8 +94,8 @@ export default function EditOrder() {
           className="flex-1 px-4"
           keyboardShouldPersistTaps="handled"
         >
-          <OrderLinesList orderItems={order.orderItems} />
           <DiscountButtonModalAndSummary />
+          <OrderLinesList orderItems={order.orderItems} />
         </KeyboardAwareScrollView>
 
         {/* Toggle Footer */}

@@ -7,10 +7,21 @@ import Header from "@/ui/Header";
 import { showAlert } from "@/utils/helpers";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FlashList } from "@shopify/flash-list";
 
 export default function ChangeTakeOutToDineInScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { orderId: orderIdParam } = useLocalSearchParams<{ orderId: string }>();
   const orderIdStr = Array.isArray(orderIdParam)
@@ -148,13 +159,20 @@ export default function ChangeTakeOutToDineInScreen() {
         animationType="fade"
         onRequestClose={closeGuestModal}
       >
-        <View className="flex-1 justify-center items-center px-6">
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            className="bg-black/50"
-            onPress={closeGuestModal}
-          />
-          <View className="w-full max-w-sm rounded-2xl bg-white p-6 border border-gray-200">
+        <KeyboardAvoidingView
+          className="flex-1"
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <View
+            className="flex-1 justify-start items-center px-6"
+            style={{ paddingTop: insets.top + 16 }}
+          >
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              className="bg-black/50"
+              onPress={closeGuestModal}
+            />
+            <View className="w-full max-w-sm rounded-2xl bg-white p-6 border border-gray-200">
             <Text className="text-lg font-bold text-gray-900 text-center mb-1">
               Table {guestModalTable}
             </Text>
@@ -203,7 +221,8 @@ export default function ChangeTakeOutToDineInScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       <FullScreenLoadingOverlay

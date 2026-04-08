@@ -1,13 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Keyboard,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Props = {
   visible: boolean;
@@ -20,6 +23,7 @@ export default function CashPaymentModal({
   onClose,
   orderTotal,
 }: Props) {
+  const insets = useSafeAreaInsets();
   const [cashAmountText, setCashAmountText] = useState("");
 
   useEffect(() => {
@@ -57,13 +61,20 @@ export default function CashPaymentModal({
       animationType="fade"
       onRequestClose={handleClose}
     >
-      <View className="flex-1 justify-center px-5">
-        <Pressable
-          className="absolute inset-0 bg-black/50"
-          onPress={handleClose}
-          accessibilityLabel="Close cash payment"
-        />
-        <View className="relative z-10 w-full max-w-md self-center rounded-2xl bg-white p-5 shadow-xl">
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <View
+          className="flex-1 justify-start px-5"
+          style={{ paddingTop: insets.top + 16 }}
+        >
+          <Pressable
+            className="absolute inset-0 bg-black/50"
+            onPress={handleClose}
+            accessibilityLabel="Close cash payment"
+          />
+          <View className="relative z-10 w-full max-w-md self-center rounded-2xl bg-white p-5 shadow-xl">
           <Text className="mb-4 text-center text-lg font-bold text-gray-900">
             Cash payment
           </Text>
@@ -131,7 +142,8 @@ export default function CashPaymentModal({
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

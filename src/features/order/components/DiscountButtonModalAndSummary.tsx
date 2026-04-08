@@ -7,6 +7,7 @@ import {
 } from "@/utils/helpers";
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Text,
@@ -14,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const DISCOUNT_TYPES: { type: DiscountType; label: string }[] = [
   { type: DiscountType.None, label: "None" },
@@ -22,6 +24,7 @@ const DISCOUNT_TYPES: { type: DiscountType; label: string }[] = [
 ];
 
 export default function DiscountButtonModalAndSummary() {
+  const insets = useSafeAreaInsets();
   const { order, updateOrder } = useOrderStore();
 
   const committedType =
@@ -80,20 +83,19 @@ export default function DiscountButtonModalAndSummary() {
   };
 
   return (
-    <View className="mt-3 mb-3">
+    <View className="mb-3">
       {/* Row: Discount button */}
-      <View className="flex-row justify-end mb-2">
-        <TouchableOpacity
-          onPress={openModal}
-          className="px-4 py-2 rounded-md bg-gray-900"
-          activeOpacity={0.8}
-        >
-          <Text className="text-white font-semibold">Discount</Text>
-        </TouchableOpacity>
-      </View>
-
       {/* Summary: discount + final total */}
       <View className="bg-white border border-gray-200 rounded-2xl p-4">
+        <View className="flex-row justify-end mb-2">
+          <TouchableOpacity
+            onPress={openModal}
+            className="px-4 py-2 rounded-md bg-gray-900"
+            activeOpacity={0.8}
+          >
+            <Text className="text-white font-semibold">Discount</Text>
+          </TouchableOpacity>
+        </View>
         {committedType !== DiscountType.None && committedDiscountAmount > 0 ? (
           <View className="flex-row justify-between mb-2">
             <Text className="text-gray-600 font-medium">
@@ -121,18 +123,25 @@ export default function DiscountButtonModalAndSummary() {
         transparent
         onRequestClose={closeModal}
       >
-        <TouchableOpacity
+        <KeyboardAvoidingView
           className="flex-1"
-          activeOpacity={1}
-          onPress={closeModal}
-          style={{
-            backgroundColor: "rgba(0,0,0,0.5)",
-            ...(Platform.OS === "web"
-              ? ({ backdropFilter: "blur(8px)" } as any)
-              : {}),
-          }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-          <View className="flex-1 justify-center px-4 pb-6">
+          <TouchableOpacity
+            className="flex-1"
+            activeOpacity={1}
+            onPress={closeModal}
+            style={{
+              backgroundColor: "rgba(0,0,0,0.5)",
+              ...(Platform.OS === "web"
+                ? ({ backdropFilter: "blur(8px)" } as any)
+                : {}),
+            }}
+          >
+            <View
+              className="flex-1 justify-start px-4 pb-6"
+              style={{ paddingTop: insets.top + 16 }}
+            >
             <TouchableOpacity
               activeOpacity={1}
               className="bg-white border border-gray-200 rounded-2xl p-4"
@@ -214,6 +223,7 @@ export default function DiscountButtonModalAndSummary() {
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

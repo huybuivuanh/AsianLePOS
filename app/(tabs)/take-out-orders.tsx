@@ -16,15 +16,10 @@ import {
   takeoutFulfillmentIsScheduled,
   takeoutScheduledAt,
 } from "@/utils/helpers";
+import { FlashList } from "@shopify/flash-list";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { FlashList } from "@shopify/flash-list";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 
 export default function TakeOutOrdersTab() {
   const {

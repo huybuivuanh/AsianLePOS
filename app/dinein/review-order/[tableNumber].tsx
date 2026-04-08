@@ -143,10 +143,10 @@ export default function ReviewDineInOrder() {
           className="flex-1 px-4"
           keyboardShouldPersistTaps="handled"
         >
-          <OrderLinesList orderItems={order.orderItems} />
           {order.orderItems && order.orderItems.length > 0 && (
             <DiscountButtonModalAndSummary />
           )}
+          <OrderLinesList orderItems={order.orderItems} />
         </KeyboardAwareScrollView>
 
         {/* Clear + Toggle Footer */}

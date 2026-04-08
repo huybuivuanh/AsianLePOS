@@ -2,6 +2,7 @@ import { useTableStore } from "@/stores/useTableStore";
 import { TableStatus } from "@/types/enums";
 import React, { useState } from "react";
 import {
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -9,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import EditTableForm from "./EditTableForm";
 
 export default function TableInfoCard({
@@ -19,6 +21,7 @@ export default function TableInfoCard({
   const table = useTableStore((state) =>
     state.tables.find((t) => t.tableNumber === tableNumber),
   );
+  const insets = useSafeAreaInsets();
   const [modalVisible, setModalVisible] = useState(false);
 
   const closeModal = () => setModalVisible(false);
@@ -68,18 +71,25 @@ export default function TableInfoCard({
         transparent
         onRequestClose={closeModal}
       >
-        <TouchableOpacity
+        <KeyboardAvoidingView
           className="flex-1"
-          activeOpacity={1}
-          onPress={closeModal}
-          style={{
-            backgroundColor: "rgba(0,0,0,0.5)",
-            ...(Platform.OS === "web"
-              ? ({ backdropFilter: "blur(8px)" } as object)
-              : {}),
-          }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-          <View className="flex-1 justify-center px-4 pb-6">
+          <TouchableOpacity
+            className="flex-1"
+            activeOpacity={1}
+            onPress={closeModal}
+            style={{
+              backgroundColor: "rgba(0,0,0,0.5)",
+              ...(Platform.OS === "web"
+                ? ({ backdropFilter: "blur(8px)" } as object)
+                : {}),
+            }}
+          >
+            <View
+              className="flex-1 justify-start px-4 pb-6"
+              style={{ paddingTop: insets.top + 16 }}
+            >
             <TouchableOpacity
               activeOpacity={1}
               className="bg-white border border-gray-200 rounded-2xl p-4"
@@ -93,6 +103,7 @@ export default function TableInfoCard({
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
