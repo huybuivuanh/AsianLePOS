@@ -2,7 +2,7 @@
   "expo": {
     "name": "Asian Le POS",
     "slug": "AsianLePOS",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "orientation": "portrait",
     "scheme": "asianlepos",
     "userInterfaceStyle": "automatic",
