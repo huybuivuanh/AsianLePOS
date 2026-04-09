@@ -175,11 +175,13 @@ export default function TakeOutOrdersTab() {
     return (
       <View
         className={`${
-          item.status === OrderStatus.Completed
-            ? "bg-green-100 border-green-200"
-            : takeoutFulfillmentIsScheduled(item)
-              ? "bg-orange-100 border-orange-200"
-              : "bg-blue-100 border-blue-200"
+          item.status === OrderStatus.Cancelled
+            ? "bg-red-100 border-red-200"
+            : item.status === OrderStatus.Completed
+              ? "bg-green-100 border-green-200"
+              : takeoutFulfillmentIsScheduled(item)
+                ? "bg-orange-100 border-orange-200"
+                : "bg-blue-100 border-blue-200"
         } p-4 mb-3 rounded-xl shadow-sm border `}
       >
         <TouchableOpacity

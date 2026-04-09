@@ -130,7 +130,13 @@ export default function DineInOrdersTab() {
 
     return (
       <View
-        className={`${item.status === OrderStatus.Completed ? "bg-green-100 border-green-200" : "bg-amber-100 border-amber-200"} p-4 mb-3 rounded-xl shadow-sm border `}
+        className={`${
+          item.status === OrderStatus.Cancelled
+            ? "bg-red-100 border-red-200"
+            : item.status === OrderStatus.Completed
+              ? "bg-green-100 border-green-200"
+              : "bg-amber-100 border-amber-200"
+        } p-4 mb-3 rounded-xl shadow-sm border `}
       >
         <TouchableOpacity
           className="flex-row justify-between items-center"

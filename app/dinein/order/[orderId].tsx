@@ -202,18 +202,34 @@ export default function DineInOrderDetails() {
           className="w-full bg-white border border-gray-200 rounded-2xl p-4"
           style={{ alignSelf: "stretch" }}
         >
-          <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-lg font-extrabold text-gray-900">
-              Order Items
-            </Text>
+          <View className="flex-row items-stretch gap-2 mb-3 w-full">
+            <View className="flex-1 justify-center min-w-0">
+              <Text className="text-lg font-extrabold text-gray-900">
+                Order Items
+              </Text>
+            </View>
+            <TouchableOpacity
+              className="flex-1 min-w-0 bg-blue-600 px-2 py-3 rounded-md items-center justify-center"
+              onPress={handlePrintAll}
+            >
+              <Text
+                className="text-white font-semibold text-center"
+                numberOfLines={2}
+              >
+                Print
+              </Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
               onPress={toggleSelectionMode}
-              className={`px-3 py-2 rounded-md ${
+              className={`flex-1 min-w-0 px-2 py-3 rounded-md items-center justify-center ${
                 selectionMode ? "bg-gray-700" : "bg-purple-600"
               }`}
             >
-              <Text className="text-white font-semibold text-sm">
+              <Text
+                className="text-white font-semibold text-sm text-center"
+                numberOfLines={2}
+              >
                 {selectionMode ? "Cancel Selection" : "Select Items"}
               </Text>
             </TouchableOpacity>
@@ -240,7 +256,7 @@ export default function DineInOrderDetails() {
           )}
 
           <View className="mt-3">
-            {selectionMode ? (
+            {selectionMode && (
               <>
                 <View className="flex-row">
                   <TouchableOpacity
@@ -288,15 +304,6 @@ export default function DineInOrderDetails() {
                   </TouchableOpacity>
                 </View>
               </>
-            ) : (
-              <TouchableOpacity
-                className="bg-blue-600 px-4 py-3 rounded-lg items-center justify-center w-full"
-                onPress={handlePrintAll}
-              >
-                <Text className="text-white font-semibold text-center">
-                  Print
-                </Text>
-              </TouchableOpacity>
             )}
           </View>
         </View>
