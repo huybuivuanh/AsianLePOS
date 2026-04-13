@@ -5,7 +5,7 @@ import { useTableStore } from "@/stores/useTableStore";
 import { TableStatus } from "@/types/enums";
 import { useRouter } from "expo-router";
 import { Check, X } from "lucide-react-native";
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { FlashList, type ListRenderItem } from "@shopify/flash-list";
 import { Pressable, Text, useWindowDimensions, View } from "react-native";
 
@@ -28,21 +28,23 @@ export default function Tables() {
     clearOrder();
   }, [clearOrder]);
 
-  const openTablePage = (tableNumber: string) => {
+  const openTablePage = useCallback((tableNumber: string) => {
     const table = tables.find((t) => t.tableNumber === tableNumber);
     if (!table) return;
     router.push({
       pathname: "/dinein/table/[tableNumber]",
       params: { tableNumber },
     });
-  };
+  }, [tables, router]);
 
-  const getPrintedStatus = (orderId: string) => {
-    const order = activeDineInOrders.find((o) => o.id === orderId);
-    return order?.printed ?? false;
-  };
+  // Build a Map once per activeDineInOrders update instead of doing a linear
+  // find inside renderItem for every table card on every render
+  const printedMap = useMemo(
+    () => new Map(activeDineInOrders.map((o) => [o.id, o.printed])),
+    [activeDineInOrders],
+  );
 
-  const renderItem: ListRenderItem<(typeof tables)[0]> = ({ item, index }) => {
+  const renderItem: ListRenderItem<(typeof tables)[0]> = useCallback(({ item, index }) => {
     const bgColor =
       item.status === TableStatus.Open ? "bg-green-200" : "bg-red-200";
     const borderColor =
@@ -76,7 +78,7 @@ export default function Tables() {
           <View className="flex-row items-center space-x-1">
             <View className="flex-row items-center space-x-1">
               <Text className="text-sm">Printed:</Text>
-              {item.currentOrderId && getPrintedStatus(item.currentOrderId) ? (
+              {item.currentOrderId && printedMap.get(item.currentOrderId) ? (
                 <Check size={16} color="green" />
               ) : (
                 <X size={16} color="red" />
@@ -86,7 +88,7 @@ export default function Tables() {
         </View>
       </Pressable>
     );
-  };
+  }, [openTablePage, printedMap, cellWidth]);
 
   return (
     <SafeAreaViewWrapper className="p-4">

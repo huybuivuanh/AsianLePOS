@@ -18,7 +18,7 @@ import {
 } from "@/utils/helpers";
 import { FlashList } from "@shopify/flash-list";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 
 export default function TakeOutOrdersTab() {
@@ -72,35 +72,35 @@ export default function TakeOutOrdersTab() {
     return resolveTaxBreakdown(o)?.total ?? 0;
   }, [cashPaymentOrderId, takeOutOrders]);
 
-  const toggleExpand = (id: string) => {
+  const toggleExpand = useCallback((id: string) => {
     setExpandedOrderId((prev) => (prev === id ? null : id));
-  };
+  }, []);
 
-  const handleComplete = async (order: TakeOutOrder) => {
+  const handleComplete = useCallback(async (order: TakeOutOrder) => {
     try {
       await completeOrder(order);
     } catch (error) {
       console.error("❌ Error completing order:", error);
     }
-  };
+  }, [completeOrder]);
 
-  const handleCancel = async (order: TakeOutOrder) => {
+  const handleCancel = useCallback(async (order: TakeOutOrder) => {
     try {
       await cancelOrder(order);
     } catch (error) {
       console.error("❌ Error canceling order:", error);
     }
-  };
+  }, [cancelOrder]);
 
-  const handlePrint = async (order: TakeOutOrder) => {
+  const handlePrint = useCallback(async (order: TakeOutOrder) => {
     try {
       await submitToPrintQueue(order);
     } catch (error) {
       console.error("❌ Error submitting to print queue:", error);
     }
-  };
+  }, [submitToPrintQueue]);
 
-  const handleToggleSelectionMode = (orderId: string) => {
+  const handleToggleSelectionMode = useCallback((orderId: string) => {
     if (selectionMode === orderId) {
       setSelectionMode(null);
       setSelectedItemIds(new Set());
@@ -109,9 +109,9 @@ export default function TakeOutOrdersTab() {
       setSelectionMode(orderId);
       setSelectedItemIds(new Set());
     }
-  };
+  }, [selectionMode]);
 
-  const handleToggleItemSelection = (itemId: string) => {
+  const handleToggleItemSelection = useCallback((itemId: string) => {
     setSelectedItemIds((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(itemId)) {
@@ -121,9 +121,9 @@ export default function TakeOutOrdersTab() {
       }
       return newSet;
     });
-  };
+  }, []);
 
-  const handlePrintSelected = async (order: TakeOutOrder) => {
+  const handlePrintSelected = useCallback(async (order: TakeOutOrder) => {
     try {
       await submitSelectedItemsToPrintQueue(order, Array.from(selectedItemIds));
       setSelectionMode(null);
@@ -131,24 +131,28 @@ export default function TakeOutOrdersTab() {
     } catch (error) {
       console.error("❌ Error printing selected items:", error);
     }
-  };
+  }, [submitSelectedItemsToPrintQueue, selectedItemIds]);
 
-  const handleMarkAsPaid = async (order: TakeOutOrder, paid: boolean) => {
+  const handleMarkAsPaid = useCallback(async (order: TakeOutOrder, paid: boolean) => {
     try {
       await markOrderAsPaid(order, paid);
     } catch (error) {
       console.error("❌ Error marking order as paid:", error);
     }
-  };
+  }, [markOrderAsPaid]);
 
-  function handleEditOrder(order: TakeOutOrder) {
-    // Convert Firestore Timestamps to JavaScript Dates
+  const handleEditOrder = useCallback((order: TakeOutOrder) => {
     const convertedOrder = convertOrderTimestamps(order);
     setOrder(convertedOrder);
     router.push("/take-out-orders/edit-order" as Href);
-  }
+  }, [setOrder, router]);
 
-  const renderOrder = ({ item }: { item: TakeOutOrder }) => {
+  const extraData = useMemo(
+    () => ({ expandedOrderId, selectionMode, selectedItemIdsSize: selectedItemIds.size }),
+    [expandedOrderId, selectionMode, selectedItemIds.size],
+  );
+
+  const renderOrder = useCallback(({ item }: { item: TakeOutOrder }) => {
     // Use taxBreakDown from order, or calculate it if missing
     const taxBreakDown = resolveTaxBreakdown(item);
     const expanded = expandedOrderId === item.id;
@@ -423,7 +427,21 @@ export default function TakeOutOrdersTab() {
         )}
       </View>
     );
-  };
+  }, [
+    expandedOrderId,
+    selectionMode,
+    selectedItemIds,
+    toggleExpand,
+    handleComplete,
+    handleCancel,
+    handlePrint,
+    handleToggleSelectionMode,
+    handleToggleItemSelection,
+    handlePrintSelected,
+    handleMarkAsPaid,
+    handleEditOrder,
+    router,
+  ]);
 
   if (loading) {
     return (
@@ -458,11 +476,7 @@ export default function TakeOutOrdersTab() {
           data={takeOutOrders}
           keyExtractor={(item, index) => item.id ?? `order-${index}`}
           renderItem={renderOrder}
-          extraData={{
-            expandedOrderId,
-            selectionMode,
-            selectedItemIdsSize: selectedItemIds.size,
-          }}
+          extraData={extraData}
           refreshing={loading}
           onRefresh={refreshTakeOutOrders}
           onEndReached={() => {

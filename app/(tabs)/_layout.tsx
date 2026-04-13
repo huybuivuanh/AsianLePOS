@@ -63,51 +63,34 @@ export default function TabsLayout() {
 
     loadCachedMenu();
 
-    let isMounted = true;
-    let cleanup: (() => void) | undefined;
+    // Set up all synchronous subscriptions immediately so cleanup is guaranteed
+    const unsubMenu = subscribeToMenuVersion();
+    const unsubTakeOut = subscribeToTakeOutOrders();
+    const unsubDineInTab = subscribeToDineInOrders();
+    const unsubActiveDineIn = subscribeToActiveDineInOrders();
+    const unsubCustomers = subscribeToCustomers();
 
-    const unsubscribeAll = async () => {
-      if (!isMounted) return;
+    // subscribeToTables is async; track mount state so we can clean it up
+    // immediately if the effect re-runs before the promise resolves
+    let mounted = true;
+    let unsubTables: (() => void) | undefined;
 
-      const unsubscribeMenu = subscribeToMenuVersion();
-      const unsubscribeTakeOut = subscribeToTakeOutOrders();
-      const unsubscribeDineInTab = subscribeToDineInOrders();
-      const unsubscribeActiveDineIn = subscribeToActiveDineInOrders();
-      const unsubscribeCustomers = subscribeToCustomers();
-
-      // ✅ Handle async subscribeToTables
-      const unsubscribeTables = await subscribeToTables();
-
-      if (!isMounted) {
-        // Clean up immediately if component unmounted during async operation
-        unsubscribeMenu?.();
-        unsubscribeTakeOut?.();
-        unsubscribeDineInTab?.();
-        unsubscribeActiveDineIn?.();
-        unsubscribeCustomers?.();
-        unsubscribeTables?.();
-        return;
-      }
-
-      return () => {
-        unsubscribeMenu?.();
-        unsubscribeTakeOut?.();
-        unsubscribeDineInTab?.();
-        unsubscribeActiveDineIn?.();
-        unsubscribeCustomers?.();
-        unsubscribeTables?.();
-      };
-    };
-
-    unsubscribeAll().then((unsub) => {
-      if (isMounted) {
-        cleanup = unsub;
+    subscribeToTables().then((unsub) => {
+      if (mounted) {
+        unsubTables = unsub;
+      } else {
+        unsub?.();
       }
     });
 
     return () => {
-      isMounted = false;
-      cleanup?.();
+      mounted = false;
+      unsubMenu?.();
+      unsubTakeOut?.();
+      unsubDineInTab?.();
+      unsubActiveDineIn?.();
+      unsubCustomers?.();
+      unsubTables?.();
     };
   }, [
     user,

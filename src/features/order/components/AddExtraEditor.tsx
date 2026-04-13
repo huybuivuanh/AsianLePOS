@@ -17,6 +17,12 @@ export default function AddExtraEditor({
   // Track if we're updating from props to prevent infinite loops
   const isUpdatingFromProps = useRef(false);
   const prevExtrasRef = useRef<string>("");
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  // Clear pending timeout on unmount
+  useEffect(() => {
+    return () => clearTimeout(syncTimeoutRef.current);
+  }, []);
 
   // Initialize drafts from existing extras (price stored as string for TextInput)
   // If price is 0, show blank instead of "0"
@@ -59,7 +65,8 @@ export default function AddExtraEditor({
       });
 
       // Reset flag after state update
-      setTimeout(() => {
+      clearTimeout(syncTimeoutRef.current);
+      syncTimeoutRef.current = setTimeout(() => {
         isUpdatingFromProps.current = false;
       }, 0);
     }

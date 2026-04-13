@@ -17,6 +17,9 @@ type MenuState = {
 const STORAGE_KEY = "@menu_cache";
 const VERSION_KEY = "@menu_version";
 
+// In-memory version cache to avoid AsyncStorage reads on every Firestore event
+let localMenuVersionCache: number | null = null;
+
 // Keys corresponding only to menu arrays
 type MenuArrayKeys = "categories" | "menuItems" | "optionGroups" | "options";
 
@@ -32,10 +35,14 @@ export const useMenuStore = create<MenuState>((set) => ({
 
     const unsubscribe = onSnapshot(versionDocRef, async (snapshot) => {
       const remoteVersion = snapshot.data()?.version ?? 0;
-      const localVersionStr = await AsyncStorage.getItem(VERSION_KEY);
-      const localVersion = localVersionStr ? parseInt(localVersionStr) : -1;
 
-      if (remoteVersion > localVersion) {
+      // Read from AsyncStorage only once per session; use memory cache after that
+      if (localMenuVersionCache === null) {
+        const localVersionStr = await AsyncStorage.getItem(VERSION_KEY);
+        localMenuVersionCache = localVersionStr ? parseInt(localVersionStr) : -1;
+      }
+
+      if (remoteVersion > localMenuVersionCache) {
         try {
           // Fetch all menu collections fresh
           const newMenu = await fetchMenuCollections();
@@ -43,6 +50,7 @@ export const useMenuStore = create<MenuState>((set) => ({
           // Update AsyncStorage cache
           await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newMenu));
           await AsyncStorage.setItem(VERSION_KEY, String(remoteVersion));
+          localMenuVersionCache = remoteVersion;
 
           // Update Zustand store
           set({ ...newMenu, loading: false });
@@ -64,6 +72,7 @@ export const useMenuStore = create<MenuState>((set) => ({
   },
 
   clearData: () => {
+    localMenuVersionCache = null;
     set({
       categories: [],
       menuItems: [],
@@ -74,34 +83,24 @@ export const useMenuStore = create<MenuState>((set) => ({
   },
 }));
 
-// Fetch all menu-related collections once
-const fetchMenuCollections = async () => {
-  const collections: [MenuArrayKeys, string][] = [
-    ["categories", "categories"],
-    ["menuItems", "menuItems"],
-    ["optionGroups", "optionGroups"],
-    ["options", "options"],
-  ];
+// Fetch all menu-related collections in parallel
+const fetchMenuCollections = async (): Promise<Pick<MenuState, MenuArrayKeys>> => {
+  const [catSnap, itemsSnap, groupsSnap, optionsSnap] = await Promise.all([
+    getDocs(collection(db, "categories")),
+    getDocs(collection(db, "menuItems")),
+    getDocs(collection(db, "optionGroups")),
+    getDocs(collection(db, "options")),
+  ]);
 
-  const result: Partial<Pick<MenuState, MenuArrayKeys>> = {};
+  const categories = catSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as (FoodCategory & { order?: number })[];
+  categories.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-  for (const [key, name] of collections) {
-    const snap = await getDocs(collection(db, name));
-    const data = snap.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    if (key === "categories") {
-      (data as (FoodCategory & { order?: number })[]).sort(
-        (a, b) => (a.order ?? 0) - (b.order ?? 0)
-      );
-    }
-
-    result[key] = data as any; // safe, since we know key corresponds to an array
-  }
-
-  return result as Pick<MenuState, MenuArrayKeys>;
+  return {
+    categories: categories as FoodCategory[],
+    menuItems: itemsSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as MenuItem[],
+    optionGroups: groupsSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as OptionGroup[],
+    options: optionsSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as ItemOption[],
+  };
 };
 
 // Load cached menu on app startup

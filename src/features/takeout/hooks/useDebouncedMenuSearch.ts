@@ -1,6 +1,6 @@
 import { debounce } from "@/utils/memory-utils";
 import { useFocusEffect } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 /**
  * Shared search field state for menu picker screens (debounced query + clear on focus).
@@ -29,6 +29,10 @@ export function useDebouncedMenuSearch(debounceMs = 300) {
     setQuery("");
     setDebouncedQuery("");
   }, []);
+
+  useEffect(() => {
+    return () => debouncedSetQuery.cancel();
+  }, [debouncedSetQuery]);
 
   useFocusEffect(
     useCallback(() => {

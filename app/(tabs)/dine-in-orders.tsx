@@ -12,7 +12,7 @@ import {
   resolveTaxBreakdown,
 } from "@/utils/helpers";
 import { useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Text,
@@ -53,19 +53,19 @@ export default function DineInOrdersTab() {
     loadDineInOrders();
   }, [loadDineInOrders]);
 
-  const toggleExpand = (id: string) => {
+  const toggleExpand = useCallback((id: string) => {
     setExpandedOrderId((prev) => (prev === id ? null : id));
-  };
+  }, []);
 
-  const handlePrint = async (order: DineInOrder) => {
+  const handlePrint = useCallback(async (order: DineInOrder) => {
     try {
       await submitToPrintQueue(order);
     } catch (error) {
       console.error("❌ Error submitting to print queue:", error);
     }
-  };
+  }, [submitToPrintQueue]);
 
-  const handleToggleSelectionMode = (orderId: string) => {
+  const handleToggleSelectionMode = useCallback((orderId: string) => {
     if (selectionMode === orderId) {
       setSelectionMode(null);
       setSelectedItemIds(new Set());
@@ -73,9 +73,9 @@ export default function DineInOrdersTab() {
       setSelectionMode(orderId);
       setSelectedItemIds(new Set());
     }
-  };
+  }, [selectionMode]);
 
-  const handleToggleItemSelection = (itemId: string) => {
+  const handleToggleItemSelection = useCallback((itemId: string) => {
     setSelectedItemIds((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(itemId)) {
@@ -85,9 +85,9 @@ export default function DineInOrdersTab() {
       }
       return newSet;
     });
-  };
+  }, []);
 
-  const handlePrintSelected = async (order: DineInOrder) => {
+  const handlePrintSelected = useCallback(async (order: DineInOrder) => {
     try {
       await submitSelectedItemsToPrintQueue(order, Array.from(selectedItemIds));
       setSelectionMode(null);
@@ -95,16 +95,22 @@ export default function DineInOrdersTab() {
     } catch (error) {
       console.error("❌ Error printing selected items:", error);
     }
-  };
+  }, [submitSelectedItemsToPrintQueue, selectedItemIds]);
 
-  const handleMarkAsPaid = async (order: DineInOrder, paid: boolean) => {
+  const handleMarkAsPaid = useCallback(async (order: DineInOrder, paid: boolean) => {
     try {
       await markOrderAsPaid(order, paid);
     } catch (error) {
       console.error("❌ Error marking order as paid:", error);
     }
-  };
-  const renderOrder = ({ item }: { item: DineInOrder }) => {
+  }, [markOrderAsPaid]);
+
+  const extraData = useMemo(
+    () => ({ expandedOrderId, selectionMode, selectedItemIdsSize: selectedItemIds.size }),
+    [expandedOrderId, selectionMode, selectedItemIds.size],
+  );
+
+  const renderOrder = useCallback(({ item }: { item: DineInOrder }) => {
     // Use taxBreakDown from order, or calculate it if missing
     const taxBreakDown = resolveTaxBreakdown(item);
     const expanded = expandedOrderId === item.id;
@@ -303,7 +309,17 @@ export default function DineInOrdersTab() {
         )}
       </View>
     );
-  };
+  }, [
+    expandedOrderId,
+    selectionMode,
+    selectedItemIds,
+    toggleExpand,
+    handlePrint,
+    handleToggleSelectionMode,
+    handleToggleItemSelection,
+    handlePrintSelected,
+    handleMarkAsPaid,
+  ]);
 
   if (loading) {
     return (
@@ -338,11 +354,7 @@ export default function DineInOrdersTab() {
           data={dineInOrders}
           keyExtractor={(item, index) => item.id ?? `order-${index}`}
           renderItem={renderOrder}
-          extraData={{
-            expandedOrderId,
-            selectionMode,
-            selectedItemIdsSize: selectedItemIds.size,
-          }}
+          extraData={extraData}
           refreshing={loading}
           onRefresh={refreshDineInOrders}
           onEndReached={() => {
