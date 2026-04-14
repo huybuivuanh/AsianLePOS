@@ -33,6 +33,17 @@ const INITIAL_DISPLAY_LIMIT = 50;
 const LOAD_MORE_BATCH_SIZE = 25;
 const CACHE_LIMIT = 200;
 
+// Debounce rapid cache writes so burst updates (many orders at once) only
+// trigger one AsyncStorage serialization instead of one per snapshot.
+let _dineInSaveTimer: ReturnType<typeof setTimeout> | null = null;
+function debouncedSaveDineInCache(data: DineInOrder[]) {
+  if (_dineInSaveTimer !== null) clearTimeout(_dineInSaveTimer);
+  _dineInSaveTimer = setTimeout(() => {
+    void saveDineInOrdersTabCache(data);
+    _dineInSaveTimer = null;
+  }, 500);
+}
+
 function dineInTabQuery() {
   return query(
     collection(db, "dineInOrders"),
@@ -153,7 +164,7 @@ export const useDineInOrdersStore = create<DineInOrdersTabState>((set, get) => {
             id: docSnap.id,
             ...(docSnap.data() as DineInOrder),
           }));
-          void saveDineInOrdersTabCache(data);
+          debouncedSaveDineInCache(data);
           applyFullList(data);
         },
         (error) => {

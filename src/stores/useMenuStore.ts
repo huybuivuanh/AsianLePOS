@@ -58,12 +58,16 @@ export const useMenuStore = create<MenuState>((set) => ({
           console.error("❌ Failed to fetch menu from Firestore:", error);
         }
       } else {
-        // Load cached menu if exists
-        const cached = await AsyncStorage.getItem(STORAGE_KEY);
-        if (cached) {
-          set({ ...JSON.parse(cached), loading: false });
-        } else {
-          set({ loading: false });
+        // Version unchanged — only hydrate from cache if the store hasn't
+        // loaded yet. Skipping this when already loaded prevents an
+        // unnecessary AsyncStorage read + full re-render on every snapshot.
+        if (useMenuStore.getState().loading) {
+          const cached = await AsyncStorage.getItem(STORAGE_KEY);
+          if (cached) {
+            set({ ...JSON.parse(cached), loading: false });
+          } else {
+            set({ loading: false });
+          }
         }
       }
     });

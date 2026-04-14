@@ -1,6 +1,6 @@
 import { OrderStatus } from "@/types/enums";
 import { sortOrdersByDate } from "@/utils/helpers";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, limit, onSnapshot, query, where } from "firebase/firestore";
 import { create } from "zustand";
 import { db } from "../lib/firebaseConfig";
 
@@ -26,6 +26,7 @@ export const useActiveDineInOrdersStore = create<ActiveDineInOrdersState>(
       const q = query(
         collection(db, "dineInOrders"),
         where("status", "==", OrderStatus.InProgress),
+        limit(100),
       );
 
       const unsubscribe = onSnapshot(

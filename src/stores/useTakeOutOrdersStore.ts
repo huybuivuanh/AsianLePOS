@@ -33,6 +33,15 @@ const INITIAL_DISPLAY_LIMIT = 50;
 const LOAD_MORE_BATCH_SIZE = 25;
 const CACHE_LIMIT = 200;
 
+let _takeOutSaveTimer: ReturnType<typeof setTimeout> | null = null;
+function debouncedSaveTakeOutCache(data: TakeOutOrder[]) {
+  if (_takeOutSaveTimer !== null) clearTimeout(_takeOutSaveTimer);
+  _takeOutSaveTimer = setTimeout(() => {
+    void saveTakeOutOrdersTabCache(data);
+    _takeOutSaveTimer = null;
+  }, 500);
+}
+
 function takeOutTabQuery() {
   return query(
     collection(db, "takeOutOrders"),
@@ -152,7 +161,7 @@ export const useTakeOutOrdersStore = create<TakeOutOrdersTabState>(
               id: docSnap.id,
               ...(docSnap.data() as TakeOutOrder),
             }));
-            void saveTakeOutOrdersTabCache(data);
+            debouncedSaveTakeOutCache(data);
             applyFullList(data);
           },
           (error) => {

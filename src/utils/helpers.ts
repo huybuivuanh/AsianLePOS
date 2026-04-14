@@ -1,8 +1,4 @@
-import {
-  DiscountType,
-  OrderType,
-  TakeOutFulfillmentKind,
-} from "@/types/enums";
+import { DiscountType, OrderType, TakeOutFulfillmentKind } from "@/types/enums";
 import dayjs from "dayjs";
 import { collection, doc, Timestamp } from "firebase/firestore";
 import { Alert, Platform } from "react-native";
@@ -174,11 +170,7 @@ export const calculateTaxBreakdown = (
     };
   }
 
-  const discountAmount = calculateDiscountAmount(
-    itemsSubtotal,
-    dType,
-    dVal,
-  );
+  const discountAmount = calculateDiscountAmount(itemsSubtotal, dType, dVal);
   const taxableSubtotal = Math.max(0, itemsSubtotal - discountAmount);
   const pst = taxableSubtotal * 0.06;
   const gst = taxableSubtotal * 0.05;
