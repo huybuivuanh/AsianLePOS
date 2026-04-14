@@ -1,22 +1,27 @@
 import CashPaymentModal from "@/features/dinein/CashPaymentModal";
 import TableInfoCard from "@/features/dinein/TableInfoCard";
+import OrderItemsList from "@/features/order/components/OrderItemsList";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
-import { DiscountType, OrderType } from "@/types/enums";
+import { OrderType } from "@/types/enums";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import Header from "@/ui/Header";
+import { groupSimpleOrderItems } from "@/utils/groupOrderItems";
 import { formatTimeOnly, showAlert } from "@/utils/helpers";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { Check } from "lucide-react-native";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+
+const NO_ITEM_SELECTION = new Set<string>();
 
 export default function TablePage() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
@@ -56,6 +61,12 @@ export default function TablePage() {
   const hasActiveOrderItems = Boolean(
     order?.orderItems && order.orderItems.length > 0,
   );
+
+  /** Merged lines for table summary only; Firestore order is unchanged. */
+  const displayOrderItems = useMemo(() => {
+    if (!order?.orderItems?.length) return [];
+    return groupSimpleOrderItems(order.orderItems);
+  }, [order?.orderItems]);
 
   // ✅ Loading or table not found
   if (!table || ordersLoading) {
@@ -121,7 +132,7 @@ export default function TablePage() {
     }
   };
 
-  const handleSeeOrder = () => {
+  const handleSplitBill = () => {
     if (!order?.id) return;
     router.push({
       pathname: "/dinein/order/[orderId]",
@@ -152,115 +163,57 @@ export default function TablePage() {
             No active order for this table.
           </Text>
         ) : (
-          <View className="mt-4 mx-4 bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
-            <View className="flex-row justify-between">
-              <View className="flex-1 pr-3">
-                <Text className="text-sm text-gray-500">Staff</Text>
+          <View className="mx-4 mt-3 min-h-0 flex-1">
+            <ScrollView
+              className="mt-3 flex-1"
+              style={{ alignSelf: "stretch" }}
+              contentContainerStyle={{
+                flexGrow: 1,
+                paddingBottom: 12,
+              }}
+              keyboardShouldPersistTaps="handled"
+            >
+              <View
+                className="rounded-2xl border border-gray-200 bg-white p-4"
+                style={{ alignSelf: "stretch" }}
+              >
+                <OrderItemsList
+                  orderItems={displayOrderItems}
+                  orderId={order!.id!}
+                  selectionMode={null}
+                  selectedItemIds={NO_ITEM_SELECTION}
+                  onToggleItemSelection={() => {}}
+                />
+              </View>
+            </ScrollView>
+            <View className="flex-row items-stretch rounded-xl border border-gray-200 bg-white px-3 py-2.5 shadow-sm">
+              <View className="min-w-0 flex-1 justify-center pr-2">
+                <Text className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                  Staff
+                </Text>
                 <Text
-                  className="text-lg font-bold text-gray-900"
+                  className="mt-0.5 text-base font-semibold text-gray-900"
                   numberOfLines={1}
                 >
-                  {order!.staff ?? "Unknown"}
+                  {order!.staff ?? "—"}
                 </Text>
               </View>
-              <View className="items-end">
-                <Text className="text-sm text-gray-500">Time</Text>
-                <Text className="text-lg font-bold text-gray-900">
+              <View className="my-0.5 w-px self-stretch bg-gray-200" />
+              <View className="shrink-0 justify-center px-3">
+                <Text className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                  Time
+                </Text>
+                <Text className="mt-0.5 text-base font-semibold text-gray-900">
                   {formatTimeOnly(order!.createdAt)}
                 </Text>
               </View>
-            </View>
-
-            {order!.taxBreakDown && (
-              <View className="mt-4 pt-4 border-t border-gray-200">
-                <View className="flex-row justify-between mb-2">
-                  <Text className="text-base text-gray-600">Subtotal</Text>
-                  <Text className="text-base text-gray-800 font-medium">
-                    ${order!.taxBreakDown.subTotal.toFixed(2)}
-                  </Text>
-                </View>
-                {order!.taxBreakDown.discount &&
-                  order!.taxBreakDown.discount.discountAmount > 0 && (
-                    <View>
-                      <View className="flex-row justify-between mb-2">
-                        {order!.taxBreakDown.discount.discountType ===
-                        DiscountType.Percent ? (
-                          <Text className="text-base text-gray-600">
-                            {`Discount (${order!.taxBreakDown.discount.discountValue}%)`}
-                          </Text>
-                        ) : (
-                          <Text className="text-base text-gray-600">
-                            {`Discount ($${order!.taxBreakDown.discount.discountValue.toFixed(2)})`}
-                          </Text>
-                        )}
-                        <Text className="text-base text-gray-800 font-medium">
-                          -$
-                          {order!.taxBreakDown.discount.discountAmount.toFixed(
-                            2,
-                          )}
-                        </Text>
-                      </View>
-                      <View className="flex-row justify-between mb-2">
-                        <Text className="text-base text-gray-600">
-                          Taxable Subtotal
-                        </Text>
-                        <Text className="text-base text-gray-800 font-medium">
-                          $
-                          {order!.taxBreakDown.discount.taxableSubtotal.toFixed(
-                            2,
-                          )}
-                        </Text>
-                      </View>
-                    </View>
-                  )}
-                <View className="flex-row justify-between mb-2">
-                  <Text className="text-base text-gray-600">PST (6%)</Text>
-                  <Text className="text-base text-gray-800 font-medium">
-                    ${order!.taxBreakDown.pst.toFixed(2)}
-                  </Text>
-                </View>
-                <View className="flex-row justify-between mb-2">
-                  <Text className="text-base text-gray-600">GST (5%)</Text>
-                  <Text className="text-base text-gray-800 font-medium">
-                    ${order!.taxBreakDown.gst.toFixed(2)}
-                  </Text>
-                </View>
-                <View className="flex-row justify-between mt-2 pt-3 border-t border-gray-100">
-                  <Text className="text-lg font-semibold text-gray-900">
-                    Total
-                  </Text>
-                  <Text className="text-lg font-bold text-gray-900">
-                    ${order!.taxBreakDown.total.toFixed(2)}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            <View className="mt-4 pt-4 border-t border-gray-200 flex-row justify-between items-center">
-              <View
-                className={`px-5 py-2.5 rounded-full ${
-                  order!.paid ? "bg-green-100" : "bg-gray-100"
-                }`}
-              >
-                <Text
-                  className={`text-base font-semibold ${
-                    order!.paid ? "text-green-700" : "text-gray-700"
-                  }`}
-                >
-                  {order!.paid ? "✓ Paid" : "Unpaid"}
+              <View className="my-0.5 w-px self-stretch bg-gray-200" />
+              <View className="shrink-0 justify-center pl-2">
+                <Text className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                  Total
                 </Text>
-              </View>
-              <View
-                className={`px-5 py-2.5 rounded-full ${
-                  order!.printed ? "bg-green-100" : "bg-yellow-100"
-                }`}
-              >
-                <Text
-                  className={`text-base font-semibold ${
-                    order!.printed ? "text-green-700" : "text-yellow-700"
-                  }`}
-                >
-                  {order!.printed ? "Printed" : "Not Printed"}
+                <Text className="mt-0.5 text-base font-bold text-gray-900">
+                  ${(order!.taxBreakDown?.total ?? 0).toFixed(2)}
                 </Text>
               </View>
             </View>
@@ -304,7 +257,7 @@ export default function TablePage() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={handleSeeOrder}
+              onPress={handleSplitBill}
               activeOpacity={0.7}
               disabled={!order?.id || actionBusy}
               className={`px-2 py-3 rounded-lg items-center justify-center flex-1 min-w-0 ${
@@ -312,7 +265,7 @@ export default function TablePage() {
               }`}
             >
               <Text className="text-white text-sm font-semibold text-center">
-                See Order
+                Split Bill
               </Text>
             </TouchableOpacity>
 

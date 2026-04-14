@@ -81,18 +81,113 @@ function buildMergedLine(
 }
 
 /**
- * Merges groupable rows that share the same **line signature**:
- * `name`, unit `price`, `kitchenType`, `togo`, `appetizer`, and the same **set of options**
- * (order-independent; compared by name, price, quantity per option).
- *
- * Not merged: rows with instructions, changes, or extras (each stays as its own line).
- *
- * - Quantities are summed for matching signatures (including when each row already has `quantity > 1`).
- * - Output order: first occurrence of a signature emits one merged row; later matches are skipped.
+ * Drink-only: same base line (name, unit price, flags, paid) but **different** single flavor
+ * options merge into one row: `quantity` becomes 1, line `price` = sum of line totals,
+ * each flavor’s `OrderItemOption.quantity` accumulates `lineQty × optionQty`.
  */
-export function groupSimpleOrderItems(items: OrderItem[]): OrderItem[] {
-  if (items.length === 0) return [];
+function drinkFlavorBucketKey(item: OrderItem): string | null {
+  if (item.kitchenType !== KitchenType.Drink) return null;
+  if (!isGroupableOrderItem(item)) return null;
+  if (!item.options || item.options.length !== 1) return null;
+  return [
+    item.name,
+    String(roundMoney2(item.price)),
+    item.kitchenType,
+    item.togo ? "1" : "0",
+    item.appetizer ? "1" : "0",
+    item.paid ? "1" : "0",
+  ].join("\0");
+}
 
+function buildMergedDrinkFlavorLine(bucket: OrderItem[]): OrderItem {
+  const template = bucket[0];
+  const flavorOrder: string[] = [];
+  const seenFlavor = new Set<string>();
+  const optionQtyByName = new Map<string, number>();
+  const optionPriceByName = new Map<string, number>();
+
+  let lineTotalSum = 0;
+  for (const item of bucket) {
+    const opt = item.options![0];
+    const lineQty = Number(item.quantity);
+    const safeLineQty = Number.isFinite(lineQty) ? lineQty : 0;
+    lineTotalSum += roundMoney2(item.price) * safeLineQty;
+
+    const rawOptQ = Number(opt.quantity);
+    const optUnit =
+      Number.isFinite(rawOptQ) && Math.floor(rawOptQ) >= 1
+        ? Math.floor(rawOptQ)
+        : 1;
+    const add = safeLineQty * optUnit;
+    const name = opt.name;
+    optionQtyByName.set(name, (optionQtyByName.get(name) ?? 0) + add);
+    if (!seenFlavor.has(name)) {
+      seenFlavor.add(name);
+      flavorOrder.push(name);
+    }
+    if (!optionPriceByName.has(name)) {
+      optionPriceByName.set(name, roundMoney2(opt.price || 0));
+    }
+  }
+
+  const options: OrderItemOption[] = flavorOrder.map((name) => ({
+    name,
+    price: optionPriceByName.get(name) ?? 0,
+    quantity: optionQtyByName.get(name) ?? 0,
+  }));
+
+  return {
+    id: template.id,
+    name: template.name,
+    price: roundMoney2(lineTotalSum),
+    quantity: 1,
+    kitchenType: template.kitchenType,
+    togo: template.togo,
+    appetizer: template.appetizer,
+    paid: template.paid,
+    options,
+  };
+}
+
+/** Collapse multi-line same-base drinks (one option per line) before signature merge. */
+function applyDrinkFlavorGrouping(items: OrderItem[]): OrderItem[] {
+  const n = items.length;
+  const indicesByKey = new Map<string, number[]>();
+
+  for (let i = 0; i < n; i++) {
+    const key = drinkFlavorBucketKey(items[i]);
+    if (!key) continue;
+    let list = indicesByKey.get(key);
+    if (!list) {
+      list = [];
+      indicesByKey.set(key, list);
+    }
+    list.push(i);
+  }
+
+  const skip = new Set<number>();
+  const replaceFirst = new Map<number, OrderItem>();
+
+  for (const indices of indicesByKey.values()) {
+    if (indices.length < 2) continue;
+    const bucket = indices.map((i) => items[i]);
+    replaceFirst.set(indices[0], buildMergedDrinkFlavorLine(bucket));
+    for (let j = 1; j < indices.length; j++) {
+      skip.add(indices[j]!);
+    }
+  }
+
+  const out: OrderItem[] = [];
+  for (let i = 0; i < n; i++) {
+    if (skip.has(i)) continue;
+    const merged = replaceFirst.get(i);
+    if (merged) out.push(merged);
+    else out.push(items[i]!);
+  }
+  return out;
+}
+
+function mergeByLineSignature(items: OrderItem[]): OrderItem[] {
   const totalsByKey = new Map<string, number>();
   const templateByKey = new Map<string, OrderItem>();
 
@@ -124,6 +219,26 @@ export function groupSimpleOrderItems(items: OrderItem[]): OrderItem[] {
   }
 
   return out;
+}
+
+/**
+ * Merges groupable rows that share the same **line signature**:
+ * `name`, unit `price`, `kitchenType`, `togo`, `appetizer`, and the same **set of options**
+ * (order-independent; compared by name, price, quantity per option).
+ *
+ * **Drinks (kitchen Drink, exactly one option, no instructions/changes/extras):** lines that
+ * share the same base key but differ only by that option’s name are merged first: one row
+ * with `quantity: 1`, `price` = sum of prior line totals, and per-flavor option quantities
+ * increased (e.g. three `2× Pop` / 7UP / Coke / Coke Zero → one `1× Pop` with three options).
+ *
+ * Not merged: rows with instructions, changes, or extras (each stays as its own line).
+ *
+ * - Quantities are summed for matching signatures (including when each row already has `quantity > 1`).
+ * - Output order: first occurrence of a signature emits one merged row; later matches are skipped.
+ */
+export function groupSimpleOrderItems(items: OrderItem[]): OrderItem[] {
+  if (items.length === 0) return [];
+  return mergeByLineSignature(applyDrinkFlavorGrouping(items));
 }
 
 function cloneOrderItemWithQuantity(
