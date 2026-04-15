@@ -1,5 +1,5 @@
 import { useOrderStore } from "@/stores/useOrderStore";
-import { DiscountType } from "@/types/enums";
+import { DiscountType, OrderType } from "@/types/enums";
 import {
   calculateDiscountAmount,
   calculateTaxBreakdown,
@@ -90,13 +90,15 @@ export default function DiscountButtonModalAndSummary() {
       {/* Summary: discount + final total */}
       <View className="bg-white border border-gray-200 rounded-2xl p-4">
         <View className="flex-row justify-end gap-2 mb-2">
-          <TouchableOpacity
-            onPress={() => router.push("/credits")}
-            className="px-4 py-2 rounded-md bg-stone-600"
-            activeOpacity={0.8}
-          >
-            <Text className="text-white font-semibold">Credits</Text>
-          </TouchableOpacity>
+          {order.orderType === OrderType.TakeOut && (
+            <TouchableOpacity
+              onPress={() => router.push("/credits")}
+              className="px-4 py-2 rounded-md bg-stone-600"
+              activeOpacity={0.8}
+            >
+              <Text className="text-white font-semibold">Credits</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             onPress={openModal}
             className="px-4 py-2 rounded-md bg-gray-900"
@@ -151,87 +153,87 @@ export default function DiscountButtonModalAndSummary() {
               className="flex-1 justify-start px-4 pb-6"
               style={{ paddingTop: insets.top + 16 }}
             >
-            <TouchableOpacity
-              activeOpacity={1}
-              className="bg-white border border-gray-200 rounded-2xl p-4"
-              onPress={(e: any) => e?.stopPropagation?.()}
-            >
-              <View className="flex-row justify-between items-center mb-3">
-                <Text className="text-gray-900 font-bold text-lg">
-                  Discount
-                </Text>
-                <TouchableOpacity onPress={closeModal} className="px-2 py-1">
-                  <Text className="text-gray-700 font-semibold">Close</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                activeOpacity={1}
+                className="bg-white border border-gray-200 rounded-2xl p-4"
+                onPress={(e: any) => e?.stopPropagation?.()}
+              >
+                <View className="flex-row justify-between items-center mb-3">
+                  <Text className="text-gray-900 font-bold text-lg">
+                    Discount
+                  </Text>
+                  <TouchableOpacity onPress={closeModal} className="px-2 py-1">
+                    <Text className="text-gray-700 font-semibold">Close</Text>
+                  </TouchableOpacity>
+                </View>
 
-              <View className="flex-row flex-wrap mb-3">
-                {DISCOUNT_TYPES.map((t) => (
-                  <TouchableOpacity
-                    key={t.type}
-                    onPress={() => setDraftType(t.type)}
-                    className={`px-3 py-2 rounded-md mr-2 mb-2 ${
-                      draftType === t.type
-                        ? "bg-gray-900"
-                        : "bg-white border border-gray-300"
-                    }`}
-                  >
-                    <Text
-                      className={`font-semibold text-sm ${
-                        draftType === t.type ? "text-white" : "text-gray-800"
+                <View className="flex-row flex-wrap mb-3">
+                  {DISCOUNT_TYPES.map((t) => (
+                    <TouchableOpacity
+                      key={t.type}
+                      onPress={() => setDraftType(t.type)}
+                      className={`px-3 py-2 rounded-md mr-2 mb-2 ${
+                        draftType === t.type
+                          ? "bg-gray-900"
+                          : "bg-white border border-gray-300"
                       }`}
                     >
-                      {t.label}
+                      <Text
+                        className={`font-semibold text-sm ${
+                          draftType === t.type ? "text-white" : "text-gray-800"
+                        }`}
+                      >
+                        {t.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <View className="flex-row items-center mb-3">
+                  <Text className="text-gray-700 font-semibold w-20">
+                    {draftType === DiscountType.Percent ? "%" : "$"}
+                  </Text>
+                  <TextInput
+                    value={draftValueText}
+                    onChangeText={setDraftValueText}
+                    keyboardType="decimal-pad"
+                    placeholder={
+                      draftType === DiscountType.Percent ? "0" : "0.00"
+                    }
+                    editable={draftType !== DiscountType.None}
+                    className={`flex-1 border rounded-lg px-3 py-2 ${
+                      draftType === DiscountType.None
+                        ? "border-gray-200 bg-gray-100"
+                        : "border-gray-300 bg-white"
+                    }`}
+                  />
+                </View>
+
+                <Text className="text-gray-600 mb-4">
+                  Discount preview: -${draftDiscountAmount.toFixed(2)}
+                </Text>
+
+                <View className="flex-row">
+                  <TouchableOpacity
+                    onPress={closeModal}
+                    className="flex-1 mr-2 py-3 rounded-lg bg-gray-200"
+                  >
+                    <Text className="text-gray-800 text-center font-semibold">
+                      Cancel
                     </Text>
                   </TouchableOpacity>
-                ))}
-              </View>
-
-              <View className="flex-row items-center mb-3">
-                <Text className="text-gray-700 font-semibold w-20">
-                  {draftType === DiscountType.Percent ? "%" : "$"}
-                </Text>
-                <TextInput
-                  value={draftValueText}
-                  onChangeText={setDraftValueText}
-                  keyboardType="decimal-pad"
-                  placeholder={
-                    draftType === DiscountType.Percent ? "0" : "0.00"
-                  }
-                  editable={draftType !== DiscountType.None}
-                  className={`flex-1 border rounded-lg px-3 py-2 ${
-                    draftType === DiscountType.None
-                      ? "border-gray-200 bg-gray-100"
-                      : "border-gray-300 bg-white"
-                  }`}
-                />
-              </View>
-
-              <Text className="text-gray-600 mb-4">
-                Discount preview: -${draftDiscountAmount.toFixed(2)}
-              </Text>
-
-              <View className="flex-row">
-                <TouchableOpacity
-                  onPress={closeModal}
-                  className="flex-1 mr-2 py-3 rounded-lg bg-gray-200"
-                >
-                  <Text className="text-gray-800 text-center font-semibold">
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={apply}
-                  className="flex-1 ml-2 py-3 rounded-lg bg-gray-900"
-                >
-                  <Text className="text-white text-center font-semibold">
-                    Apply
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={apply}
+                    className="flex-1 ml-2 py-3 rounded-lg bg-gray-900"
+                  >
+                    <Text className="text-white text-center font-semibold">
+                      Apply
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
         </KeyboardAvoidingView>
       </Modal>
     </View>

@@ -106,10 +106,25 @@ export default function CreditsPreviewScreen() {
                 </Text>
               </View>
               {item.phoneNumber ? (
-                <Text className="mt-1.5 text-[15px] text-gray-700">
+                <Text className="mt-2 text-[15px] text-gray-700">
                   {item.phoneNumber}
                 </Text>
               ) : null}
+              <View className="mt-2 flex-row items-center">
+                <View
+                  className={`rounded-full px-2.5 py-1 ${
+                    item.completed ? "bg-emerald-100" : "bg-amber-100"
+                  }`}
+                >
+                  <Text
+                    className={`text-xs font-semibold uppercase tracking-wide ${
+                      item.completed ? "text-emerald-800" : "text-amber-900"
+                    }`}
+                  >
+                    {item.completed ? "Completed" : "Open"}
+                  </Text>
+                </View>
+              </View>
               {item.description?.trim() ? (
                 <Text className="mt-2 border-t border-gray-200 pt-2 text-[15px] leading-snug text-gray-600">
                   {item.description.trim()}
