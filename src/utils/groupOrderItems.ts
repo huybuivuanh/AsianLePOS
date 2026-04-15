@@ -289,11 +289,11 @@ function expandOptionQuantitiesToOnes(
   return out;
 }
 
-function drinkNeedsOptionQuantityUngroup(item: OrderItem): boolean {
-  return (
-    item.kitchenType === KitchenType.Drink &&
-    Boolean(item.options?.some((o) => Number(o.quantity) > 1))
-  );
+function drinkNeedsFlavorSplitting(item: OrderItem): boolean {
+  if (item.kitchenType !== KitchenType.Drink) return false;
+  const opts = item.options ?? [];
+  if (opts.length >= 2) return true;
+  return Boolean(opts.some((o) => Number(o.quantity) > 1));
 }
 
 function cloneOrderItemWithQuantityAndOptions(
@@ -346,7 +346,7 @@ export function ungroupOrderItems(items: OrderItem[]): OrderItem[] {
       continue;
     }
 
-    if (drinkNeedsOptionQuantityUngroup(item) && item.options?.length) {
+    if (drinkNeedsFlavorSplitting(item) && item.options?.length) {
       const expanded = expandOptionQuantitiesToOnes(item.options);
       const n = expanded.length;
       const origPrem = optionPremiumSum(item.options);
