@@ -11,12 +11,12 @@ import {
   groupSimpleOrderItems,
   ungroupOrderItems,
 } from "@/utils/groupOrderItems";
-import { normalizeOrderItemTextForDb } from "@/utils/normalizeOrderItemText";
 import {
   calculateTaxBreakdown,
   orderItemsSubtotal,
   orderPaidFromLineItems,
 } from "@/utils/helpers";
+import { normalizeOrderItemTextForDb } from "@/utils/normalizeOrderItemText";
 import {
   collection,
   doc,
@@ -444,11 +444,24 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
     const batch = writeBatch(db);
     const orderRef = doc(db, firestorecollection, order.id);
+
+    /** Cycle: Cancelled → Completed → InProgress → Completed → … */
+    const nextStatus =
+      order.status === OrderStatus.Cancelled
+        ? OrderStatus.Completed
+        : order.status === OrderStatus.Completed
+          ? OrderStatus.InProgress
+          : OrderStatus.Completed;
+
     batch.update(orderRef, {
-      status: OrderStatus.Completed,
+      status: nextStatus,
     });
 
-    if (order.orderType === OrderType.DineIn && order.tableNumber) {
+    if (
+      order.orderType === OrderType.DineIn &&
+      order.tableNumber &&
+      nextStatus === OrderStatus.Completed
+    ) {
       const tableDocId = useTableStore
         .getState()
         .getTableDocId(order.tableNumber);
