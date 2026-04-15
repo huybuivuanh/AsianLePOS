@@ -5,6 +5,7 @@ import {
   calculateTaxBreakdown,
   orderItemsSubtotal,
 } from "@/utils/helpers";
+import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -24,6 +25,7 @@ const DISCOUNT_TYPES: { type: DiscountType; label: string }[] = [
 ];
 
 export default function DiscountButtonModalAndSummary() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { order, updateOrder } = useOrderStore();
 
@@ -87,7 +89,14 @@ export default function DiscountButtonModalAndSummary() {
       {/* Row: Discount button */}
       {/* Summary: discount + final total */}
       <View className="bg-white border border-gray-200 rounded-2xl p-4">
-        <View className="flex-row justify-end mb-2">
+        <View className="flex-row justify-end gap-2 mb-2">
+          <TouchableOpacity
+            onPress={() => router.push("/credits")}
+            className="px-4 py-2 rounded-md bg-stone-600"
+            activeOpacity={0.8}
+          >
+            <Text className="text-white font-semibold">Credits</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={openModal}
             className="px-4 py-2 rounded-md bg-gray-900"
