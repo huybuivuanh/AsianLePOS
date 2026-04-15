@@ -16,7 +16,11 @@ import EditTableForm from "./EditTableForm";
 const WEB_BACKDROP =
   Platform.OS === "web" ? ({ backdropFilter: "blur(8px)" } as object) : {};
 
-export default function TableInfoCard({ tableNumber }: { tableNumber: string }) {
+export default function TableInfoCard({
+  tableNumber,
+}: {
+  tableNumber: string;
+}) {
   const table = useTableStore((s) =>
     s.tables.find((t) => t.tableNumber === tableNumber),
   );
@@ -26,7 +30,9 @@ export default function TableInfoCard({ tableNumber }: { tableNumber: string }) 
   if (!table) {
     return (
       <View className="flex-1 justify-center items-center bg-gray-100 p-4">
-        <Text className="text-base font-semibold text-gray-600">Table not found</Text>
+        <Text className="text-base font-semibold text-gray-600">
+          Table not found
+        </Text>
       </View>
     );
   }
@@ -35,7 +41,7 @@ export default function TableInfoCard({ tableNumber }: { tableNumber: string }) 
     table.status === TableStatus.Open ? "text-green-600" : "text-orange-400";
 
   return (
-    <View className="w-full px-4 py-2 pb-4">
+    <View className="w-full px-4 py-2 pb-0">
       <Pressable
         onPress={() => setOpen(true)}
         className="flex-row items-center justify-between gap-3 bg-white rounded-2xl border border-gray-100 px-4 py-3.5 shadow-md active:opacity-90"

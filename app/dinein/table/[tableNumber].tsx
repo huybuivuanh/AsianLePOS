@@ -201,6 +201,19 @@ export default function TablePage() {
               <View className="my-0.5 w-px self-stretch bg-gray-200" />
               <View className="shrink-0 justify-center px-3">
                 <Text className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                  Paid
+                </Text>
+                <Text
+                  className={`mt-0.5 text-base font-semibold ${
+                    order?.paid ? "text-emerald-700" : "text-rose-700"
+                  }`}
+                >
+                  {order?.paid ? "Paid" : "Unpaid"}
+                </Text>
+              </View>
+              <View className="my-0.5 w-px self-stretch bg-gray-200" />
+              <View className="shrink-0 justify-center px-3">
+                <Text className="text-xs font-medium uppercase tracking-wide text-gray-500">
                   Time
                 </Text>
                 <Text className="mt-0.5 text-base font-semibold text-gray-900">

@@ -79,18 +79,38 @@ export function groupOrderItemsByDisplaySection(
   if (sorted.length === 0) return [];
 
   const sections: OrderItemDisplaySection[] = [];
-  for (const item of sorted) {
+  const sectionIndexedItems: { tier: OrderItemDisplayTier; item: OrderItem; index: number }[] = [];
+
+  for (const [index, item] of sorted.entries()) {
     const tier = dineInItemSortTier(item);
-    const last = sections[sections.length - 1];
-    if (!last || last.tier !== tier) {
-      sections.push({
-        tier,
-        title: SECTION_TITLES[tier],
-        items: [item],
-      });
-    } else {
-      last.items.push(item);
-    }
+    sectionIndexedItems.push({ tier, item, index });
   }
+
+  // Split into contiguous tiers (Appetizers → Table → To Go), then group lines within each tier by kitchen station.
+  const byTier: Record<OrderItemDisplayTier, { item: OrderItem; index: number }[]> = {
+    0: [],
+    1: [],
+    2: [],
+  };
+  for (const entry of sectionIndexedItems) byTier[entry.tier].push({ item: entry.item, index: entry.index });
+
+  for (const tier of [0, 1, 2] as const) {
+    const tierItems = byTier[tier];
+    if (tierItems.length === 0) continue;
+
+    tierItems.sort((a, b) => {
+      const ra = kitchenTypeSortRank(a.item.kitchenType);
+      const rb = kitchenTypeSortRank(b.item.kitchenType);
+      if (ra !== rb) return ra - rb;
+      return a.index - b.index;
+    });
+
+    sections.push({
+      tier,
+      title: SECTION_TITLES[tier],
+      items: tierItems.map(({ item }) => item),
+    });
+  }
+
   return sections;
 }
