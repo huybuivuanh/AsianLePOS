@@ -214,7 +214,7 @@ export default function TablePage() {
               <View className="my-0.5 w-px self-stretch bg-gray-200" />
               <View className="shrink-0 justify-center px-3">
                 <Text className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                  Time
+                  Ordered At
                 </Text>
                 <Text className="mt-0.5 text-base font-semibold text-gray-900">
                   {formatTimeOnly(order!.createdAt)}
