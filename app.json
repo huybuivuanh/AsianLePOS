@@ -5,6 +5,7 @@
     "version": "1.0.7",
     "orientation": "portrait",
     "scheme": "asianlepos",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -24,7 +25,8 @@
     },
     "web": {
       "output": "static",
-      "bundler": "metro"
+      "bundler": "metro",
+      "favicon": "./assets/icon.png"
     },
     "plugins": [
       "expo-router",
