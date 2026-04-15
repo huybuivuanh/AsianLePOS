@@ -144,4 +144,19 @@ declare global {
     phone: string;
     createdAt: Timestamp;
   }
+
+  interface MenuChange extends ItemChange {
+    id?: string;
+    createdAt: Timestamp;
+  }
+
+  interface Credit {
+    id?: string;
+    name?: string;
+    phoneNumber?: string;
+    description?: string;
+    amount: number;
+    completed: boolean;
+    createdAt: Timestamp;
+  }
 }

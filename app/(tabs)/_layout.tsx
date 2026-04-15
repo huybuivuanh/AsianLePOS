@@ -6,6 +6,7 @@ import { useDineInOrdersStore } from "@/stores/useDineInOrdersStore";
 import { loadCachedMenu, useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
+import { useMenuChangesStore } from "@/stores/useMenuChangesStore";
 import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
@@ -29,6 +30,7 @@ export default function TabsLayout() {
   const { subscribeToTables, clearData: clearTables } = useTableStore();
   const { subscribeToCustomers, clearData: clearCustomers } =
     useCustomersStore();
+  const { clearData: clearMenuChanges } = useMenuChangesStore();
   const { clearOrder } = useOrderStore();
 
   // Redirect to login if not authenticated and clear data
@@ -41,6 +43,7 @@ export default function TabsLayout() {
       clearActiveDineIn();
       clearTables();
       clearCustomers();
+      clearMenuChanges();
       clearOrder();
       router.push("/login");
     }
@@ -54,6 +57,7 @@ export default function TabsLayout() {
     clearActiveDineIn,
     clearTables,
     clearCustomers,
+    clearMenuChanges,
     clearOrder,
   ]);
 
@@ -62,6 +66,9 @@ export default function TabsLayout() {
     if (!user) return;
 
     loadCachedMenu();
+
+    // Menu changes: one fetch per signed-in session (store skips if already loaded).
+    void useMenuChangesStore.getState().fetchMenuChanges();
 
     // Set up all synchronous subscriptions immediately so cleanup is guaranteed
     const unsubMenu = subscribeToMenuVersion();

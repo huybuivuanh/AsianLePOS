@@ -534,7 +534,11 @@ export default function Item() {
           ))}
 
           <AddExtraEditor extras={extras} onChange={setExtras} />
-          <ItemChangeEditor changes={changes} onChange={setChanges} />
+          <ItemChangeEditor
+            changes={changes}
+            onChange={setChanges}
+            onBrowseMenuChanges={() => router.push("/menu-changes")}
+          />
           {orderTypeStr === OrderType.DineIn && (
             <View className="mt-3">
               <SpecialFlagsSelector
