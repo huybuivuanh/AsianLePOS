@@ -11,6 +11,7 @@ import {
   orderSubtotal,
   resolveTaxBreakdown,
 } from "@/utils/helpers";
+import { groupSimpleOrderItems } from "@/utils/groupOrderItems";
 import { FlashList } from "@shopify/flash-list";
 import { useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -124,12 +125,26 @@ export default function DineInOrdersTab() {
     [expandedOrderId, selectionMode, selectedItemIds.size],
   );
 
+  const groupedItemsByOrderId = useMemo(() => {
+    const map = new Map<string, OrderItem[]>();
+    for (const o of dineInOrders) {
+      if (!o.id) continue;
+      map.set(o.id, groupSimpleOrderItems(o.orderItems ?? []));
+    }
+    return map;
+  }, [dineInOrders]);
+
   const renderOrder = useCallback(
     ({ item }: { item: DineInOrder }) => {
       // Use taxBreakDown from order, or calculate it if missing
       const taxBreakDown = resolveTaxBreakdown(item);
       const expanded = expandedOrderId === item.id;
       const isSelectionMode = selectionMode === item.id;
+
+      const displayOrderItems =
+        !isSelectionMode && item.id
+          ? (groupedItemsByOrderId.get(item.id) ?? item.orderItems)
+          : item.orderItems;
 
       // Calculate selected items total and tax breakdown when in selection mode
       const selectedItemsTotal =
@@ -242,7 +257,7 @@ export default function DineInOrdersTab() {
           {expanded && (
             <View className="mt-3 border-t border-gray-200 pt-2">
               <OrderItemsList
-                orderItems={item.orderItems}
+                orderItems={displayOrderItems}
                 orderId={item.id!}
                 selectionMode={selectionMode}
                 selectedItemIds={selectedItemIds}
@@ -330,6 +345,7 @@ export default function DineInOrdersTab() {
       expandedOrderId,
       selectionMode,
       selectedItemIds,
+      groupedItemsByOrderId,
       toggleExpand,
       handlePrint,
       handleToggleSelectionMode,
