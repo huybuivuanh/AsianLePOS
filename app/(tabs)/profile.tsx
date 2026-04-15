@@ -21,7 +21,7 @@ const Profile = () => {
     .join("");
 
   return (
-    <SafeAreaViewWrapper className="flex-1 bg-white">
+    <SafeAreaViewWrapper className="flex-1 bg-white" includeBottomInset={false}>
       <View className="p-5">
         {/* Header card */}
         <View className="bg-gray-50 border border-gray-200 rounded-2xl p-4">

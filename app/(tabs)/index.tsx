@@ -29,7 +29,7 @@ export default function TakeOut() {
   if (!categories.length) return <Text>No categories found</Text>;
 
   return (
-    <SafeAreaViewWrapper className="flex-1">
+    <SafeAreaViewWrapper className="flex-1" includeBottomInset={false}>
       <View className="flex-1 px-4 pt-4">
         <MenuPickerBody
           query={query}

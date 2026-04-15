@@ -91,7 +91,7 @@ export default function Tables() {
   }, [openTablePage, printedMap, cellWidth]);
 
   return (
-    <SafeAreaViewWrapper className="p-4">
+    <SafeAreaViewWrapper className="p-4" includeBottomInset={false}>
       <FlashList
         style={{ flex: 1, minHeight: 0, width: "100%", alignSelf: "stretch" }}
         keyboardShouldPersistTaps="always"

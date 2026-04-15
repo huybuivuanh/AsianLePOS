@@ -1,11 +1,11 @@
 // app/(tabs)/_layout.tsx
 import { useAuth } from "@/providers/AuthProvider";
 import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
+import { useCustomersStore } from "@/stores/useCustomersStore";
 import { useDineInOrdersStore } from "@/stores/useDineInOrdersStore";
 import { loadCachedMenu, useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
-import { useCustomersStore } from "@/stores/useCustomersStore";
 import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";

@@ -341,7 +341,10 @@ export default function DineInOrdersTab() {
 
   if (loading) {
     return (
-      <SafeAreaViewWrapper className="flex-1 justify-center items-center bg-white">
+      <SafeAreaViewWrapper
+        className="flex-1 justify-center items-center bg-white"
+        includeBottomInset={false}
+      >
         <ActivityIndicator size="large" color="#007AFF" />
         <Text className="mt-2 text-gray-600">Loading dine in orders...</Text>
       </SafeAreaViewWrapper>
@@ -349,7 +352,7 @@ export default function DineInOrdersTab() {
   }
 
   return (
-    <SafeAreaViewWrapper className="flex-1 p-4">
+    <SafeAreaViewWrapper className="flex-1 p-4" includeBottomInset={false}>
       {dineInOrders.length === 0 ? (
         <View className="flex-1 justify-center items-center">
           <Text className="text-gray-500">No dine in orders yet.</Text>
