@@ -14,6 +14,7 @@ import {
 import Header from "@/ui/Header";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import { ungroupOrderItems } from "@/utils/groupOrderItems";
+import { normalizeOrderItemTextForDb } from "@/utils/normalizeOrderItemText";
 import {
   calculateTaxBreakdown,
   generateFirestoreId,
@@ -92,7 +93,9 @@ export default function ReviewDineInOrder() {
         orderType: OrderType.DineIn,
         tableNumber,
         guests: getTable(tableNumber)?.guests || 0,
-        orderItems: ungroupOrderItems(order.orderItems ?? []),
+        orderItems: ungroupOrderItems(order.orderItems ?? []).map(
+          normalizeOrderItemTextForDb,
+        ),
         taxBreakDown: computedTax,
         status: OrderStatus.InProgress,
         paid: false,

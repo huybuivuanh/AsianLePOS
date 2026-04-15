@@ -11,6 +11,7 @@ import {
   groupSimpleOrderItems,
   ungroupOrderItems,
 } from "@/utils/groupOrderItems";
+import { normalizeOrderItemTextForDb } from "@/utils/normalizeOrderItemText";
 import {
   calculateTaxBreakdown,
   orderItemsSubtotal,
@@ -297,11 +298,14 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       order.orderType === OrderType.DineIn
         ? ungroupOrderItems(order.orderItems ?? [])
         : groupSimpleOrderItems(order.orderItems ?? []);
+    const normalizedItemsForFirestore = itemsForFirestore.map(
+      normalizeOrderItemTextForDb,
+    );
 
     const base = {
       id: order.id,
       orderType: order.orderType,
-      orderItems: itemsForFirestore,
+      orderItems: normalizedItemsForFirestore,
       taxBreakDown,
       status: OrderStatus.InProgress,
       paid: false,
@@ -347,7 +351,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         : groupSimpleOrderItems(order.orderItems ?? []);
 
     const cleanOrderItems = rawItems.map((item) => {
-      const cleanItem: OrderItem = {
+      const cleanItem: OrderItem = normalizeOrderItemTextForDb({
         id: item.id,
         name: item.name,
         price: item.price,
@@ -360,7 +364,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         extras: item.extras ?? [],
         changes: item.changes ?? [],
         ...(item.instructions && { instructions: item.instructions }),
-      };
+      });
       return cleanItem;
     });
 
@@ -806,7 +810,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     );
 
     const cleanOrderItems = ungroupOrderItems(orderItems).map((item) => {
-      const cleanItem: OrderItem = {
+      const cleanItem: OrderItem = normalizeOrderItemTextForDb({
         id: item.id,
         name: item.name,
         price: item.price,
@@ -819,7 +823,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         extras: item.extras ?? [],
         changes: item.changes ?? [],
         ...(item.instructions && { instructions: item.instructions }),
-      };
+      });
       return cleanItem;
     });
 
