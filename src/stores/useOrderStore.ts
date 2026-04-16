@@ -18,14 +18,7 @@ import {
   orderPaidFromLineItems,
 } from "@/utils/helpers";
 import { normalizeOrderItemTextForDb } from "@/utils/normalizeOrderItemText";
-import {
-  doc,
-  getDoc,
-  setDoc,
-  Timestamp,
-  updateDoc,
-  writeBatch,
-} from "firebase/firestore";
+import { doc, getDoc, setDoc, Timestamp, writeBatch } from "firebase/firestore";
 import { create } from "zustand";
 
 /**
@@ -501,17 +494,16 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       orderItems: groupSimpleOrderItems(order.orderItems ?? []),
     };
     const printQueueRef = doc(db, "printQueue", order.id);
-    const existing = await getDoc(printQueueRef);
-    if (existing.exists()) {
-      await updateDoc(printQueueRef, { printed: false });
-      return;
-    }
-    await setDoc(printQueueRef, {
-      ...forPrint,
-      id: order.id,
-      printed: false,
-      createdAt: Timestamp.now(),
-    } as Record<string, unknown>);
+    await setDoc(
+      printQueueRef,
+      {
+        ...forPrint,
+        id: order.id,
+        printed: false,
+        createdAt: Timestamp.now(),
+      } as Record<string, unknown>,
+      { merge: true },
+    );
   },
 
   submitSelectedItemsToPrintQueue: async (

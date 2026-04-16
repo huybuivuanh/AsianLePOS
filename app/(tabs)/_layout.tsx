@@ -1,6 +1,5 @@
 // app/(tabs)/_layout.tsx
 import { useAuth } from "@/providers/AuthProvider";
-import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
 import { useCustomersStore } from "@/stores/useCustomersStore";
 import { useDineInOrdersStore } from "@/stores/useDineInOrdersStore";
 import { loadCachedMenu, useMenuStore } from "@/stores/useMenuStore";
@@ -14,6 +13,19 @@ import { Tabs, useRouter } from "expo-router";
 import { useEffect } from "react";
 import { Platform, Text, View } from "react-native";
 
+const TAB_SCREEN_OPTIONS = {
+  headerShown: false,
+  tabBarActiveTintColor: "#1D4ED8",
+  tabBarInactiveTintColor: "#6B7280",
+  tabBarStyle: { backgroundColor: "#F3F4F6", height: 80 },
+  tabBarLabelStyle: { fontSize: 12, marginBottom: 5 },
+  sceneStyle: {
+    flex: 1,
+    width: "100%" as const,
+    ...(Platform.OS === "web" ? { alignSelf: "stretch" as const } : {}),
+  },
+} as const;
+
 export default function TabsLayout() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -26,8 +38,6 @@ export default function TabsLayout() {
     useTakeOutOrdersStore();
   const { subscribeToDineInOrders, clearData: clearDineInOrdersTab } =
     useDineInOrdersStore();
-  const { subscribeToActiveDineInOrders, clearData: clearActiveDineIn } =
-    useActiveDineInOrdersStore();
   const { subscribeToTables, clearData: clearTables } = useTableStore();
   const { subscribeToCustomers, clearData: clearCustomers } =
     useCustomersStore();
@@ -42,7 +52,6 @@ export default function TabsLayout() {
       clearMenu();
       clearTakeOutOrders();
       clearDineInOrdersTab();
-      clearActiveDineIn();
       clearTables();
       clearCustomers();
       clearMenuChanges();
@@ -79,7 +88,6 @@ export default function TabsLayout() {
     const unsubMenu = subscribeToMenuVersion();
     const unsubTakeOut = subscribeToTakeOutOrders();
     const unsubDineInTab = subscribeToDineInOrders();
-    const unsubActiveDineIn = subscribeToActiveDineInOrders();
     const unsubCustomers = subscribeToCustomers();
 
     // subscribeToTables is async; track mount state so we can clean it up
@@ -100,7 +108,6 @@ export default function TabsLayout() {
       unsubMenu?.();
       unsubTakeOut?.();
       unsubDineInTab?.();
-      unsubActiveDineIn?.();
       unsubCustomers?.();
       unsubTables?.();
     };
@@ -109,7 +116,6 @@ export default function TabsLayout() {
     subscribeToMenuVersion,
     subscribeToTakeOutOrders,
     subscribeToDineInOrders,
-    subscribeToActiveDineInOrders,
     subscribeToCustomers,
     subscribeToTables,
   ]);
@@ -123,20 +129,7 @@ export default function TabsLayout() {
   }
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: "#1D4ED8",
-        tabBarInactiveTintColor: "#6B7280",
-        tabBarStyle: { backgroundColor: "#F3F4F6", height: 80 },
-        tabBarLabelStyle: { fontSize: 12, marginBottom: 5 },
-        sceneStyle: {
-          flex: 1,
-          width: "100%",
-          ...(Platform.OS === "web" ? { alignSelf: "stretch" as const } : {}),
-        },
-      }}
-    >
+    <Tabs screenOptions={TAB_SCREEN_OPTIONS}>
       <Tabs.Screen
         name="index"
         options={{

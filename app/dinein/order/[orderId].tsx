@@ -24,6 +24,15 @@ import {
   View,
 } from "react-native";
 
+const scrollViewStyle = { flex: 1, width: "100%" as const, alignSelf: "stretch" as const };
+const scrollContentStyle = {
+  flexGrow: 1,
+  alignSelf: "stretch" as const,
+  width: "100%" as const,
+  padding: 16,
+  paddingBottom: 24,
+};
+
 export default function DineInOrderDetails() {
   const { orderId } = useLocalSearchParams<{ orderId: string }>();
   const router = useRouter();
@@ -91,30 +100,30 @@ export default function DineInOrderDetails() {
     if (!selectionMode) setCashPaymentModalVisible(false);
   }, [selectionMode]);
 
-  const toggleSelectionMode = () => {
+  const toggleSelectionMode = useCallback(() => {
     setSelectionMode((p) => !p);
     setSelectedItemIds(new Set());
-  };
+  }, []);
 
-  const toggleItemSelection = (itemId: string) => {
+  const toggleItemSelection = useCallback((itemId: string) => {
     setSelectedItemIds((prev) => {
       const next = new Set(prev);
       if (next.has(itemId)) next.delete(itemId);
       else next.add(itemId);
       return next;
     });
-  };
+  }, []);
 
-  const handlePrintAll = async () => {
+  const handlePrintAll = useCallback(async () => {
     if (!order) return;
     try {
       await submitToPrintQueue(order);
     } catch (e) {
       console.error("❌ Error submitting to print queue:", e);
     }
-  };
+  }, [order, submitToPrintQueue]);
 
-  const handlePrintSelected = async () => {
+  const handlePrintSelected = useCallback(async () => {
     if (!order) return;
     try {
       await submitSelectedItemsToPrintQueue(order, Array.from(selectedItemIds));
@@ -123,7 +132,7 @@ export default function DineInOrderDetails() {
     } catch (e) {
       console.error("❌ Error printing selected items:", e);
     }
-  };
+  }, [order, selectedItemIds, submitSelectedItemsToPrintQueue]);
 
   const handleToggleLinePaid = useCallback(
     async (itemId: string, nextPaid: boolean) => {
@@ -143,7 +152,7 @@ export default function DineInOrderDetails() {
     [order, orderIdStr],
   );
 
-  const handleMarkSelectedPaid = async () => {
+  const handleMarkSelectedPaid = useCallback(async () => {
     if (!order || !orderIdStr || selectedItemIds.size === 0) return;
     const items = order.orderItems ?? [];
     try {
@@ -159,7 +168,15 @@ export default function DineInOrderDetails() {
     } catch (e) {
       console.error("❌ Error marking selected items paid:", e);
     }
-  };
+  }, [order, orderIdStr, selectedItemIds]);
+
+  const orderSubtotalMemo = useMemo(() => orderSubtotal(order), [order]);
+
+  const handleBack = useCallback(() => router.back(), [router]);
+  const handleCloseCashModal = useCallback(
+    () => setCashPaymentModalVisible(false),
+    [],
+  );
 
   if (loading) {
     return (
@@ -185,17 +202,11 @@ export default function DineInOrderDetails() {
     <SafeAreaViewWrapper className="flex-1 bg-gray-100">
       <Header
         title={`Table ${order.tableNumber}`}
-        onBack={() => router.back()}
+        onBack={handleBack}
       />
       <ScrollView
-        style={{ flex: 1, width: "100%", alignSelf: "stretch" }}
-        contentContainerStyle={{
-          flexGrow: 1,
-          alignSelf: "stretch",
-          width: "100%",
-          padding: 16,
-          paddingBottom: 24,
-        }}
+        style={scrollViewStyle}
+        contentContainerStyle={scrollContentStyle}
         keyboardShouldPersistTaps="handled"
       >
         <View
@@ -251,7 +262,7 @@ export default function DineInOrderDetails() {
               isSelectionMode={selectionMode}
               selectedItemsTotal={selectedItemsTotal}
               selectedItemsTaxBreakDown={selectedItemsTaxBreakDown}
-              orderSubtotal={orderSubtotal(order)}
+              orderSubtotal={orderSubtotalMemo}
             />
           )}
 
@@ -311,7 +322,7 @@ export default function DineInOrderDetails() {
 
       <CashPaymentModal
         visible={cashPaymentModalVisible}
-        onClose={() => setCashPaymentModalVisible(false)}
+        onClose={handleCloseCashModal}
         orderTotal={selectedItemsTaxBreakDown.total}
       />
     </SafeAreaViewWrapper>

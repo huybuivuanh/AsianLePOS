@@ -26,7 +26,7 @@ type DineInOrdersTabState = {
   loadMoreOrders: () => Promise<void>;
   refreshDineInOrders: () => Promise<void>;
   subscribeToDineInOrders: () => () => void;
-  clearData: () => void;
+  clearData: () => Promise<void>;
 };
 
 const INITIAL_DISPLAY_LIMIT = 50;

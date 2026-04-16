@@ -26,7 +26,7 @@ type TakeOutOrdersTabState = {
   loadMoreOrders: () => Promise<void>;
   refreshTakeOutOrders: () => Promise<void>;
   subscribeToTakeOutOrders: () => () => void;
-  clearData: () => void;
+  clearData: () => Promise<void>;
 };
 
 const INITIAL_DISPLAY_LIMIT = 50;
