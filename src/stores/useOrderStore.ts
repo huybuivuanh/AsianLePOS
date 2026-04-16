@@ -8,7 +8,7 @@ import {
   TakeOutFulfillmentKind,
 } from "@/types/enums";
 import {
-  groupSimpleOrderItems,
+  groupOrderItemsBySignature,
   ungroupOrderItems,
 } from "@/utils/groupOrderItems";
 import {
@@ -291,7 +291,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const itemsForFirestore =
       order.orderType === OrderType.DineIn
         ? ungroupOrderItems(order.orderItems ?? [])
-        : groupSimpleOrderItems(order.orderItems ?? []);
+        : groupOrderItemsBySignature(order.orderItems ?? []);
     const normalizedItemsForFirestore = itemsForFirestore.map(
       normalizeOrderItemTextForDb,
     );
@@ -342,7 +342,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const rawItems =
       order.orderType === OrderType.DineIn
         ? ungroupOrderItems(order.orderItems ?? [])
-        : groupSimpleOrderItems(order.orderItems ?? []);
+        : groupOrderItemsBySignature(order.orderItems ?? []);
 
     const cleanOrderItems = rawItems.map((item) => {
       const cleanItem: OrderItem = normalizeOrderItemTextForDb({
@@ -491,7 +491,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     if (!order.id) throw new Error("Order ID is required to print.");
     const forPrint: OrderDraft = {
       ...order,
-      orderItems: groupSimpleOrderItems(order.orderItems ?? []),
+      orderItems: groupOrderItemsBySignature(order.orderItems ?? []),
     };
     const printQueueRef = doc(db, "printQueue", order.id);
     await setDoc(
@@ -532,7 +532,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
     const partialOrder: OrderDraft = {
       ...order,
-      orderItems: groupSimpleOrderItems(selectedItems),
+      orderItems: groupOrderItemsBySignature(selectedItems),
       taxBreakDown: selectedTaxBreakDown,
     };
 
@@ -739,7 +739,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       id: orderId,
       orderType: OrderType.TakeOut,
       staff: data.staff ?? "",
-      orderItems: groupSimpleOrderItems(cleanOrderItems),
+      orderItems: groupOrderItemsBySignature(cleanOrderItems),
       taxBreakDown,
       status: OrderStatus.InProgress,
       paid: data.paid ?? false,

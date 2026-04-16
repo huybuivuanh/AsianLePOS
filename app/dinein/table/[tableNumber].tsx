@@ -8,7 +8,7 @@ import { useTableStore } from "@/stores/useTableStore";
 import { OrderType } from "@/types/enums";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import Header from "@/ui/Header";
-import { groupSimpleOrderItems } from "@/utils/groupOrderItems";
+import { groupOrderItemsBySignature } from "@/utils/groupOrderItems";
 import { formatTimeOnly, showAlert } from "@/utils/helpers";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { Check } from "lucide-react-native";
@@ -67,7 +67,7 @@ export default function TablePage() {
   /** Merged lines for table summary only; Firestore order is unchanged. */
   const displayOrderItems = useMemo(() => {
     if (!order?.orderItems?.length) return [];
-    return groupSimpleOrderItems(order.orderItems);
+    return groupOrderItemsBySignature(order.orderItems);
   }, [order?.orderItems]);
 
   // ✅ Loading or table not found

@@ -11,7 +11,7 @@ import {
   orderSubtotal,
   resolveTaxBreakdown,
 } from "@/utils/helpers";
-import { groupSimpleOrderItems } from "@/utils/groupOrderItems";
+import { groupOrderItemsBySignature } from "@/utils/groupOrderItems";
 import { FlashList } from "@shopify/flash-list";
 import { useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -129,7 +129,7 @@ export default function DineInOrdersTab() {
     const map = new Map<string, OrderItem[]>();
     for (const o of dineInOrders) {
       if (!o.id) continue;
-      map.set(o.id, groupSimpleOrderItems(o.orderItems ?? []));
+      map.set(o.id, groupOrderItemsBySignature(o.orderItems ?? []));
     }
     return map;
   }, [dineInOrders]);

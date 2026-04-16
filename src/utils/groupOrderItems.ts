@@ -2,10 +2,15 @@ import { KitchenType } from "@/types/enums";
 import { generateFirestoreId } from "./helpers";
 
 /**
- * Merge order lines that share the same “signature” (name, price, kitchen, flags, options)
- * when they have no instructions, changes, or extras.
+ * Merge order lines that share the exact same “signature” (name, price, kitchen, flags,
+ * options, instructions, changes, extras).
  * For display/print; do not blindly persist if you rely on per-line ids for edits.
  */
+
+function normalizeInstructionsKey(instructions: string | undefined): string {
+  const v = instructions?.trim() ?? "";
+  return v;
+}
 
 function hasInstructions(item: OrderItem): boolean {
   return Boolean(item.instructions?.trim());
@@ -19,8 +24,12 @@ function hasExtras(item: OrderItem): boolean {
   return Boolean(item.extras && item.extras.length > 0);
 }
 
-/** Lines we may combine: nothing that makes the row unique beyond signature. */
-function isGroupableOrderItem(item: OrderItem): boolean {
+/**
+ * Drink-flavor bucketing keeps the original "simple drink" rule: no instructions/changes/extras.
+ * (Exact-signature merge still applies afterwards.)
+ */
+function isSimpleDrinkForFlavorBucketing(item: OrderItem): boolean {
+  if (item.kitchenType !== KitchenType.Drink) return false;
   if (hasInstructions(item)) return false;
   if (hasChanges(item)) return false;
   if (hasExtras(item)) return false;
@@ -45,15 +54,50 @@ function normalizeOptionsKey(options: OrderItemOption[] | undefined): string {
   );
 }
 
-function mergeGroupKey(item: OrderItem): string {
+function normalizeChangesKey(changes: ItemChange[] | undefined): string {
+  if (!changes?.length) return "";
+  const sorted = [...changes].sort((a, b) => {
+    const byFrom = a.from.localeCompare(b.from);
+    if (byFrom !== 0) return byFrom;
+    const byTo = a.to.localeCompare(b.to);
+    if (byTo !== 0) return byTo;
+    return a.price - b.price;
+  });
+  return JSON.stringify(
+    sorted.map((c) => ({
+      from: c.from,
+      to: c.to,
+      price: roundMoney2(c.price),
+    })),
+  );
+}
+
+function normalizeExtrasKey(extras: AddExtra[] | undefined): string {
+  if (!extras?.length) return "";
+  const sorted = [...extras].sort((a, b) => {
+    const byDesc = a.description.localeCompare(b.description);
+    if (byDesc !== 0) return byDesc;
+    return a.price - b.price;
+  });
+  return JSON.stringify(
+    sorted.map((e) => ({
+      description: e.description,
+      price: roundMoney2(e.price),
+    })),
+  );
+}
+
+function fullSignatureKey(item: OrderItem): string {
   const parts = [
     item.name,
     String(roundMoney2(item.price)),
     item.kitchenType,
     item.togo ? "1" : "0",
     item.appetizer ? "1" : "0",
-    item.paid ? "1" : "0",
     normalizeOptionsKey(item.options),
+    normalizeInstructionsKey(item.instructions),
+    normalizeChangesKey(item.changes),
+    normalizeExtrasKey(item.extras),
   ];
   return parts.join("\0");
 }
@@ -66,6 +110,15 @@ function buildMergedLine(
     template.options && template.options.length > 0
       ? template.options.map((o) => ({ ...o }))
       : undefined;
+  const changes =
+    template.changes && template.changes.length > 0
+      ? template.changes.map((c) => ({ ...c }))
+      : undefined;
+  const extras =
+    template.extras && template.extras.length > 0
+      ? template.extras.map((e) => ({ ...e }))
+      : undefined;
+  const instructions = template.instructions?.trim();
 
   return {
     id: template.id,
@@ -77,6 +130,9 @@ function buildMergedLine(
     appetizer: template.appetizer,
     paid: template.paid,
     ...(options ? { options } : {}),
+    ...(changes ? { changes } : {}),
+    ...(extras ? { extras } : {}),
+    ...(instructions ? { instructions } : {}),
   };
 }
 
@@ -86,8 +142,7 @@ function buildMergedLine(
  * each flavor’s `OrderItemOption.quantity` accumulates `lineQty × optionQty`.
  */
 function drinkFlavorBucketKey(item: OrderItem): string | null {
-  if (item.kitchenType !== KitchenType.Drink) return null;
-  if (!isGroupableOrderItem(item)) return null;
+  if (!isSimpleDrinkForFlavorBucketing(item)) return null;
   if (!item.options || item.options.length !== 1) return null;
   return [
     item.name,
@@ -95,7 +150,6 @@ function drinkFlavorBucketKey(item: OrderItem): string | null {
     item.kitchenType,
     item.togo ? "1" : "0",
     item.appetizer ? "1" : "0",
-    item.paid ? "1" : "0",
   ].join("\0");
 }
 
@@ -149,7 +203,58 @@ function buildMergedDrinkFlavorLine(bucket: OrderItem[]): OrderItem {
   };
 }
 
-/** Collapse multi-line same-base drinks (one option per line) before signature merge. */
+/**
+ * For grouping/printing only: treat each drink option as a "flavor drink".
+ * Example: `1× Pop` with options `[Coke, 7UP]` becomes two lines:
+ * - `1× Pop` + `[Coke]`
+ * - `1× Pop` + `[7UP]`
+ *
+ * If an option has `quantity > 1`, it expands to that many flavor-drinks
+ * (multiplied by the line's `quantity`).
+ */
+function expandDrinkMultiFlavorLinesForGrouping(items: OrderItem[]): OrderItem[] {
+  const out: OrderItem[] = [];
+
+  for (const item of items) {
+    if (
+      item.kitchenType !== KitchenType.Drink ||
+      !item.options?.length
+    ) {
+      out.push(item);
+      continue;
+    }
+
+    const lineQtyRaw = Number(item.quantity);
+    const lineQty =
+      Number.isFinite(lineQtyRaw) && Math.floor(lineQtyRaw) >= 1
+        ? Math.floor(lineQtyRaw)
+        : 1;
+
+    const hasLineId = item.id != null && item.id !== "";
+    let emitted = 0;
+
+    for (const opt of item.options) {
+      const rawOptQ = Number(opt.quantity);
+      const optUnit =
+        Number.isFinite(rawOptQ) && Math.floor(rawOptQ) >= 1
+          ? Math.floor(rawOptQ)
+          : 1;
+
+      out.push({
+        ...item,
+        // Keep a stable id for the first derived line when possible; otherwise generate.
+        id: hasLineId && emitted === 0 ? item.id : generateFirestoreId(),
+        quantity: lineQty * optUnit,
+        options: [{ ...opt, quantity: 1 }],
+      });
+      emitted += 1;
+    }
+  }
+
+  return out;
+}
+
+/** Collapse multi-line same-base drinks (one option per line) before exact-signature merge. */
 function applyDrinkFlavorGrouping(items: OrderItem[]): OrderItem[] {
   const n = items.length;
   const indicesByKey = new Map<string, number[]>();
@@ -187,13 +292,12 @@ function applyDrinkFlavorGrouping(items: OrderItem[]): OrderItem[] {
   return out;
 }
 
-function mergeByLineSignature(items: OrderItem[]): OrderItem[] {
+function mergeByExactSignature(items: OrderItem[]): OrderItem[] {
   const totalsByKey = new Map<string, number>();
   const templateByKey = new Map<string, OrderItem>();
 
   for (const item of items) {
-    if (!isGroupableOrderItem(item)) continue;
-    const key = mergeGroupKey(item);
+    const key = fullSignatureKey(item);
     totalsByKey.set(key, (totalsByKey.get(key) ?? 0) + item.quantity);
     if (!templateByKey.has(key)) {
       templateByKey.set(key, item);
@@ -204,12 +308,7 @@ function mergeByLineSignature(items: OrderItem[]): OrderItem[] {
   const out: OrderItem[] = [];
 
   for (const item of items) {
-    if (!isGroupableOrderItem(item)) {
-      out.push(item);
-      continue;
-    }
-
-    const key = mergeGroupKey(item);
+    const key = fullSignatureKey(item);
     if (emittedKeys.has(key)) continue;
     emittedKeys.add(key);
 
@@ -222,23 +321,19 @@ function mergeByLineSignature(items: OrderItem[]): OrderItem[] {
 }
 
 /**
- * Merges groupable rows that share the same **line signature**:
- * `name`, unit `price`, `kitchenType`, `togo`, `appetizer`, and the same **set of options**
- * (order-independent; compared by name, price, quantity per option).
+ * Merges rows that share the exact same **line signature**:
+ * `name`, unit `price`, `kitchenType`, `togo`, `appetizer`, `paid`,
+ * `options`, `instructions`, `changes`, and `extras`.
  *
- * **Drinks (kitchen Drink, exactly one option, no instructions/changes/extras):** lines that
- * share the same base key but differ only by that option’s name are merged first: one row
- * with `quantity: 1`, `price` = sum of prior line totals, and per-flavor option quantities
- * increased (e.g. three `2× Pop` / 7UP / Coke / Coke Zero → one `1× Pop` with three options).
- *
- * Not merged: rows with instructions, changes, or extras (each stays as its own line).
- *
- * - Quantities are summed for matching signatures (including when each row already has `quantity > 1`).
- * - Output order: first occurrence of a signature emits one merged row; later matches are skipped.
+ * Drinks: a line that contains multiple flavors (multiple options) is expanded first so each
+ * flavor becomes its own drink count; then exact-signature merge is applied (so only identical
+ * flavors/options merge together).
  */
-export function groupSimpleOrderItems(items: OrderItem[]): OrderItem[] {
+export function groupOrderItemsBySignature(items: OrderItem[]): OrderItem[] {
   if (items.length === 0) return [];
-  return mergeByLineSignature(applyDrinkFlavorGrouping(items));
+  const expandedDrinks = expandDrinkMultiFlavorLinesForGrouping(items);
+  const bucketedDrinks = applyDrinkFlavorGrouping(expandedDrinks);
+  return mergeByExactSignature(bucketedDrinks);
 }
 
 function cloneOrderItemWithQuantity(
