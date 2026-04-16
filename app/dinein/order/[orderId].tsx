@@ -170,7 +170,7 @@ export default function DineInOrderDetails() {
     }
   }, [order, orderIdStr, selectedItemIds]);
 
-  const orderSubtotalMemo = useMemo(() => orderSubtotal(order), [order]);
+  const orderSubtotalMemo = useMemo(() => (order ? orderSubtotal(order) : 0), [order]);
 
   const handleBack = useCallback(() => router.back(), [router]);
   const handleCloseCashModal = useCallback(

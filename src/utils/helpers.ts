@@ -67,7 +67,8 @@ export const orderPaidFromLineItems = (
 };
 
 /** Subtotal from line items, or taxBreakDown.subTotal when present. */
-export const orderSubtotal = (order: Partial<Order>): number => {
+export const orderSubtotal = (order?: Partial<Order> | null): number => {
+  if (!order) return 0;
   if (order.taxBreakDown?.subTotal != null) {
     return order.taxBreakDown.subTotal;
   }
