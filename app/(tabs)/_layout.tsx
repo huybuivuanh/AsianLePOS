@@ -1,12 +1,12 @@
 // app/(tabs)/_layout.tsx
 import { useAuth } from "@/providers/AuthProvider";
+import { useCreditsStore } from "@/stores/useCreditsStore";
 import { useCustomersStore } from "@/stores/useCustomersStore";
 import { useDineInOrdersStore } from "@/stores/useDineInOrdersStore";
+import { useMenuChangesStore } from "@/stores/useMenuChangesStore";
 import { loadCachedMenu, useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
-import { useCreditsStore } from "@/stores/useCreditsStore";
-import { useMenuChangesStore } from "@/stores/useMenuChangesStore";
 import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
@@ -66,7 +66,6 @@ export default function TabsLayout() {
     clearMenu,
     clearTakeOutOrders,
     clearDineInOrdersTab,
-    clearActiveDineIn,
     clearTables,
     clearCustomers,
     clearMenuChanges,

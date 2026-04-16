@@ -58,7 +58,7 @@ export default function TablePage() {
   useEffect(() => {
     if (currentOrder) setOrder(currentOrder);
     else setOrder(null);
-  }, [currentOrder, table]);
+  }, [currentOrder]);
 
   const hasActiveOrderItems = Boolean(
     order?.orderItems && order.orderItems.length > 0,
