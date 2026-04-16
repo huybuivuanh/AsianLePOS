@@ -1,8 +1,8 @@
 import { initializeApp } from "firebase-admin/app";
-import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import type { Query } from "firebase-admin/firestore";
-import { onSchedule } from "firebase-functions/v2/scheduler";
+import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 
 initializeApp();
 
@@ -11,6 +11,8 @@ const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const BATCH_SIZE = 500;
 
 const ORDER_COLLECTIONS = ["dineInOrders", "takeOutOrders"] as const;
+
+const PRINT_QUEUE_COLLECTION = "printQueue";
 
 async function deleteQueryInBatches(query: Query): Promise<number> {
   const snapshot = await query.limit(BATCH_SIZE).get();
@@ -24,6 +26,27 @@ async function deleteQueryInBatches(query: Query): Promise<number> {
   const deleted = snapshot.size;
   const rest = await deleteQueryInBatches(query);
   return deleted + rest;
+}
+
+/** Deletes every document in a collection (Firestore has no single “drop collection” API). */
+async function deleteEntireCollectionInBatches(
+  collectionPath: string,
+): Promise<number> {
+  const db = getFirestore();
+  const col = db.collection(collectionPath);
+  let total = 0;
+
+  while (true) {
+    const snapshot = await col.limit(BATCH_SIZE).get();
+    if (snapshot.empty) break;
+
+    const batch = db.batch();
+    snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+    await batch.commit();
+    total += snapshot.size;
+  }
+
+  return total;
 }
 
 /**
@@ -51,5 +74,26 @@ export const purgeStaleOrders = onSchedule(
     }
 
     logger.info(`purgeStaleOrders: finished, total deleted ${total}`);
+  },
+);
+
+/**
+ * Deletes **all** documents in `printQueue` (batched). Runs daily at midnight in `America/Regina`.
+ * Anything not yet processed by the print server at run time will be removed — acceptable only if
+ * the queue is disposable. Adjust `timeZone` / `schedule` as needed.
+ */
+export const purgeStalePrintQueue = onSchedule(
+  {
+    schedule: "0 0 * * *",
+    timeZone: "America/Regina",
+    region: "us-central1",
+    memory: "256MiB",
+    timeoutSeconds: 540,
+  },
+  async () => {
+    const n = await deleteEntireCollectionInBatches(PRINT_QUEUE_COLLECTION);
+    logger.info(
+      `purgeStalePrintQueue: deleted ${n} docs from ${PRINT_QUEUE_COLLECTION} (full wipe)`,
+    );
   },
 );

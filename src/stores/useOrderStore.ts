@@ -13,16 +13,17 @@ import {
 } from "@/utils/groupOrderItems";
 import {
   calculateTaxBreakdown,
+  generateFirestoreId,
   orderItemsSubtotal,
   orderPaidFromLineItems,
 } from "@/utils/helpers";
 import { normalizeOrderItemTextForDb } from "@/utils/normalizeOrderItemText";
 import {
-  collection,
   doc,
   getDoc,
   setDoc,
   Timestamp,
+  updateDoc,
   writeBatch,
 } from "firebase/firestore";
 import { create } from "zustand";
@@ -495,12 +496,22 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
   submitToPrintQueue: async (order: OrderDraft) => {
     if (!order.id) throw new Error("Order ID is required to print.");
-    const printQueueRef = doc(collection(db, "printQueue"));
     const forPrint: OrderDraft = {
       ...order,
       orderItems: groupSimpleOrderItems(order.orderItems ?? []),
     };
-    await setDoc(printQueueRef, forPrint as Record<string, unknown>);
+    const printQueueRef = doc(db, "printQueue", order.id);
+    const existing = await getDoc(printQueueRef);
+    if (existing.exists()) {
+      await updateDoc(printQueueRef, { printed: false });
+      return;
+    }
+    await setDoc(printQueueRef, {
+      ...forPrint,
+      id: order.id,
+      printed: false,
+      createdAt: Timestamp.now(),
+    } as Record<string, unknown>);
   },
 
   submitSelectedItemsToPrintQueue: async (
@@ -533,8 +544,15 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       taxBreakDown: selectedTaxBreakDown,
     };
 
-    const printQueueRef = doc(collection(db, "printQueue"));
-    await setDoc(printQueueRef, partialOrder as Record<string, unknown>);
+    const queueDocId = generateFirestoreId();
+    const printQueueRef = doc(db, "printQueue", queueDocId);
+    // New queue doc per partial print: doc id + `id` match the queue job;.
+    await setDoc(printQueueRef, {
+      ...partialOrder,
+      id: queueDocId,
+      printed: false,
+      createdAt: Timestamp.now(),
+    } as Record<string, unknown>);
   },
 
   changeDineInOrderTable: async ({
