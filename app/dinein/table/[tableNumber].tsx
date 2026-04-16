@@ -22,6 +22,8 @@ import {
 } from "react-native";
 
 const NO_ITEM_SELECTION = new Set<string>();
+const NOOP = () => {};
+const scrollContentStyle = { flexGrow: 1, paddingBottom: 12 };
 
 export default function TablePage() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
@@ -167,10 +169,7 @@ export default function TablePage() {
             <ScrollView
               className="mt-3 flex-1"
               style={{ alignSelf: "stretch" }}
-              contentContainerStyle={{
-                flexGrow: 1,
-                paddingBottom: 12,
-              }}
+              contentContainerStyle={scrollContentStyle}
               keyboardShouldPersistTaps="handled"
             >
               <View
@@ -182,7 +181,7 @@ export default function TablePage() {
                   orderId={order!.id!}
                   selectionMode={null}
                   selectedItemIds={NO_ITEM_SELECTION}
-                  onToggleItemSelection={() => {}}
+                  onToggleItemSelection={NOOP}
                 />
               </View>
             </ScrollView>

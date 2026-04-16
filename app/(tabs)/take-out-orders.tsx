@@ -18,8 +18,324 @@ import {
 } from "@/utils/helpers";
 import { FlashList } from "@shopify/flash-list";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+
+// ─── Module-level constants ───────────────────────────────────────────────────
+
+const EMPTY_SELECTED_IDS = new Set<string>();
+
+const FLASH_LIST_STYLE = {
+  flex: 1,
+  minHeight: 0,
+  width: "100%" as const,
+  alignSelf: "stretch" as const,
+  paddingTop: 6,
+};
+
+const FLASH_LIST_CONTENT_STYLE = {
+  flexGrow: 1,
+  alignSelf: "stretch" as const,
+  width: "100%" as const,
+};
+
+// ─── TakeOutOrderCard ─────────────────────────────────────────────────────────
+
+type TakeOutOrderCardProps = {
+  item: TakeOutOrder;
+  expanded: boolean;
+  isSelectionMode: boolean;
+  selectedItemIds: Set<string>;
+  onToggleExpand: (id: string) => void;
+  onComplete: (order: TakeOutOrder) => void;
+  onCancel: (order: TakeOutOrder) => void;
+  onPrint: (order: TakeOutOrder) => void;
+  onToggleSelectionMode: (orderId: string) => void;
+  onToggleItemSelection: (itemId: string) => void;
+  onPrintSelected: (order: TakeOutOrder) => void;
+  onMarkAsPaid: (order: TakeOutOrder, paid: boolean) => void;
+  onEditOrder: (order: TakeOutOrder) => void;
+  onOpenCashPayment: (orderId: string) => void;
+  onChangeToDineIn: (orderId: string) => void;
+};
+
+const TakeOutOrderCard = memo(function TakeOutOrderCard({
+  item,
+  expanded,
+  isSelectionMode,
+  selectedItemIds,
+  onToggleExpand,
+  onComplete,
+  onCancel,
+  onPrint,
+  onToggleSelectionMode,
+  onToggleItemSelection,
+  onPrintSelected,
+  onMarkAsPaid,
+  onEditOrder,
+  onOpenCashPayment,
+  onChangeToDineIn,
+}: TakeOutOrderCardProps) {
+  const taxBreakDown = useMemo(() => resolveTaxBreakdown(item), [item]);
+
+  const selectedItemsTotal = useMemo(() => {
+    if (!isSelectionMode || !item.orderItems || selectedItemIds.size === 0)
+      return 0;
+    return item.orderItems
+      .filter((oi) => oi.id && selectedItemIds.has(oi.id))
+      .reduce((sum, oi) => sum + oi.price * oi.quantity, 0);
+  }, [isSelectionMode, item.orderItems, selectedItemIds]);
+
+  const selectedItemsTaxBreakDown = useMemo(
+    () =>
+      selectedItemsTotal === 0
+        ? EMPTY_TAX_BREAKDOWN
+        : calculateTaxBreakdown(selectedItemsTotal, DiscountType.None, 0),
+    [selectedItemsTotal],
+  );
+
+  const orderSubtotalMemo = useMemo(() => orderSubtotal(item), [item]);
+
+  const cardBg =
+    item.status === OrderStatus.Cancelled
+      ? "bg-red-100 border-red-200"
+      : item.status === OrderStatus.Completed
+        ? "bg-green-100 border-green-200"
+        : takeoutFulfillmentIsScheduled(item)
+          ? "bg-orange-100 border-orange-200"
+          : "bg-blue-100 border-blue-200";
+
+  return (
+    <View className={`${cardBg} p-4 mb-3 rounded-xl shadow-sm border`}>
+      <TouchableOpacity
+        className="flex-row justify-between items-center"
+        onPress={() => onToggleExpand(item.id!)}
+      >
+        <View>
+          {item.customerName ? (
+            <Text className="font-semibold text-gray-800 text-base">
+              Name: {item.customerName}
+            </Text>
+          ) : null}
+          {item.phoneNumber ? (
+            <Text className="font-semibold text-gray-800 text-base">
+              Phone #: {formatPhone(item.phoneNumber)}
+            </Text>
+          ) : null}
+          <Text className="font-semibold text-gray-800 text-base">
+            Staff: {item.staff ?? "—"}
+          </Text>
+          <Text className="font-semibold text-gray-800 text-base">
+            Ordered At: {formatDate(item.createdAt)}
+          </Text>
+          {takeoutFulfillmentIsScheduled(item) && (
+            <Text className="font-semibold text-gray-800 text-base">
+              Preorder: {formatDate(takeoutScheduledAt(item)!)}
+            </Text>
+          )}
+        </View>
+
+        <View>
+          <View className="items-end space-y-2">
+            <View
+              className={`px-3 py-1 rounded-full ${
+                item.printed ? "bg-green-100" : "bg-yellow-100"
+              }`}
+            >
+              <Text
+                className={`text-xs font-semibold ${
+                  item.printed ? "text-green-700" : "text-yellow-700"
+                }`}
+              >
+                {item.printed ? "Printed" : "Not Printed"}
+              </Text>
+            </View>
+            {!(item.status === OrderStatus.Completed && !item.paid) &&
+              item.status !== OrderStatus.Cancelled && (
+                <View
+                  className={`px-3 py-1 rounded-full ${
+                    item.paid ? "bg-green-100" : "bg-gray-100"
+                  }`}
+                >
+                  <Text
+                    className={`text-xs font-semibold ${
+                      item.paid ? "text-green-700" : "text-gray-700"
+                    }`}
+                  >
+                    {item.paid ? "Paid" : "Unpaid"}
+                  </Text>
+                </View>
+              )}
+            <View
+              className={`px-3 py-1 rounded-full ${
+                item.status === OrderStatus.InProgress
+                  ? "bg-blue-100"
+                  : item.status === OrderStatus.Completed
+                    ? "bg-green-100"
+                    : "bg-red-200"
+              }`}
+            >
+              <Text
+                className={`text-xs font-semibold ${
+                  item.status === OrderStatus.InProgress
+                    ? "text-blue-700"
+                    : item.status === OrderStatus.Completed
+                      ? "text-green-700"
+                      : "text-red-700"
+                }`}
+              >
+                {item.status === OrderStatus.InProgress
+                  ? "In Progress"
+                  : item.status === OrderStatus.Completed
+                    ? "Completed"
+                    : "Cancelled"}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+
+      {expanded && (
+        <View className="mt-3 border-t border-gray-200 pt-2">
+          <OrderItemsList
+            orderItems={item.orderItems}
+            orderId={item.id!}
+            selectionMode={isSelectionMode ? item.id! : null}
+            selectedItemIds={selectedItemIds}
+            onToggleItemSelection={onToggleItemSelection}
+            showSectionHeaders={false}
+          />
+
+          {taxBreakDown && (
+            <OrderTaxBreakdown
+              taxBreakDown={taxBreakDown}
+              isSelectionMode={isSelectionMode}
+              selectedItemsTotal={selectedItemsTotal}
+              selectedItemsTaxBreakDown={selectedItemsTaxBreakDown}
+              orderSubtotal={orderSubtotalMemo}
+            />
+          )}
+
+          {isSelectionMode ? (
+            <View className="mt-3">
+              <View className="flex-row justify-between">
+                <TouchableOpacity
+                  className="bg-green-500 px-4 py-3 rounded-md flex-1 mr-2"
+                  onPress={() => onPrintSelected(item)}
+                  disabled={selectedItemIds.size === 0}
+                  style={{ opacity: selectedItemIds.size === 0 ? 0.5 : 1 }}
+                >
+                  <Text className="text-white font-semibold text-center">
+                    Print Selected ({selectedItemIds.size})
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="bg-gray-700 px-4 py-3 rounded-md flex-1 ml-2"
+                  onPress={() => onToggleSelectionMode(item.id!)}
+                >
+                  <Text className="text-white font-semibold text-center">
+                    Cancel Selection
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <>
+              {/* Row 1: Edit | Select Items | Print */}
+              <View className="flex-row justify-between mt-3">
+                <TouchableOpacity
+                  className="bg-orange-500 px-3 py-3 rounded-md flex-1 mr-2"
+                  onPress={() => onEditOrder(item)}
+                >
+                  <Text className="text-white font-semibold text-center text-sm">
+                    Edit
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="bg-purple-500 px-3 py-3 rounded-md flex-1 mx-1"
+                  onPress={() => onToggleSelectionMode(item.id!)}
+                >
+                  <Text className="text-white font-semibold text-center text-sm">
+                    Select Items
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="bg-blue-500 px-3 py-3 rounded-md flex-1 ml-2"
+                  onPress={() => onPrint(item)}
+                >
+                  <Text className="text-white font-semibold text-center text-sm">
+                    Print
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <View className="flex-row justify-between mt-3">
+                <TouchableOpacity
+                  className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 bg-sky-500 mr-2 ${
+                    item.status !== OrderStatus.InProgress ? "opacity-50" : ""
+                  }`}
+                  disabled={item.status !== OrderStatus.InProgress || !item.id}
+                  onPress={() => onChangeToDineIn(item.id!)}
+                >
+                  <Text className="text-white font-semibold text-center text-sm">
+                    Change Type
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="bg-yellow-600 px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 ml-2"
+                  onPress={() => onOpenCashPayment(item.id!)}
+                >
+                  <Text className="text-white font-semibold text-center text-sm">
+                    Cash payment
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Row 3: Cancel | Paid | Complete */}
+              <View className="flex-row justify-between mt-3">
+                <TouchableOpacity
+                  className="bg-red-500 px-3 py-3 rounded-md flex-1 mr-2"
+                  onPress={() => onCancel(item)}
+                >
+                  <Text className="text-white font-semibold text-center text-sm">
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className={`px-3 py-3 rounded-md flex-1 mx-1 ${
+                    item.paid ? "bg-gray-500" : "bg-pink-500"
+                  }`}
+                  onPress={() => onMarkAsPaid(item, !item.paid)}
+                >
+                  <Text className="text-white font-semibold text-center text-sm">
+                    {item.paid ? "Unpaid" : "Paid"}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="bg-green-500 px-3 py-3 rounded-md flex-1 ml-2"
+                  onPress={() => onComplete(item)}
+                >
+                  <Text className="text-white font-semibold text-center text-sm">
+                    Complete
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+        </View>
+      )}
+    </View>
+  );
+});
+
+// ─── TakeOutOrdersTab ─────────────────────────────────────────────────────────
 
 export default function TakeOutOrdersTab() {
   const {
@@ -55,6 +371,12 @@ export default function TakeOutOrdersTab() {
     submitSelectedItemsToPrintQueue,
   } = useOrderStore();
 
+  // Keep a ref so handlePrintSelected doesn't need selectedItemIds as a dep.
+  const selectedItemIdsRef = useRef(selectedItemIds);
+  useEffect(() => {
+    selectedItemIdsRef.current = selectedItemIds;
+  }, [selectedItemIds]);
+
   useEffect(() => {
     loadTakeOutOrders();
   }, [loadTakeOutOrders]);
@@ -68,380 +390,173 @@ export default function TakeOutOrdersTab() {
   const cashPaymentModalTotal = useMemo(() => {
     if (!cashPaymentOrderId) return 0;
     const o = takeOutOrders.find((x) => x.id === cashPaymentOrderId);
-    if (!o) return 0;
-    return resolveTaxBreakdown(o)?.total ?? 0;
+    return resolveTaxBreakdown(o!)?.total ?? 0;
   }, [cashPaymentOrderId, takeOutOrders]);
 
   const toggleExpand = useCallback((id: string) => {
     setExpandedOrderId((prev) => (prev === id ? null : id));
   }, []);
 
-  const handleComplete = useCallback(async (order: TakeOutOrder) => {
-    try {
-      await completeOrder(order);
-    } catch (error) {
-      console.error("❌ Error completing order:", error);
-    }
-  }, [completeOrder]);
-
-  const handleCancel = useCallback(async (order: TakeOutOrder) => {
-    try {
-      await cancelOrder(order);
-    } catch (error) {
-      console.error("❌ Error canceling order:", error);
-    }
-  }, [cancelOrder]);
-
-  const handlePrint = useCallback(async (order: TakeOutOrder) => {
-    try {
-      await submitToPrintQueue(order);
-    } catch (error) {
-      console.error("❌ Error submitting to print queue:", error);
-    }
-  }, [submitToPrintQueue]);
-
-  const handleToggleSelectionMode = useCallback((orderId: string) => {
-    if (selectionMode === orderId) {
-      setSelectionMode(null);
-      setSelectedItemIds(new Set());
-    } else {
-      setCashPaymentOrderId(null);
-      setSelectionMode(orderId);
-      setSelectedItemIds(new Set());
-    }
-  }, [selectionMode]);
-
-  const handleToggleItemSelection = useCallback((itemId: string) => {
-    setSelectedItemIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(itemId)) {
-        newSet.delete(itemId);
-      } else {
-        newSet.add(itemId);
+  const handleComplete = useCallback(
+    async (order: TakeOutOrder) => {
+      try {
+        await completeOrder(order);
+      } catch (error) {
+        console.error("❌ Error completing order:", error);
       }
-      return newSet;
+    },
+    [completeOrder],
+  );
+
+  const handleCancel = useCallback(
+    async (order: TakeOutOrder) => {
+      try {
+        await cancelOrder(order);
+      } catch (error) {
+        console.error("❌ Error canceling order:", error);
+      }
+    },
+    [cancelOrder],
+  );
+
+  const handlePrint = useCallback(
+    async (order: TakeOutOrder) => {
+      try {
+        await submitToPrintQueue(order);
+      } catch (error) {
+        console.error("❌ Error submitting to print queue:", error);
+      }
+    },
+    [submitToPrintQueue],
+  );
+
+  // Functional updater removes the selectionMode dep — keeps this stable.
+  const handleToggleSelectionMode = useCallback((orderId: string) => {
+    setSelectionMode((prev) => {
+      if (prev === orderId) {
+        setSelectedItemIds(new Set());
+        return null;
+      }
+      setCashPaymentOrderId(null);
+      setSelectedItemIds(new Set());
+      return orderId;
     });
   }, []);
 
-  const handlePrintSelected = useCallback(async (order: TakeOutOrder) => {
-    try {
-      await submitSelectedItemsToPrintQueue(order, Array.from(selectedItemIds));
-      setSelectionMode(null);
-      setSelectedItemIds(new Set());
-    } catch (error) {
-      console.error("❌ Error printing selected items:", error);
-    }
-  }, [submitSelectedItemsToPrintQueue, selectedItemIds]);
+  const handleToggleItemSelection = useCallback((itemId: string) => {
+    setSelectedItemIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
+  }, []);
 
-  const handleMarkAsPaid = useCallback(async (order: TakeOutOrder, paid: boolean) => {
-    try {
-      await markOrderAsPaid(order, paid);
-    } catch (error) {
-      console.error("❌ Error marking order as paid:", error);
-    }
-  }, [markOrderAsPaid]);
+  // Reads selectedItemIds via ref so this stays stable across selections.
+  const handlePrintSelected = useCallback(
+    async (order: TakeOutOrder) => {
+      try {
+        await submitSelectedItemsToPrintQueue(
+          order,
+          Array.from(selectedItemIdsRef.current),
+        );
+        setSelectionMode(null);
+        setSelectedItemIds(new Set());
+      } catch (error) {
+        console.error("❌ Error printing selected items:", error);
+      }
+    },
+    [submitSelectedItemsToPrintQueue],
+  );
 
-  const handleEditOrder = useCallback((order: TakeOutOrder) => {
-    const convertedOrder = convertOrderTimestamps(order);
-    setOrder(convertedOrder);
-    router.push("/take-out-orders/edit-order" as Href);
-  }, [setOrder, router]);
+  const handleMarkAsPaid = useCallback(
+    async (order: TakeOutOrder, paid: boolean) => {
+      try {
+        await markOrderAsPaid(order, paid);
+      } catch (error) {
+        console.error("❌ Error marking order as paid:", error);
+      }
+    },
+    [markOrderAsPaid],
+  );
+
+  const handleEditOrder = useCallback(
+    (order: TakeOutOrder) => {
+      setOrder(convertOrderTimestamps(order));
+      router.push("/take-out-orders/edit-order" as Href);
+    },
+    [setOrder, router],
+  );
+
+  const handleOpenCashPayment = useCallback((orderId: string) => {
+    setCashPaymentOrderId(orderId);
+  }, []);
+
+  const handleCloseCashPayment = useCallback(() => {
+    setCashPaymentOrderId(null);
+  }, []);
+
+  const handleChangeToDineIn = useCallback(
+    (orderId: string) => {
+      router.push({
+        pathname: "/take-out-orders/change-to-dinein/[orderId]",
+        params: { orderId },
+      } as Href);
+    },
+    [router],
+  );
 
   const extraData = useMemo(
-    () => ({ expandedOrderId, selectionMode, selectedItemIdsSize: selectedItemIds.size }),
+    () => ({
+      expandedOrderId,
+      selectionMode,
+      selectedItemIdsSize: selectedItemIds.size,
+    }),
     [expandedOrderId, selectionMode, selectedItemIds.size],
   );
 
-  const renderOrder = useCallback(({ item }: { item: TakeOutOrder }) => {
-    // Use taxBreakDown from order, or calculate it if missing
-    const taxBreakDown = resolveTaxBreakdown(item);
-    const expanded = expandedOrderId === item.id;
-    const isSelectionMode = selectionMode === item.id;
-
-    // Calculate selected items total and tax breakdown when in selection mode
-    const selectedItemsTotal =
-      !isSelectionMode || !item.orderItems || selectedItemIds.size === 0
-        ? 0
-        : item.orderItems
-            .filter(
-              (orderItem) => orderItem.id && selectedItemIds.has(orderItem.id),
-            )
-            .reduce(
-              (sum, orderItem) => sum + orderItem.price * orderItem.quantity,
-              0,
-            );
-
-    const selectedItemsTaxBreakDown =
-      selectedItemsTotal === 0
-        ? EMPTY_TAX_BREAKDOWN
-        : calculateTaxBreakdown(selectedItemsTotal, DiscountType.None, 0);
-
-    return (
-      <View
-        className={`${
-          item.status === OrderStatus.Cancelled
-            ? "bg-red-100 border-red-200"
-            : item.status === OrderStatus.Completed
-              ? "bg-green-100 border-green-200"
-              : takeoutFulfillmentIsScheduled(item)
-                ? "bg-orange-100 border-orange-200"
-                : "bg-blue-100 border-blue-200"
-        } p-4 mb-3 rounded-xl shadow-sm border `}
-      >
-        <TouchableOpacity
-          className="flex-row justify-between items-center"
-          onPress={() => toggleExpand(item.id!)}
-        >
-          <View>
-            {item.customerName ? (
-              <>
-                <Text className="font-semibold text-gray-800 text-base">
-                  Name: {item.customerName}
-                </Text>
-              </>
-            ) : null}
-            {item.phoneNumber ? (
-              <Text className="font-semibold text-gray-800 text-base">
-                Phone #: {formatPhone(item.phoneNumber)}
-              </Text>
-            ) : null}
-            <Text className="font-semibold text-gray-800 text-base">
-              Staff: {item.staff ?? "—"}
-            </Text>
-            <Text className="font-semibold text-gray-800 text-base">
-              Ordered At: {formatDate(item.createdAt)}
-            </Text>
-            {takeoutFulfillmentIsScheduled(item) && (
-              <Text className="font-semibold text-gray-800 text-base">
-                Preorder: {formatDate(takeoutScheduledAt(item)!)}
-              </Text>
-            )}
-          </View>
-
-          <View>
-            <View className="items-end space-y-2">
-              <View
-                className={`px-3 py-1 rounded-full ${
-                  item.printed ? "bg-green-100" : "bg-yellow-100"
-                }`}
-              >
-                <Text
-                  className={`text-xs font-semibold ${
-                    item.printed ? "text-green-700" : "text-yellow-700"
-                  }`}
-                >
-                  {item.printed ? "Printed" : "Not Printed"}
-                </Text>
-              </View>
-              {!(item.status === OrderStatus.Completed && !item.paid) &&
-                item.status !== OrderStatus.Cancelled && (
-                  <View
-                    className={`px-3 py-1 rounded-full ${
-                      item.paid ? "bg-green-100" : "bg-gray-100"
-                    }`}
-                  >
-                    <Text
-                      className={`text-xs font-semibold ${
-                        item.paid ? "text-green-700" : "text-gray-700"
-                      }`}
-                    >
-                      {item.paid ? "Paid" : "Unpaid"}
-                    </Text>
-                  </View>
-                )}
-              <View
-                className={`px-3 py-1 rounded-full ${
-                  item.status === OrderStatus.InProgress
-                    ? "bg-blue-100"
-                    : item.status === OrderStatus.Completed
-                      ? "bg-green-100"
-                      : "bg-red-200"
-                }`}
-              >
-                <Text
-                  className={`text-xs font-semibold ${
-                    item.status === OrderStatus.InProgress
-                      ? "text-blue-700"
-                      : item.status === OrderStatus.Completed
-                        ? "text-green-700"
-                        : "text-red-700"
-                  }`}
-                >
-                  {item.status === OrderStatus.InProgress
-                    ? "In Progress"
-                    : item.status === OrderStatus.Completed
-                      ? "Completed"
-                      : "Cancelled"}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </TouchableOpacity>
-
-        {expanded && (
-          <View className="mt-3 border-t border-gray-200 pt-2">
-            <OrderItemsList
-              orderItems={item.orderItems}
-              orderId={item.id!}
-              selectionMode={selectionMode}
-              selectedItemIds={selectedItemIds}
-              onToggleItemSelection={handleToggleItemSelection}
-              showSectionHeaders={false}
-            />
-
-            {/* Tax breakdown */}
-            {taxBreakDown && (
-              <OrderTaxBreakdown
-                taxBreakDown={taxBreakDown}
-                isSelectionMode={isSelectionMode}
-                selectedItemsTotal={selectedItemsTotal}
-                selectedItemsTaxBreakDown={selectedItemsTaxBreakDown}
-                orderSubtotal={orderSubtotal(item)}
-              />
-            )}
-
-            {/* Buttons */}
-
-            {selectionMode === item.id ? (
-              <View className="mt-3">
-                <View className="flex-row justify-between">
-                  <TouchableOpacity
-                    className="bg-green-500 px-4 py-3 rounded-md flex-1 mr-2"
-                    onPress={() => handlePrintSelected(item)}
-                    disabled={selectedItemIds.size === 0}
-                    style={{
-                      opacity: selectedItemIds.size === 0 ? 0.5 : 1,
-                    }}
-                  >
-                    <Text className="text-white font-semibold text-center">
-                      Print Selected ({selectedItemIds.size})
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    className="bg-gray-700 px-4 py-3 rounded-md flex-1 ml-2"
-                    onPress={() => handleToggleSelectionMode(item.id!)}
-                  >
-                    <Text className="text-white font-semibold text-center">
-                      Cancel Selection
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
-              <>
-                {/* Row 1: Print All | Select Items | Edit */}
-                <View className="flex-row justify-between mt-3">
-                  <TouchableOpacity
-                    className="bg-orange-500 px-3 py-3 rounded-md flex-1 mr-2"
-                    onPress={() => handleEditOrder(item)}
-                  >
-                    <Text className="text-white font-semibold text-center text-sm">
-                      Edit
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    className="bg-purple-500 px-3 py-3 rounded-md flex-1 mx-1"
-                    onPress={() => handleToggleSelectionMode(item.id!)}
-                  >
-                    <Text className="text-white font-semibold text-center text-sm">
-                      Select Items
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    className="bg-blue-500 px-3 py-3 rounded-md flex-1 ml-2"
-                    onPress={() => handlePrint(item)}
-                  >
-                    <Text className="text-white font-semibold text-center text-sm">
-                      Print
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                <View className="flex-row justify-between mt-3">
-                  <TouchableOpacity
-                    className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 bg-sky-500 mr-2 ${
-                      item.status !== OrderStatus.InProgress ? "opacity-50" : ""
-                    }`}
-                    disabled={
-                      item.status !== OrderStatus.InProgress || !item.id
-                    }
-                    onPress={() => {
-                      if (!item.id) return;
-                      router.push({
-                        pathname: "/take-out-orders/change-to-dinein/[orderId]",
-                        params: { orderId: item.id },
-                      } as Href);
-                    }}
-                  >
-                    <Text className="text-white font-semibold text-center text-sm">
-                      Change Type
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    className="bg-yellow-600 px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 ml-2"
-                    onPress={() => {
-                      if (!item.id) return;
-                      setCashPaymentOrderId(item.id);
-                    }}
-                  >
-                    <Text className="text-white font-semibold text-center text-sm">
-                      Cash payment
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Row 3: Done | Mark Paid | Cancel */}
-                <View className="flex-row justify-between mt-3">
-                  <TouchableOpacity
-                    className="bg-red-500 px-3 py-3 rounded-md flex-1 mr-2"
-                    onPress={() => handleCancel(item)}
-                  >
-                    <Text className="text-white font-semibold text-center text-sm">
-                      Cancel
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    className={`px-3 py-3 rounded-md flex-1 mx-1 ${
-                      item.paid ? "bg-gray-500" : "bg-pink-500"
-                    }`}
-                    onPress={() => handleMarkAsPaid(item, !item.paid)}
-                  >
-                    <Text className="text-white font-semibold text-center text-sm">
-                      {item.paid ? "Unpaid" : "Paid"}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    className="bg-green-500 px-3 py-3 rounded-md flex-1 ml-2"
-                    onPress={() => handleComplete(item)}
-                  >
-                    <Text className="text-white font-semibold text-center text-sm">
-                      Complete
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            )}
-          </View>
-        )}
-      </View>
-    );
-  }, [
-    expandedOrderId,
-    selectionMode,
-    selectedItemIds,
-    toggleExpand,
-    handleComplete,
-    handleCancel,
-    handlePrint,
-    handleToggleSelectionMode,
-    handleToggleItemSelection,
-    handlePrintSelected,
-    handleMarkAsPaid,
-    handleEditOrder,
-    router,
-  ]);
+  const renderOrder = useCallback(
+    ({ item }: { item: TakeOutOrder }) => {
+      const isSelectionMode = selectionMode === item.id;
+      return (
+        <TakeOutOrderCard
+          item={item}
+          expanded={expandedOrderId === item.id}
+          isSelectionMode={isSelectionMode}
+          // Only pass live selectedItemIds to the card currently in selection
+          // mode — all others get the stable empty set so their memo holds.
+          selectedItemIds={isSelectionMode ? selectedItemIds : EMPTY_SELECTED_IDS}
+          onToggleExpand={toggleExpand}
+          onComplete={handleComplete}
+          onCancel={handleCancel}
+          onPrint={handlePrint}
+          onToggleSelectionMode={handleToggleSelectionMode}
+          onToggleItemSelection={handleToggleItemSelection}
+          onPrintSelected={handlePrintSelected}
+          onMarkAsPaid={handleMarkAsPaid}
+          onEditOrder={handleEditOrder}
+          onOpenCashPayment={handleOpenCashPayment}
+          onChangeToDineIn={handleChangeToDineIn}
+        />
+      );
+    },
+    [
+      expandedOrderId,
+      selectionMode,
+      selectedItemIds,
+      toggleExpand,
+      handleComplete,
+      handleCancel,
+      handlePrint,
+      handleToggleSelectionMode,
+      handleToggleItemSelection,
+      handlePrintSelected,
+      handleMarkAsPaid,
+      handleEditOrder,
+      handleOpenCashPayment,
+      handleChangeToDineIn,
+    ],
+  );
 
   if (loading) {
     return (
@@ -463,18 +578,8 @@ export default function TakeOutOrdersTab() {
         </View>
       ) : (
         <FlashList
-          style={{
-            flex: 1,
-            minHeight: 0,
-            width: "100%",
-            alignSelf: "stretch",
-            paddingTop: 6,
-          }}
-          contentContainerStyle={{
-            flexGrow: 1,
-            alignSelf: "stretch",
-            width: "100%",
-          }}
+          style={FLASH_LIST_STYLE}
+          contentContainerStyle={FLASH_LIST_CONTENT_STYLE}
           keyboardShouldPersistTaps="always"
           data={takeOutOrders}
           keyExtractor={(item, index) => item.id ?? `order-${index}`}
@@ -483,9 +588,7 @@ export default function TakeOutOrdersTab() {
           refreshing={loading}
           onRefresh={refreshTakeOutOrders}
           onEndReached={() => {
-            if (hasMore && !loadingMore) {
-              loadMoreOrders();
-            }
+            if (hasMore && !loadingMore) loadMoreOrders();
           }}
           onEndReachedThreshold={0.5}
           ListFooterComponent={
@@ -500,7 +603,7 @@ export default function TakeOutOrdersTab() {
 
       <CashPaymentModal
         visible={cashPaymentOrderId !== null}
-        onClose={() => setCashPaymentOrderId(null)}
+        onClose={handleCloseCashPayment}
         orderTotal={cashPaymentModalTotal}
       />
     </SafeAreaViewWrapper>
