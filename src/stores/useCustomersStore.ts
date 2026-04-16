@@ -1,8 +1,9 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   addDoc,
   collection,
   doc,
-  onSnapshot,
+  getDocs,
   query,
   Timestamp,
   updateDoc,
@@ -17,6 +18,33 @@ import { db } from "../lib/firebaseConfig";
 import { useOrderStore } from "./useOrderStore";
 
 const CUSTOMERS_COLLECTION = "customers";
+const CUSTOMERS_CACHE_KEY = "@customers:cache";
+
+async function saveCustomersCache(customers: Customer[]): Promise<void> {
+  try {
+    await AsyncStorage.setItem(CUSTOMERS_CACHE_KEY, JSON.stringify(customers));
+  } catch (e) {
+    console.error("❌ Error saving customers cache:", e);
+  }
+}
+
+async function loadCustomersCache(): Promise<Customer[] | null> {
+  try {
+    const raw = await AsyncStorage.getItem(CUSTOMERS_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as Customer[]) : null;
+  } catch (e) {
+    console.error("❌ Error loading customers cache:", e);
+    return null;
+  }
+}
+
+async function clearCustomersCache(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(CUSTOMERS_CACHE_KEY);
+  } catch (e) {
+    console.error("❌ Error clearing customers cache:", e);
+  }
+}
 
 type CustomersState = {
   customers: Customer[];
@@ -41,42 +69,71 @@ type CustomersState = {
   clearData: () => void;
 };
 
-function customersQuery() {
-  return query(collection(db, CUSTOMERS_COLLECTION));
-}
-
 export const useCustomersStore = create<CustomersState>((set, get) => ({
   customers: [],
   loading: true,
 
+  subscribeToCustomers: () => {
+    set({ loading: true });
+
+    // Serve cache immediately, then refresh from Firestore in the background.
+    loadCustomersCache().then((cached) => {
+      if (cached && cached.length > 0) {
+        set({ customers: cached, loading: false });
+      }
+    });
+
+    void getDocs(query(collection(db, CUSTOMERS_COLLECTION)))
+      .then((snapshot) => {
+        const data = snapshot.docs.map((docSnap) => ({
+          ...(docSnap.data() as Customer),
+          id: docSnap.id,
+        }));
+        set({ customers: data, loading: false });
+        void saveCustomersCache(data);
+      })
+      .catch((e) => {
+        console.error("❌ Error fetching customers:", e);
+        set({ loading: false });
+      });
+
+    // No realtime listener — return a no-op cleanup for compatibility.
+    return () => {};
+  },
+
   addCustomer: async ({ name, phone }) => {
     const n = name.trim().toUpperCase();
     const p = extractPhoneDigits(phone) || phone.trim();
-    if (!n || !p) {
-      return undefined;
-    }
+    if (!n || !p) return undefined;
 
     const ref = await addDoc(collection(db, CUSTOMERS_COLLECTION), {
       name: n,
       phone: p,
       createdAt: Timestamp.now(),
     });
+
+    // Write-through: reflect the new customer in local state immediately.
+    const newCustomer = { id: ref.id, name: n, phone: p } as Customer;
+    const updated = [...get().customers, newCustomer];
+    set({ customers: updated });
+    void saveCustomersCache(updated);
+
     return ref.id;
   },
 
   updateCustomer: async (id, { name, phone }) => {
     const n = name.trim().toUpperCase();
     const p = extractPhoneDigits(phone) || phone.trim();
-    if (!n) {
-      return;
-    }
-    if (!p) {
-      return;
-    }
-    await updateDoc(doc(db, CUSTOMERS_COLLECTION, id), {
-      name: n,
-      phone: p,
-    });
+    if (!n || !p) return;
+
+    await updateDoc(doc(db, CUSTOMERS_COLLECTION, id), { name: n, phone: p });
+
+    // Write-through: update the matching customer in local state immediately.
+    const updated = get().customers.map((c) =>
+      c.id === id ? { ...c, name: n, phone: p } : c,
+    );
+    set({ customers: updated });
+    void saveCustomersCache(updated);
   },
 
   syncTakeOutCustomerFromCart: async () => {
@@ -93,8 +150,7 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
 
     try {
       if (existing?.id) {
-        const sameName =
-          existing.name.trim().toUpperCase() === upperName;
+        const sameName = existing.name.trim().toUpperCase() === upperName;
         const samePhone = extractPhoneDigits(existing.phone) === digits;
         if (sameName && samePhone) return;
         await updateCustomer(existing.id, { name: upperName, phone: digits });
@@ -106,31 +162,8 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     }
   },
 
-  subscribeToCustomers: () => {
-    set({ loading: true });
-
-    const unsubscribe = onSnapshot(
-      customersQuery(),
-      (snapshot) => {
-        const data = snapshot.docs.map((docSnap) => {
-          const raw = docSnap.data() as Customer;
-          return { ...raw, id: docSnap.id };
-        });
-        set({ customers: data, loading: false });
-      },
-      (error) => {
-        console.error("❌ Customers snapshot error:", error);
-        set({ loading: false });
-      },
-    );
-
-    return () => unsubscribe();
-  },
-
   clearData: () => {
-    set({
-      customers: [],
-      loading: true,
-    });
+    void clearCustomersCache();
+    set({ customers: [], loading: true });
   },
 }));
