@@ -29,9 +29,10 @@ type TakeOutOrdersTabState = {
   clearData: () => Promise<void>;
 };
 
-const INITIAL_DISPLAY_LIMIT = 50;
-const LOAD_MORE_BATCH_SIZE = 25;
-const CACHE_LIMIT = 200;
+// Keep the in-memory list small to reduce RAM usage on long-running sessions.
+const CACHE_LIMIT = 30;
+const INITIAL_DISPLAY_LIMIT = CACHE_LIMIT;
+const LOAD_MORE_BATCH_SIZE = 10;
 
 let _takeOutSaveTimer: ReturnType<typeof setTimeout> | null = null;
 function debouncedSaveTakeOutCache(data: TakeOutOrder[]) {

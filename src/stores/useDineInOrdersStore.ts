@@ -29,9 +29,10 @@ type DineInOrdersTabState = {
   clearData: () => Promise<void>;
 };
 
-const INITIAL_DISPLAY_LIMIT = 50;
-const LOAD_MORE_BATCH_SIZE = 25;
-const CACHE_LIMIT = 200;
+// Keep the in-memory list small to reduce RAM usage on long-running sessions.
+const CACHE_LIMIT = 25;
+const INITIAL_DISPLAY_LIMIT = CACHE_LIMIT;
+const LOAD_MORE_BATCH_SIZE = 10;
 
 // Debounce rapid cache writes so burst updates (many orders at once) only
 // trigger one AsyncStorage serialization instead of one per snapshot.
