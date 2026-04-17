@@ -311,7 +311,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const orderToSubmit: Record<string, unknown> = { ...base };
 
     if (order.orderType === OrderType.TakeOut) {
-      orderToSubmit.customerName = order.customerName ?? null;
+      orderToSubmit.customerName = order.customerName?.trim().toUpperCase() ?? null;
       orderToSubmit.phoneNumber = order.phoneNumber ?? null;
       orderToSubmit.fulfillment = order.fulfillment;
     } else {
@@ -378,7 +378,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     };
 
     if (order.orderType === OrderType.TakeOut) {
-      if (order.customerName) updateData.customerName = order.customerName;
+      if (order.customerName) updateData.customerName = order.customerName.trim().toUpperCase();
       if (order.phoneNumber) updateData.phoneNumber = order.phoneNumber;
       if (order.fulfillment) updateData.fulfillment = order.fulfillment;
     } else {
@@ -639,7 +639,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     phoneNumber,
     fulfillment,
   }) => {
-    const name = customerName?.trim() ?? "";
+    const name = customerName?.trim().toUpperCase() ?? "";
     const phone = phoneNumber?.trim() ?? "";
     if (!name && !phone) {
       throw new Error("Enter a customer name or phone number.");
