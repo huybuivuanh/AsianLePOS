@@ -2,9 +2,8 @@ import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore"
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { TableStatus } from "@/types/enums";
-import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
-import React, { useEffect, useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from "react-native";
 
 interface EditTableFormProps {
   tableNumber: string;
@@ -29,11 +28,17 @@ export default function EditTableForm({
   const [status, setStatus] = useState<TableStatus>(TableStatus.Open);
   const [submitting, setSubmitting] = useState(false);
 
+  // Keep a ref to the latest table so the open-effect can read it
+  // without being re-triggered by every Firestore snapshot.
+  const tableRef = useRef(table);
+  useEffect(() => { tableRef.current = table; }, [table]);
+
+  // Only reset local draft when the modal opens, not on every live update.
   useEffect(() => {
-    if (!visible || !table) return;
-    setGuests(table.guests);
-    setStatus(table.status);
-  }, [visible, table]);
+    if (!visible || !tableRef.current) return;
+    setGuests(tableRef.current.guests);
+    setStatus(tableRef.current.status);
+  }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!table) {
     return null;
@@ -49,7 +54,8 @@ export default function EditTableForm({
   const decreaseGuests = () => {
     const newGuests = Math.max(0, guests - 1);
     setGuests(newGuests);
-    if (newGuests === 0) setStatus(TableStatus.Open);
+    if (newGuests === 0 && table.currentOrderId === null)
+      setStatus(TableStatus.Open);
   };
 
   const handleClearTable = () => {
@@ -60,19 +66,17 @@ export default function EditTableForm({
   const handleSubmit = async () => {
     try {
       setSubmitting(true);
-      await updateTable(table.id, {
-        guests,
-        status,
-      });
       const order = activeDineInOrders.find(
         (o) => o.id === table.currentOrderId,
       );
-      if (order) {
-        await updateOrderOnFirestore({ ...order, guests: guests });
-      }
+      await Promise.all([
+        updateTable(table.id, { guests, status }),
+        order ? updateOrderOnFirestore({ ...order, guests }) : Promise.resolve(),
+      ]);
       onDismiss();
     } catch (error) {
       console.error("Failed to update table:", error);
+      Alert.alert("Error", "Failed to save. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -128,7 +132,7 @@ export default function EditTableForm({
         <TouchableOpacity
           onPress={onDismiss}
           disabled={submitting}
-          className="flex-1 mr-2 py-3 rounded-xl bg-red-500"
+          className={`flex-1 mr-2 py-3 rounded-xl bg-red-500 ${submitting ? "opacity-50" : ""}`}
         >
           <Text className="text-gray-800 text-center font-semibold">
             Cancel
@@ -141,16 +145,13 @@ export default function EditTableForm({
             submitting ? "opacity-50" : ""
           }`}
         >
-          <Text className="text-white text-center font-semibold">
-            {submitting ? "Saving…" : "Save"}
-          </Text>
+          {submitting ? (
+            <ActivityIndicator size="small" color="#ffffff" />
+          ) : (
+            <Text className="text-white text-center font-semibold">Save</Text>
+          )}
         </TouchableOpacity>
       </View>
-
-      <FullScreenLoadingOverlay
-        visible={submitting}
-        title="Saving table…"
-      />
     </View>
   );
 }
