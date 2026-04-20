@@ -183,15 +183,17 @@ export default function TablePage() {
   const handleToggleLinePaid = useCallback(
     async (itemId: string, nextPaid: boolean) => {
       if (!order?.id || !order.orderItems?.length) return;
+      const nextItems = order.orderItems.map((it) =>
+        it.id === itemId ? { ...it, paid: nextPaid } : it,
+      );
+      setOrder((prev) => prev ? { ...prev, orderItems: nextItems } : prev);
       try {
-        const nextItems = order.orderItems.map((it) =>
-          it.id === itemId ? { ...it, paid: nextPaid } : it,
-        );
         await updateDoc(doc(db, "dineInOrders", order.id), {
           orderItems: nextItems,
         });
       } catch (e) {
         console.error("❌ Error updating line paid state:", e);
+        // onSnapshot will revert to the real Firestore state automatically
       }
     },
     [order?.id, order?.orderItems],
@@ -200,17 +202,19 @@ export default function TablePage() {
   const handleMarkSelectedPaid = useCallback(async () => {
     if (!order?.id || selectedItemIds.size === 0) return;
     const items = order.orderItems ?? [];
+    const nextItems = items.map((it) =>
+      it.id && selectedItemIds.has(it.id) ? { ...it, paid: true } : it,
+    );
+    setOrder((prev) => prev ? { ...prev, orderItems: nextItems } : prev);
+    setSelectionMode(false);
+    setSelectedItemIds(new Set());
     try {
-      const nextItems = items.map((it) =>
-        it.id && selectedItemIds.has(it.id) ? { ...it, paid: true } : it,
-      );
       await updateDoc(doc(db, "dineInOrders", order.id), {
         orderItems: nextItems,
       });
-      setSelectionMode(false);
-      setSelectedItemIds(new Set());
     } catch (e) {
       console.error("❌ Error marking selected items paid:", e);
+      // onSnapshot will revert to the real Firestore state automatically
     }
   }, [order?.id, order?.orderItems, selectedItemIds]);
 
@@ -257,49 +261,6 @@ export default function TablePage() {
                 className="rounded-2xl border border-gray-200 bg-white p-4"
                 style={{ alignSelf: "stretch" }}
               >
-                <View className="flex-row items-stretch gap-2 mb-3 w-full">
-                  <View className="flex-1 justify-center min-w-0">
-                    <Text className="text-lg font-extrabold text-gray-900">
-                      Order Items
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    className="flex-1 min-w-0 bg-blue-600 px-2 py-3 rounded-md items-center justify-center"
-                    onPress={handlePrint}
-                    disabled={actionBusy}
-                  >
-                    <View className="flex-row items-center justify-center">
-                      <Text
-                        className="text-white font-semibold text-center"
-                        numberOfLines={2}
-                      >
-                        Print
-                      </Text>
-                      {order?.printed && (
-                        <Check
-                          size={14}
-                          color="orange"
-                          style={{ marginLeft: 4 }}
-                        />
-                      )}
-                    </View>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={toggleSelectionMode}
-                    disabled={actionBusy}
-                    className={`flex-1 min-w-0 px-2 py-3 rounded-md items-center justify-center ${
-                      selectionMode ? "bg-gray-700" : "bg-purple-600"
-                    }`}
-                  >
-                    <Text
-                      className="text-white font-semibold text-sm text-center"
-                      numberOfLines={2}
-                    >
-                      {selectionMode ? "Cancel Selection" : "Select Items"}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
                 <OrderItemsList
                   orderItems={order!.orderItems}
                   orderId={order!.id!}
@@ -600,7 +561,9 @@ export default function TablePage() {
         visible={cashPaymentModalVisible}
         onClose={closeCashPaymentModal}
         orderTotal={
-          selectionMode ? selectedItemsTaxBreakDown.total : order?.taxBreakDown?.total ?? 0
+          selectionMode
+            ? selectedItemsTaxBreakDown.total
+            : (order?.taxBreakDown?.total ?? 0)
         }
       />
 

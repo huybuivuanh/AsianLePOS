@@ -15,7 +15,6 @@ import {
   calculateTaxBreakdown,
   generateFirestoreId,
   orderItemsSubtotal,
-  orderPaidFromLineItems,
 } from "@/utils/helpers";
 import { normalizeOrderItemTextForDb } from "@/utils/normalizeOrderItemText";
 import { doc, getDoc, setDoc, Timestamp, writeBatch } from "firebase/firestore";
@@ -302,7 +301,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       orderItems: normalizedItemsForFirestore,
       taxBreakDown,
       status: OrderStatus.InProgress,
-      paid: false,
       printed: false,
       createdAt: Timestamp.fromDate(new Date()),
       staff: order.staff,
@@ -311,7 +309,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const orderToSubmit: Record<string, unknown> = { ...base };
 
     if (order.orderType === OrderType.TakeOut) {
-      orderToSubmit.customerName = order.customerName?.trim().toUpperCase() ?? null;
+      orderToSubmit.customerName =
+        order.customerName?.trim().toUpperCase() ?? null;
       orderToSubmit.phoneNumber = order.phoneNumber ?? null;
       orderToSubmit.fulfillment = order.fulfillment;
     } else {
@@ -374,7 +373,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     };
 
     if (order.orderType === OrderType.TakeOut) {
-      if (order.customerName) updateData.customerName = order.customerName.trim().toUpperCase();
+      if (order.customerName)
+        updateData.customerName = order.customerName.trim().toUpperCase();
       if (order.phoneNumber) updateData.phoneNumber = order.phoneNumber;
       if (order.fulfillment) updateData.fulfillment = order.fulfillment;
     } else {
