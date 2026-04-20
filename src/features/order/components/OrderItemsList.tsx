@@ -37,7 +37,7 @@ const OrderItemRow = memo(function OrderItemRow({
   onToggleLinePaid,
 }: RowProps) {
   const lineTotal = (orderItem.price * orderItem.quantity).toFixed(2);
-  const linePaid = orderItem.paid ?? false;
+  const linePaid = orderItem.paid;
   const showPaidBtn =
     linePaidToggleEnabled && Boolean(onToggleLinePaid) && Boolean(orderItem.id);
 

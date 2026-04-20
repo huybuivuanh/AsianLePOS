@@ -11,6 +11,7 @@ import {
   EMPTY_TAX_BREAKDOWN,
   formatDate,
   formatPhone,
+  orderPaidFromLineItems,
   orderSubtotal,
   resolveTaxBreakdown,
   takeoutFulfillmentIsScheduled,
@@ -84,6 +85,10 @@ const TakeOutOrderCard = memo(function TakeOutOrderCard({
   onChangeToDineIn,
 }: TakeOutOrderCardProps) {
   const taxBreakDown = useMemo(() => resolveTaxBreakdown(item), [item]);
+  const isPaid = useMemo(
+    () => orderPaidFromLineItems(item.orderItems ?? []),
+    [item.orderItems],
+  );
 
   const selectedItemsTotal = useMemo(() => {
     if (!isSelectionMode || !item.orderItems || selectedItemIds.size === 0)
@@ -157,19 +162,19 @@ const TakeOutOrderCard = memo(function TakeOutOrderCard({
                 {item.printed ? "Printed" : "Not Printed"}
               </Text>
             </View>
-            {!(item.status === OrderStatus.Completed && !item.paid) &&
+            {!(item.status === OrderStatus.Completed && !isPaid) &&
               item.status !== OrderStatus.Cancelled && (
                 <View
                   className={`px-3 py-1 rounded-full ${
-                    item.paid ? "bg-green-100" : "bg-gray-100"
+                    isPaid ? "bg-green-100" : "bg-gray-100"
                   }`}
                 >
                   <Text
                     className={`text-xs font-semibold ${
-                      item.paid ? "text-green-700" : "text-gray-700"
+                      isPaid ? "text-green-700" : "text-gray-700"
                     }`}
                   >
-                    {item.paid ? "Paid" : "Unpaid"}
+                    {isPaid ? "Paid" : "Unpaid"}
                   </Text>
                 </View>
               )}
@@ -310,12 +315,12 @@ const TakeOutOrderCard = memo(function TakeOutOrderCard({
                 </TouchableOpacity>
                 <TouchableOpacity
                   className={`px-3 py-3 rounded-md flex-1 mx-1 ${
-                    item.paid ? "bg-gray-500" : "bg-pink-500"
+                    isPaid ? "bg-gray-500" : "bg-pink-500"
                   }`}
-                  onPress={() => onMarkAsPaid(item, !item.paid)}
+                  onPress={() => onMarkAsPaid(item, !isPaid)}
                 >
                   <Text className="text-white font-semibold text-center text-sm">
-                    {item.paid ? "Unpaid" : "Paid"}
+                    {isPaid ? "Unpaid" : "Paid"}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity

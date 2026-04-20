@@ -110,7 +110,6 @@ declare global {
     orderItems: OrderItem[];
     taxBreakDown: TaxBreakDown;
     status: OrderStatus;
-    paid: boolean;
     printed: boolean;
     createdAt: Timestamp;
   }

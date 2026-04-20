@@ -143,7 +143,6 @@ export default function DineInOrderDetails() {
         );
         await updateDoc(doc(db, "dineInOrders", orderIdStr), {
           orderItems: nextItems,
-          paid: orderPaidFromLineItems(nextItems),
         });
       } catch (e) {
         console.error("❌ Error updating line paid state:", e);
@@ -161,7 +160,6 @@ export default function DineInOrderDetails() {
       );
       await updateDoc(doc(db, "dineInOrders", orderIdStr), {
         orderItems: nextItems,
-        paid: orderPaidFromLineItems(nextItems),
       });
       setSelectionMode(false);
       setSelectedItemIds(new Set());

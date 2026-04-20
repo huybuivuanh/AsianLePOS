@@ -223,7 +223,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
             togo: fields.togo ?? item.togo,
             appetizer: fields.appetizer ?? item.appetizer,
             kitchenType: fields.kitchenType ?? item.kitchenType,
-            paid: fields.paid ?? item.paid ?? false,
+            paid: fields.paid ?? item.paid,
             ...(fields.instructions !== undefined
               ? fields.instructions.trim()
                 ? { instructions: fields.instructions.trim() }
@@ -353,7 +353,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         togo: item.togo,
         appetizer: item.appetizer,
         kitchenType: item.kitchenType,
-        paid: item.paid ?? false,
+        paid: item.paid,
         options: item.options ?? [],
         extras: item.extras ?? [],
         changes: item.changes ?? [],
@@ -368,10 +368,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       orderItems: cleanOrderItems,
       taxBreakDown,
       status: order.status,
-      paid:
-        order.orderType === OrderType.DineIn
-          ? orderPaidFromLineItems(cleanOrderItems)
-          : (order.paid ?? false),
       printed: order.printed ?? false,
       staff: order.staff,
       ...(order.createdAt && { createdAt: order.createdAt }),
@@ -483,7 +479,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
     const batch = writeBatch(db);
     const orderRef = doc(db, firestorecollection, order.id);
-    batch.update(orderRef, { paid });
+    const nextItems = (order.orderItems ?? []).map((it) => ({ ...it, paid }));
+    batch.update(orderRef, { orderItems: nextItems });
     await batch.commit();
   },
 
@@ -726,7 +723,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         togo: false,
         appetizer: false,
         kitchenType: item.kitchenType,
-        paid: item.paid ?? false,
+        paid: item.paid,
         options: item.options ?? [],
         extras: item.extras ?? [],
         changes: item.changes ?? [],
@@ -742,7 +739,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       orderItems: groupOrderItemsBySignature(cleanOrderItems),
       taxBreakDown,
       status: OrderStatus.InProgress,
-      paid: data.paid ?? false,
       printed: data.printed ?? false,
       createdAt: data.createdAt,
       customerName: name || null,
@@ -841,7 +837,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         togo: item.togo,
         appetizer: item.appetizer,
         kitchenType: item.kitchenType,
-        paid: item.paid ?? false,
+        paid: item.paid,
         options: item.options ?? [],
         extras: item.extras ?? [],
         changes: item.changes ?? [],
@@ -857,7 +853,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       orderItems: cleanOrderItems,
       taxBreakDown,
       status: OrderStatus.InProgress,
-      paid: orderPaidFromLineItems(cleanOrderItems),
       printed: data.printed ?? false,
       createdAt: data.createdAt,
       tableNumber,
