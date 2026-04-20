@@ -1,10 +1,13 @@
 // app/layout.tsx (Expo)
 import { AuthProvider } from "@/providers/AuthProvider";
+import { useNetworkStore } from "@/stores/useNetworkStore";
+import OfflineBanner from "@/ui/OfflineBanner";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
-import { Platform } from "react-native";
+import { useEffect } from "react";
+import { Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   SafeAreaProvider,
@@ -30,6 +33,9 @@ export default function RootLayout({
   const webFontsBlocking =
     Platform.OS === "web" && !ioniconsReady && !ioniconsError;
 
+  const startListening = useNetworkStore((s) => s.startListening);
+  useEffect(() => startListening(), [startListening]);
+
   if (webFontsBlocking) {
     return null;
   }
@@ -39,14 +45,17 @@ export default function RootLayout({
       <BottomSheetModalProvider>
         <SafeAreaProvider initialMetrics={initialWindowMetrics}>
           <AuthProvider>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { flex: 1, width: "100%" },
-              }}
-            >
-              {children}
-            </Stack>
+            <View style={{ flex: 1 }}>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { flex: 1, width: "100%" },
+                }}
+              >
+                {children}
+              </Stack>
+              <OfflineBanner />
+            </View>
           </AuthProvider>
         </SafeAreaProvider>
       </BottomSheetModalProvider>
