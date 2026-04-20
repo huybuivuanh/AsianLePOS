@@ -7,7 +7,11 @@ import {
   getReactNativePersistence,
   initializeAuth,
 } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import {
+  initializeFirestore,
+  memoryEagerGarbageCollector,
+  memoryLocalCache,
+} from "firebase/firestore";
 import { Platform } from "react-native";
 
 function requiredEnvVar(label: string, value: string | undefined): string {
@@ -61,5 +65,9 @@ if (Platform.OS === "web") {
   });
 }
 
-export const db = getFirestore(app);
+export const db = initializeFirestore(app, {
+  localCache: memoryLocalCache({
+    garbageCollector: memoryEagerGarbageCollector(),
+  }),
+});
 export { auth };
