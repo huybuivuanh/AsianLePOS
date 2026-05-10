@@ -5,7 +5,7 @@ import {
   findBestCustomerByLast7,
   lastSevenDigits,
 } from "@/utils/customerPhone";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -22,9 +22,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function CustomerInfoForm() {
   const insets = useSafeAreaInsets();
   const { order, updateOrder } = useOrderStore();
+  const dismissTakeOutCustomerNameSuggestion = useOrderStore(
+    (s) => s.dismissTakeOutCustomerNameSuggestion,
+  );
+  const takeOutCustomerSuggestDismissedLast7 = useOrderStore(
+    (s) => s.takeOutCustomerSuggestDismissedLast7,
+  );
+  const clearTakeOutCustomerNameSuggestionDismissal = useOrderStore(
+    (s) => s.clearTakeOutCustomerNameSuggestionDismissal,
+  );
   const customers = useCustomersStore((s) => s.customers);
-
-  const [suggestionDismissed, setSuggestionDismissed] = useState(false);
 
   const phoneDigits = useMemo(
     () => extractPhoneDigits(order.phoneNumber || ""),
@@ -42,11 +49,17 @@ export default function CustomerInfoForm() {
 
   /** Only suggest when phone already matches someone and name is still empty (phone typed first). */
   const showSuggestion =
-    nameFieldEmpty && Boolean(last7 && matchedCustomer && !suggestionDismissed);
+    nameFieldEmpty &&
+    Boolean(last7 && matchedCustomer) &&
+    takeOutCustomerSuggestDismissedLast7 !== last7;
 
+  // Same idea as the old per-instance reset on `last7`: if the number is edited/cleared
+  // so we no longer have 7+ digits, forget dismissal so typing the number again can prompt.
   useEffect(() => {
-    setSuggestionDismissed(false);
-  }, [last7]);
+    if (!last7) {
+      clearTakeOutCustomerNameSuggestionDismissal();
+    }
+  }, [last7, clearTakeOutCustomerNameSuggestionDismissal]);
 
   useEffect(() => {
     if (showSuggestion) {
@@ -55,15 +68,16 @@ export default function CustomerInfoForm() {
   }, [showSuggestion]);
 
   const onYesUseSavedName = () => {
-    if (!matchedCustomer) return;
+    if (!matchedCustomer || !last7) return;
     updateOrder({
       customerName: matchedCustomer.name.trim(),
     });
-    setSuggestionDismissed(true);
+    dismissTakeOutCustomerNameSuggestion(last7);
   };
 
   const onNoSuggestion = () => {
-    setSuggestionDismissed(true);
+    if (!last7) return;
+    dismissTakeOutCustomerNameSuggestion(last7);
   };
 
   return (

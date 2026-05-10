@@ -33,6 +33,14 @@ type OrderDraft = Partial<Order> & {
 
 type OrderState = {
   order: OrderDraft;
+  /**
+   * Last 7 phone digits for which the user dismissed the “use saved name?” modal.
+   * Shared across all mounted CustomerInfoForm instances (e.g. web stack / duplicate trees).
+   */
+  takeOutCustomerSuggestDismissedLast7: string | undefined;
+  dismissTakeOutCustomerNameSuggestion: (last7: string) => void;
+  /** Call when the phone has fewer than 7 digits so re-entry can show the suggestion again. */
+  clearTakeOutCustomerNameSuggestionDismissal: () => void;
 
   updateOrder: (fields: OrderDraft) => void;
   addItem: (item: OrderItem) => void;
@@ -150,6 +158,13 @@ function mergeOrderDraft(prev: OrderDraft, fields: OrderDraft): OrderDraft {
 
 export const useOrderStore = create<OrderState>((set, get) => ({
   order: { ...defaultTakeOutDraft },
+  takeOutCustomerSuggestDismissedLast7: undefined,
+
+  dismissTakeOutCustomerNameSuggestion: (last7: string) =>
+    set({ takeOutCustomerSuggestDismissedLast7: last7 }),
+
+  clearTakeOutCustomerNameSuggestionDismissal: () =>
+    set({ takeOutCustomerSuggestDismissedLast7: undefined }),
 
   updateOrder: (fields) =>
     set((state) => ({
@@ -187,7 +202,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   },
 
   clearOrder: () => {
-    set({ order: { ...defaultTakeOutDraft } });
+    set({
+      order: { ...defaultTakeOutDraft },
+      takeOutCustomerSuggestDismissedLast7: undefined,
+    });
   },
 
   getTotalItems: () => {
