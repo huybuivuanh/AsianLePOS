@@ -19,7 +19,7 @@ import {
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { doc, updateDoc } from "firebase/firestore";
 import { Check } from "lucide-react-native";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -45,6 +45,20 @@ export default function TablePage() {
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(
     () => new Set(),
   );
+
+  // Debounce ref for individual line-item paid toggles — collapses rapid taps into
+  // one Firestore write so the write queue doesn't back up before completeOrder.
+  const pendingToggleRef = useRef<{
+    orderId: string;
+    items: OrderItem[];
+    timer: ReturnType<typeof setTimeout>;
+  } | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pendingToggleRef.current) clearTimeout(pendingToggleRef.current.timer);
+    };
+  }, []);
 
   const { activeDineInOrders, loading: ordersLoading } =
     useActiveDineInOrdersStore();
@@ -111,10 +125,28 @@ export default function TablePage() {
     [order?.orderItems],
   );
 
+  const flushPendingToggle = async () => {
+    const pending = pendingToggleRef.current;
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    pendingToggleRef.current = null;
+    await updateDoc(doc(db, "dineInOrders", pending.orderId), {
+      orderItems: pending.items,
+    });
+  };
+
+  const cancelPendingToggle = () => {
+    const pending = pendingToggleRef.current;
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    pendingToggleRef.current = null;
+  };
+
   const handleCancelOrder = async () => {
     if (!order) return;
     try {
       setActionOverlay({ title: "Cancelling order…" });
+      cancelPendingToggle();
       await cancelOrder(order);
       setOrder(null);
       router.replace("/tables");
@@ -130,6 +162,7 @@ export default function TablePage() {
     if (!order) return;
     try {
       setActionOverlay({ title: "Completing order…" });
+      await flushPendingToggle();
       await completeOrder(order);
       setOrder(null);
       router.replace("/tables");
@@ -158,6 +191,7 @@ export default function TablePage() {
       setActionOverlay({
         title: paid ? "Marking as paid…" : "Updating payment…",
       });
+      cancelPendingToggle();
       await markOrderAsPaid(order, paid);
     } catch (error) {
       console.error("❌ Error marking order as paid:", error);
@@ -181,20 +215,38 @@ export default function TablePage() {
   }, [order, selectedItemIds, submitSelectedItemsToPrintQueue]);
 
   const handleToggleLinePaid = useCallback(
-    async (itemId: string, nextPaid: boolean) => {
+    (itemId: string, nextPaid: boolean) => {
       if (!order?.id || !order.orderItems?.length) return;
-      const nextItems = order.orderItems.map((it) =>
+
+      // Stack rapid taps on top of the in-flight pending items, not the stale
+      // snapshot value, so every tap is reflected even before Firestore confirms.
+      const base =
+        pendingToggleRef.current?.orderId === order.id
+          ? pendingToggleRef.current.items
+          : order.orderItems;
+
+      const nextItems = base.map((it) =>
         it.id === itemId ? { ...it, paid: nextPaid } : it,
       );
-      setOrder((prev) => prev ? { ...prev, orderItems: nextItems } : prev);
-      try {
-        await updateDoc(doc(db, "dineInOrders", order.id), {
-          orderItems: nextItems,
-        });
-      } catch (e) {
-        console.error("❌ Error updating line paid state:", e);
-        // onSnapshot will revert to the real Firestore state automatically
+
+      setOrder((prev) => (prev ? { ...prev, orderItems: nextItems } : prev));
+
+      if (pendingToggleRef.current?.timer) {
+        clearTimeout(pendingToggleRef.current.timer);
       }
+
+      const timer = setTimeout(() => {
+        const pending = pendingToggleRef.current;
+        pendingToggleRef.current = null;
+        if (!pending) return;
+        updateDoc(doc(db, "dineInOrders", pending.orderId), {
+          orderItems: pending.items,
+        }).catch((e) => {
+          console.error("❌ Error updating line paid state:", e);
+        });
+      }, 400);
+
+      pendingToggleRef.current = { orderId: order.id, items: nextItems, timer };
     },
     [order?.id, order?.orderItems],
   );
@@ -205,16 +257,16 @@ export default function TablePage() {
     const nextItems = items.map((it) =>
       it.id && selectedItemIds.has(it.id) ? { ...it, paid: true } : it,
     );
-    setOrder((prev) => prev ? { ...prev, orderItems: nextItems } : prev);
+    setOrder((prev) => (prev ? { ...prev, orderItems: nextItems } : prev));
     setSelectionMode(false);
     setSelectedItemIds(new Set());
+    cancelPendingToggle();
     try {
       await updateDoc(doc(db, "dineInOrders", order.id), {
         orderItems: nextItems,
       });
     } catch (e) {
       console.error("❌ Error marking selected items paid:", e);
-      // onSnapshot will revert to the real Firestore state automatically
     }
   }, [order?.id, order?.orderItems, selectedItemIds]);
 

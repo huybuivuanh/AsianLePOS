@@ -8,7 +8,11 @@ import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enums";
 import Header from "@/ui/Header";
-import { generateFirestoreId, showAlert } from "@/utils/helpers";
+import {
+  generateFirestoreId,
+  orderPaidFromLineItems,
+  showAlert,
+} from "@/utils/helpers";
 import {
   appendOrderItemOptionsForGroup,
   getItemOptionGroupsInDisplayOrder,
@@ -375,7 +379,9 @@ export default function Item() {
         togo: specialFlag === "toGo",
         appetizer: specialFlag === "appetizer",
         kitchenType: item.kitchenType,
-        paid: false,
+        // Keep order-level paid state: new lines on an already fully-paid order stay paid
+        // (add-on collected immediately at the register).
+        paid: orderPaidFromLineItems(order.orderItems ?? []),
         price: orderItemPrice,
         quantity,
         ...(instructions !== "" && { instructions }),

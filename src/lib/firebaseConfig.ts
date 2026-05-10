@@ -65,13 +65,10 @@ if (Platform.OS === "web") {
   });
 }
 
-export const db = initializeFirestore(
-  app,
-  {
-    localCache: memoryLocalCache({
-      garbageCollector: memoryEagerGarbageCollector(),
-    }),
-  },
-  "asian-le-pos-database",
-);
+export const db = initializeFirestore(app, {
+  localCache: memoryLocalCache({
+    garbageCollector: memoryEagerGarbageCollector(),
+  }),
+});
+
 export { auth };
