@@ -303,8 +303,8 @@ All stores use this instead of reimplementing. Fixes inconsistencies (some use t
 | **2** | Split `useOrderStore` into `useCartStore` + thin `useOrderStore` | Medium | ✅ Done |
 | **3** | Fix store-to-store `.getState()` calls | Low | ✅ Done |
 | **4** | Add `src/hooks/` with `useAsyncAction`, `useDisclosure`, `useDebouncedValue` | Low | ✅ Done |
-| **5** | Break up mega screens using new hooks and extracted components | Medium | ⏳ Next |
-| **6** | Create `src/domain/` and move business logic out of utils | Low | ⏳ Pending |
+| **5** | Break up mega screens using new hooks and extracted components | Medium | ✅ Done |
+| **6** | Create `src/domain/` and move business logic out of utils | Low | ✅ Done |
 | **7** | Navigation performance fixes (memoization, selectors, lazy modals) | Low | ⏳ Pending |
 | **8** | Consolidate cache helpers | Low | ⏳ Pending |
 
