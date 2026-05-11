@@ -107,11 +107,13 @@ const fetchMenuCollections = async (): Promise<Pick<MenuState, MenuArrayKeys>> =
   };
 };
 
-// Load cached menu on app startup
+// Load cached menu on app startup — always clears loading so the UI never
+// blocks waiting for a Firestore round-trip when there is no local cache.
 export const loadCachedMenu = async () => {
   const cache = await AsyncStorage.getItem(STORAGE_KEY);
   if (cache) {
-    const data = JSON.parse(cache);
-    useMenuStore.setState({ ...data, loading: false });
+    useMenuStore.setState({ ...JSON.parse(cache), loading: false });
+  } else {
+    useMenuStore.setState({ loading: false });
   }
 };

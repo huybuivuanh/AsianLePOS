@@ -4,7 +4,7 @@ import { useCreditsStore } from "@/stores/useCreditsStore";
 import { useCustomersStore } from "@/stores/useCustomersStore";
 import { useDineInOrdersStore } from "@/stores/useDineInOrdersStore";
 import { useMenuChangesStore } from "@/stores/useMenuChangesStore";
-import { loadCachedMenu, useMenuStore } from "@/stores/useMenuStore";
+import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
@@ -31,7 +31,6 @@ export default function TabsLayout() {
   const router = useRouter();
   const {
     subscribeToMenuVersion,
-    loading: menuLoading,
     clearData: clearMenu,
   } = useMenuStore();
   const { subscribeToTakeOutOrders, clearData: clearTakeOutOrders } =
@@ -77,8 +76,6 @@ export default function TabsLayout() {
   useEffect(() => {
     if (!user) return;
 
-    loadCachedMenu();
-
     // Menu changes & credits: one fetch per signed-in session (stores skip if already loaded).
     void useMenuChangesStore.getState().fetchMenuChanges();
     void useCreditsStore.getState().fetchCredits();
@@ -119,7 +116,7 @@ export default function TabsLayout() {
     subscribeToTables,
   ]);
 
-  if (authLoading || !user || menuLoading) {
+  if (authLoading || !user) {
     return (
       <View className="flex-1 justify-center items-center bg-gray-100">
         <Text className="text-lg font-medium">Loading...</Text>

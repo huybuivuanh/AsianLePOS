@@ -1,5 +1,6 @@
 // app/layout.tsx (Expo)
 import { AuthProvider } from "@/providers/AuthProvider";
+import { loadCachedMenu } from "@/stores/useMenuStore";
 import { useNetworkStore } from "@/stores/useNetworkStore";
 import OfflineBanner from "@/ui/OfflineBanner";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -35,6 +36,10 @@ export default function RootLayout({
 
   const startListening = useNetworkStore((s) => s.startListening);
   useEffect(() => startListening(), [startListening]);
+
+  // Start loading the menu cache immediately — runs in parallel with auth
+  // initialization so menu data is ready the moment the user is authenticated.
+  useEffect(() => { void loadCachedMenu(); }, []);
 
   if (webFontsBlocking) {
     return null;
