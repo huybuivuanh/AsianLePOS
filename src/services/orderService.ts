@@ -163,6 +163,13 @@ export async function completeOrder(order: OrderDraft, tableDocId?: string | nul
   await batch.commit();
 }
 
+/** Writes an already-mutated orderItems array to Firestore (used by paid-toggle debounce). */
+export async function updateLineItemsPaid(orderId: string, items: OrderItem[]): Promise<void> {
+  const batch = writeBatch(db);
+  batch.update(doc(db, "dineInOrders", orderId), { orderItems: items });
+  await batch.commit();
+}
+
 export async function markPaid(order: OrderDraft, paid: boolean): Promise<void> {
   if (!order.id) throw new Error("Order ID is required to mark as paid.");
 
