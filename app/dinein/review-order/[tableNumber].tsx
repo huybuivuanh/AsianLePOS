@@ -53,10 +53,7 @@ export default function ReviewDineInOrder() {
 
       await submitOrder(newOrder);
 
-      router.push({
-        pathname: "/dinein/table/[tableNumber]",
-        params: { tableNumber },
-      });
+      router.dismiss(2);
     } catch (error: any) {
       showAlert("Error", error.message || "Failed to submit order.");
     } finally {

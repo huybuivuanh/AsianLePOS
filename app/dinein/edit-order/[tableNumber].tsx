@@ -66,10 +66,7 @@ export default function EditDinInOrder() {
       setSubmitting(true);
       await updateOrderOnFirestore(order);
       clearOrder();
-      router.replace({
-        pathname: "/dinein/table/[tableNumber]",
-        params: { tableNumber },
-      });
+      router.back();
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "Failed to submit order.";
