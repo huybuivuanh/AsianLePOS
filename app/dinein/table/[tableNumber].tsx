@@ -127,7 +127,7 @@ export default function TablePage() {
     <SafeAreaViewWrapper className="flex-1 bg-gray-100">
       <Header
         title={`Table ${tableNumber}`}
-        onBack={() => { if (!actionBusy) router.replace("/tables"); }}
+        onBack={() => { if (!actionBusy) router.back(); }}
       />
 
       <View className="flex-1 justify-between">

@@ -36,7 +36,7 @@ export function useDineInTableActions(): UseDineInTableActionsResult {
         setActionOverlay({ title: "Cancelling order…" });
         await cancelOrder(order);
         onSuccess();
-        router.replace("/tables");
+        router.back();
       } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : "Failed to cancel order. Please try again.";
         showAlert(msg);
@@ -54,7 +54,7 @@ export function useDineInTableActions(): UseDineInTableActionsResult {
         await flush();
         await completeOrder(order);
         onSuccess();
-        router.replace("/tables");
+        router.back();
       } catch (err) {
         console.error("Failed to complete order:", err);
       } finally {
