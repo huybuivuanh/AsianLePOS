@@ -38,18 +38,38 @@ Expo Router (file-based) under `/app`. Main structure:
 Firestore listeners for all tabs are set up and torn down in `app/(tabs)/_layout.tsx`.
 
 ### State Management
-7 Zustand stores in `src/stores/`:
+9 Zustand stores in `src/stores/`:
 - `useOrderStore` — active cart + order submission logic
 - `useMenuStore` — menu items, categories, option groups (with AsyncStorage caching)
 - `useTableStore` — table status (Open/Occupied)
 - `useDineInOrdersStore` / `useActiveDineInOrdersStore` — dine-in order list + filtered view
 - `useTakeOutOrdersStore` — take-out order list
 - `useCustomersStore` — customer autocomplete
+- `useCreditsStore` — customer credits (how much the restaurant owes customers)
+- `useMenuChangesStore` — item change prices (cost to substitute/modify a menu item)
 
 All stores are cleared on logout to prevent data leaks.
 
 ### Menu Caching Strategy
-`useMenuStore` checks a `menuVersion` doc in Firestore on load. If the version has changed since last fetch, it pulls all menu collections and writes to AsyncStorage. Otherwise it reads from cache. This avoids unnecessary Firestore reads on each app open.
+`useMenuStore` checks a `menuVersion` doc in Firestore on load. If the version has changed since last fetch, it pulls all menu collections and writes to AsyncStorage. Otherwise it reads from cache. `loadCachedMenu()` is called from the root layout (`app/_layout.tsx`) immediately on app open — parallel to Firebase auth — so menu data is ready before auth resolves. This avoids blocking the UI on menu loading after login.
+
+### Cache-First Pattern (customers, credits, menuChanges)
+`useCustomersStore`, `useCreditsStore`, and `useMenuChangesStore` all follow the same cache-first pattern:
+1. On subscribe/fetch: serve AsyncStorage cache immediately so UI is not blank
+2. Fetch from Firestore in the background, update state + re-save cache on success
+3. On writes: write-through to Firestore then update state + cache
+4. `clearData()` wipes both in-memory state and AsyncStorage cache
+
+### Menu Picker UX
+When taking an order (all 3 flows: dine-in, take-out, add-item to existing order), the item picker screen:
+- **Default view**: shows items from the first category only (sorted by category `order` field) — keeps the list short since staff use search
+- **Search**: switches to all items across all categories, filtered by name (300ms debounce)
+- **Keyboard**: auto-opens on every screen focus via `useFocusEffect` + a 100ms delay (lets the navigation transition settle)
+- No category navigation level — items are shown directly
+
+Key components in `src/features/takeout/components/`:
+- `MenuPickerBody` — search bar + item list; `browseItems` prop for default view, `items` prop for search
+- `SearchResults` — filtered `FlashList` of items
 
 ### Order Model
 - **`OrderDraft`** = in-cart, not yet persisted
@@ -67,6 +87,7 @@ All stores are cleared on logout to prevent data leaks.
 dineInOrders       takeOutOrders      categories
 menuItems          optionGroups       options
 menuVersion        tables             customers
+credits            menuChanges
 ```
 
 ### Cloud Functions
