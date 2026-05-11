@@ -3,9 +3,9 @@ import { useMenuChangesStore } from "@/stores/useMenuChangesStore";
 import Header from "@/ui/Header";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
+import { FlashList } from "@shopify/flash-list";
 import {
   ActivityIndicator,
-  FlatList,
   Text,
   TextInput,
   View,
@@ -57,7 +57,7 @@ export default function MenuChangesScreen() {
           <Text className="mt-2 text-gray-600">Loading…</Text>
         </View>
       ) : (
-        <FlatList
+        <FlashList
           data={filtered}
           keyExtractor={(item) =>
             item.id ?? `${item.from}-${item.to}-${item.price}`
@@ -65,7 +65,6 @@ export default function MenuChangesScreen() {
           contentContainerStyle={{
             paddingHorizontal: 16,
             paddingBottom: 24,
-            flexGrow: 1,
           }}
           keyboardShouldPersistTaps="handled"
           ListEmptyComponent={

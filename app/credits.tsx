@@ -4,9 +4,9 @@ import Header from "@/ui/Header";
 import { extractPhoneDigits } from "@/utils/customerPhone";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
+import { FlashList } from "@shopify/flash-list";
 import {
   ActivityIndicator,
-  FlatList,
   Text,
   TextInput,
   View,
@@ -72,7 +72,7 @@ export default function CreditsPreviewScreen() {
           <Text className="mt-2 text-gray-600">Loading…</Text>
         </View>
       ) : (
-        <FlatList
+        <FlashList
           data={filtered}
           keyExtractor={(item) =>
             item.id ?? `${item.name}-${item.phoneNumber}-${item.amount}`
@@ -80,7 +80,6 @@ export default function CreditsPreviewScreen() {
           contentContainerStyle={{
             paddingHorizontal: 16,
             paddingBottom: 24,
-            flexGrow: 1,
           }}
           keyboardShouldPersistTaps="handled"
           ListEmptyComponent={

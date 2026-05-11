@@ -359,11 +359,12 @@ export default function TablePage() {
         </View>
       </View>
 
-      <CashPaymentModal
-        visible={cashModal.isOpen}
-        onClose={cashModal.close}
-        orderTotal={selectionMode ? selectedItemsTaxBreakDown.total : (order?.taxBreakDown?.total ?? 0)}
-      />
+      {cashModal.isOpen && (
+        <CashPaymentModal
+          onClose={cashModal.close}
+          orderTotal={selectionMode ? selectedItemsTaxBreakDown.total : (order?.taxBreakDown?.total ?? 0)}
+        />
+      )}
 
       <FullScreenLoadingOverlay
         visible={Boolean(actionOverlay)}

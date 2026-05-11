@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -13,24 +13,13 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Props = {
-  visible: boolean;
   onClose: () => void;
   orderTotal: number;
 };
 
-export default function CashPaymentModal({
-  visible,
-  onClose,
-  orderTotal,
-}: Props) {
+export default function CashPaymentModal({ onClose, orderTotal }: Props) {
   const insets = useSafeAreaInsets();
   const [cashAmountText, setCashAmountText] = useState("");
-
-  useEffect(() => {
-    if (visible) {
-      setCashAmountText("");
-    }
-  }, [visible]);
 
   const cashReceived = useMemo(() => {
     const n = parseFloat(cashAmountText);
@@ -56,7 +45,7 @@ export default function CashPaymentModal({
 
   return (
     <Modal
-      visible={visible}
+      visible
       transparent
       animationType="fade"
       onRequestClose={handleClose}

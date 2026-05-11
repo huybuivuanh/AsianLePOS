@@ -139,11 +139,12 @@ export default function TakeOutOrdersTab() {
         />
       )}
 
-      <CashPaymentModal
-        visible={cashPaymentOrderId !== null}
-        onClose={handleCloseCashPayment}
-        orderTotal={cashPaymentModalTotal}
-      />
+      {cashPaymentOrderId !== null && (
+        <CashPaymentModal
+          onClose={handleCloseCashPayment}
+          orderTotal={cashPaymentModalTotal}
+        />
+      )}
     </SafeAreaViewWrapper>
   );
 }
