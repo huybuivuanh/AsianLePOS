@@ -2,38 +2,33 @@ import { X } from "lucide-react-native";
 import React from "react";
 import {
   Keyboard,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import CategoryGrid from "./CategoryGrid";
 import SearchResults from "./SearchResults";
 
 export type MenuPickerBodyProps = {
   query: string;
   debouncedQuery: string;
-  searching: boolean;
   onQueryChange: (text: string) => void;
   onClearSearch: () => void;
-  searchItems: MenuItem[];
-  onSelectSearchItem: (item: MenuItem) => void;
-  categories: FoodCategory[];
-  onSelectCategory: (category: FoodCategory) => void;
-  /** Outer wrapper around grid/results (e.g. "-mx-4" to align with screen padding) */
+  /** All items — shown filtered when a search query is active. */
+  items: MenuItem[];
+  /** Items shown when no query is active (e.g. first category). */
+  browseItems: MenuItem[];
+  onSelectItem: (item: MenuItem) => void;
   listWrapperClassName?: string;
 };
 
 export default function MenuPickerBody({
   query,
   debouncedQuery,
-  searching,
   onQueryChange,
   onClearSearch,
-  searchItems,
-  onSelectSearchItem,
-  categories,
-  onSelectCategory,
+  items,
+  browseItems,
+  onSelectItem,
   listWrapperClassName = "-mx-4",
 }: MenuPickerBodyProps) {
   return (
@@ -61,18 +56,11 @@ export default function MenuPickerBody({
       </View>
 
       <View className={`flex-1 ${listWrapperClassName}`}>
-        {searching ? (
-          <SearchResults
-            items={searchItems}
-            query={debouncedQuery}
-            onSelectItem={onSelectSearchItem}
-          />
-        ) : (
-          <CategoryGrid
-            categories={categories}
-            onSelectCategory={onSelectCategory}
-          />
-        )}
+        <SearchResults
+          items={debouncedQuery ? items : browseItems}
+          query={debouncedQuery}
+          onSelectItem={onSelectItem}
+        />
       </View>
     </>
   );

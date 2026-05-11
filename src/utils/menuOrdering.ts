@@ -74,23 +74,27 @@ export function appendOrderItemOptionsForGroup(
   }
 }
 
-export function getMenuItemsForCategory(
-  category: FoodCategory,
+/** Items belonging to the first category (by order field). */
+export function getFirstCategoryItems(
+  categories: FoodCategory[],
   menuItems: MenuItem[]
 ): MenuItem[] {
+  const sorted = sortCategoriesByOrder(categories);
+  if (!sorted.length) return [];
+  const firstCat = sorted[0];
   const itemById = new Map<string, MenuItem>();
   for (const item of menuItems) {
     if (item.id != null) itemById.set(String(item.id), item);
   }
-  const ordered: MenuItem[] = [];
-  for (const rawId of category.itemIds ?? []) {
+  const result: MenuItem[] = [];
+  for (const rawId of firstCat.itemIds ?? []) {
     const item = itemById.get(String(rawId));
-    if (item) ordered.push(item);
+    if (item) result.push(item);
   }
-  return ordered;
+  return result;
 }
 
-/** All visible items in category order (for global search). */
+/** All visible items in category order. */
 export function getVisibleMenuItemsInCategoryOrder(
   categories: FoodCategory[],
   menuItems: MenuItem[]

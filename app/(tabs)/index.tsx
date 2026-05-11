@@ -1,6 +1,7 @@
 import {
   MenuPickerBody,
   buildItemScreenParams,
+  getFirstCategoryItems,
   getVisibleMenuItemsInCategoryOrder,
   useDebouncedMenuSearch,
 } from "@/features/takeout";
@@ -8,7 +9,7 @@ import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enums";
-import { useRouter, type Href } from "expo-router";
+import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
@@ -17,11 +18,16 @@ export default function TakeOut() {
   const { categories, menuItems, loading } = useMenuStore();
   const totalItems = useOrderStore((state) => state.getTotalItems());
 
-  const { query, debouncedQuery, handleQueryChange, clearSearch, searching } =
+  const { query, debouncedQuery, handleQueryChange, clearSearch } =
     useDebouncedMenuSearch();
 
-  const searchItems = useMemo(
+  const items = useMemo(
     () => getVisibleMenuItemsInCategoryOrder(categories, menuItems),
+    [categories, menuItems],
+  );
+
+  const browseItems = useMemo(
+    () => getFirstCategoryItems(categories, menuItems),
     [categories, menuItems],
   );
 
@@ -34,21 +40,17 @@ export default function TakeOut() {
         <MenuPickerBody
           query={query}
           debouncedQuery={debouncedQuery}
-          searching={searching}
           onQueryChange={handleQueryChange}
           onClearSearch={clearSearch}
-          searchItems={searchItems}
-          onSelectSearchItem={(item) =>
+          items={items}
+          browseItems={browseItems}
+          onSelectItem={(item) =>
             router.push({
               pathname: "/item/[itemId]",
               params: buildItemScreenParams(item, {
                 orderType: OrderType.TakeOut,
               }),
             })
-          }
-          categories={categories}
-          onSelectCategory={(cat) =>
-            router.push(`/takeout/category/${cat.id!}` as Href)
           }
         />
       </View>

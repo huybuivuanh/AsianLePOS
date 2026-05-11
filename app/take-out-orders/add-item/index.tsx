@@ -1,6 +1,7 @@
 import {
   MenuPickerBody,
   buildItemScreenParams,
+  getFirstCategoryItems,
   getVisibleMenuItemsInCategoryOrder,
   useDebouncedMenuSearch,
 } from "@/features/takeout";
@@ -9,7 +10,7 @@ import { useMenuStore } from "@/stores/useMenuStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enums";
 import Header from "@/ui/Header";
-import { useRouter, type Href } from "expo-router";
+import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
@@ -18,11 +19,16 @@ export default function AddItemPage() {
   const { categories, menuItems, loading } = useMenuStore();
   const { order } = useOrderStore();
 
-  const { query, debouncedQuery, handleQueryChange, clearSearch, searching } =
+  const { query, debouncedQuery, handleQueryChange, clearSearch } =
     useDebouncedMenuSearch();
 
-  const searchItems = useMemo(
+  const items = useMemo(
     () => getVisibleMenuItemsInCategoryOrder(categories, menuItems),
+    [categories, menuItems],
+  );
+
+  const browseItems = useMemo(
+    () => getFirstCategoryItems(categories, menuItems),
     [categories, menuItems],
   );
 
@@ -38,22 +44,15 @@ export default function AddItemPage() {
         <MenuPickerBody
           query={query}
           debouncedQuery={debouncedQuery}
-          searching={searching}
           onQueryChange={handleQueryChange}
           onClearSearch={clearSearch}
-          searchItems={searchItems}
-          onSelectSearchItem={(item) =>
+          items={items}
+          browseItems={browseItems}
+          onSelectItem={(item) =>
             router.push({
               pathname: "/item/[itemId]",
-              params: buildItemScreenParams(item, {
-                orderType,
-                ...(orderType === OrderType.DineIn && { menuEntry: "search" }),
-              }),
+              params: buildItemScreenParams(item, { orderType }),
             })
-          }
-          categories={categories}
-          onSelectCategory={(cat) =>
-            router.push(`/take-out-orders/add-item/category/${cat.id!}` as Href)
           }
         />
         <View className="absolute bottom-4 left-0 right-0 px-4">

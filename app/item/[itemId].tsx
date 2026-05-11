@@ -33,13 +33,12 @@ import {
 
 export default function Item() {
   const router = useRouter();
-  const { itemId, orderType, orderItemId, menuEntry } = useLocalSearchParams();
+  const { itemId, orderType, orderItemId } = useLocalSearchParams();
   const { menuItems, optionGroups, options } = useMenuStore();
   const { addItem, updateOrderItem, order } = useOrderStore();
 
   const itemIdStr = Array.isArray(itemId) ? itemId[0] : itemId;
   const orderTypeStr = Array.isArray(orderType) ? orderType[0] : orderType;
-  const menuEntryStr = Array.isArray(menuEntry) ? menuEntry[0] : menuEntry;
 
   const item = menuItems.find((i) => i.id === itemIdStr);
   const orderItemIdStr = Array.isArray(orderItemId)
@@ -399,12 +398,6 @@ export default function Item() {
 
     if (shouldPopStack) {
       router.back();
-      // Category path: […, category, item] — second pop skips category (take-order / add-item grid,
-      // or edit-order after add-item → category). Search path is […, item] — one back only.
-      // Applies to both new lines and editing a line when menuEntry is still "category".
-      if (menuEntryStr === "category") {
-        queueMicrotask(() => router.back());
-      }
     } else {
       router.push("/(tabs)");
     }
