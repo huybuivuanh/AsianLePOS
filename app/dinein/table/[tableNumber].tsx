@@ -68,9 +68,10 @@ export default function TablePage() {
     setOrder(currentOrder ?? null);
   }, [currentOrder]);
 
+  const closeCashModal = cashModal.close;
   useEffect(() => {
-    if (!selectionMode) cashModal.close();
-  }, [selectionMode, cashModal]);
+    if (!selectionMode) closeCashModal();
+  }, [selectionMode, closeCashModal]);
 
   const hasActiveOrderItems = Boolean(order?.orderItems && order.orderItems.length > 0);
 
