@@ -79,7 +79,11 @@ export function groupOrderItemsByDisplaySection(
   if (sorted.length === 0) return [];
 
   const sections: OrderItemDisplaySection[] = [];
-  const sectionIndexedItems: { tier: OrderItemDisplayTier; item: OrderItem; index: number }[] = [];
+  const sectionIndexedItems: {
+    tier: OrderItemDisplayTier;
+    item: OrderItem;
+    index: number;
+  }[] = [];
 
   for (const [index, item] of sorted.entries()) {
     const tier = dineInItemSortTier(item);
@@ -87,12 +91,16 @@ export function groupOrderItemsByDisplaySection(
   }
 
   // Split into contiguous tiers (Appetizers → Table → To Go), then group lines within each tier by kitchen station.
-  const byTier: Record<OrderItemDisplayTier, { item: OrderItem; index: number }[]> = {
+  const byTier: Record<
+    OrderItemDisplayTier,
+    { item: OrderItem; index: number }[]
+  > = {
     0: [],
     1: [],
     2: [],
   };
-  for (const entry of sectionIndexedItems) byTier[entry.tier].push({ item: entry.item, index: entry.index });
+  for (const entry of sectionIndexedItems)
+    byTier[entry.tier].push({ item: entry.item, index: entry.index });
 
   for (const tier of [0, 1, 2] as const) {
     const tierItems = byTier[tier];

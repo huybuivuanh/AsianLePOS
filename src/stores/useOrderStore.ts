@@ -17,6 +17,7 @@ import {
   orderItemsSubtotal,
 } from "@/utils/helpers";
 import { normalizeOrderItemTextForDb } from "@/utils/normalizeOrderItemText";
+import { preprocessOrderItems } from "@/utils/preprocessOrderItems";
 import { doc, getDoc, setDoc, Timestamp, writeBatch } from "firebase/firestore";
 import { create } from "zustand";
 
@@ -310,7 +311,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       order.orderType === OrderType.DineIn
         ? ungroupOrderItems(order.orderItems ?? [])
         : groupOrderItemsBySignature(order.orderItems ?? []);
-    const normalizedItemsForFirestore = itemsForFirestore.map(
+    const normalizedItemsForFirestore = preprocessOrderItems(itemsForFirestore).map(
       normalizeOrderItemTextForDb,
     );
 
@@ -320,6 +321,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       orderItems: normalizedItemsForFirestore,
       taxBreakDown,
       status: OrderStatus.InProgress,
+      paid: false,
       printed: false,
       createdAt: Timestamp.fromDate(new Date()),
       staff: order.staff,
@@ -342,6 +344,22 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       doc(db, firestorecollection, order.id!),
       orderToSubmit as Record<string, unknown>,
     );
+
+    if (order.orderType === OrderType.DineIn && order.tableNumber) {
+      const tableDocId = useTableStore
+        .getState()
+        .getTableDocId(order.tableNumber);
+      if (!tableDocId) {
+        throw new Error(
+          "Cannot find table in app. Open the Tables tab to sync, then try again.",
+        );
+      }
+      batch.update(doc(db, "tables", tableDocId), {
+        status: TableStatus.Occupied,
+        currentOrderId: order.id,
+      });
+    }
+
     await batch.commit();
 
     get().clearOrder();
@@ -362,7 +380,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         ? ungroupOrderItems(order.orderItems ?? [])
         : groupOrderItemsBySignature(order.orderItems ?? []);
 
-    const cleanOrderItems = rawItems.map((item) => {
+    const cleanOrderItems = preprocessOrderItems(rawItems).map((item) => {
       const cleanItem: OrderItem = normalizeOrderItemTextForDb({
         id: item.id,
         name: item.name,
@@ -757,7 +775,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       id: orderId,
       orderType: OrderType.TakeOut,
       staff: data.staff ?? "",
-      orderItems: groupOrderItemsBySignature(cleanOrderItems),
+      orderItems: groupOrderItemsBySignature(preprocessOrderItems(cleanOrderItems)),
       taxBreakDown,
       status: OrderStatus.InProgress,
       printed: data.printed ?? false,
@@ -849,7 +867,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       d?.discountValue ?? 0,
     );
 
-    const cleanOrderItems = ungroupOrderItems(orderItems).map((item) => {
+    const cleanOrderItems = preprocessOrderItems(ungroupOrderItems(orderItems)).map((item) => {
       const cleanItem: OrderItem = normalizeOrderItemTextForDb({
         id: item.id,
         name: item.name,
