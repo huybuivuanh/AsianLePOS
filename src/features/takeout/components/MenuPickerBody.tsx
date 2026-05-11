@@ -1,5 +1,6 @@
+import { useFocusEffect } from "expo-router";
 import { X } from "lucide-react-native";
-import React from "react";
+import React, { useCallback, useRef } from "react";
 import {
   Keyboard,
   TextInput,
@@ -31,10 +32,20 @@ export default function MenuPickerBody({
   onSelectItem,
   listWrapperClassName = "-mx-4",
 }: MenuPickerBodyProps) {
+  const inputRef = useRef<TextInput>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      const timer = setTimeout(() => inputRef.current?.focus(), 100);
+      return () => clearTimeout(timer);
+    }, [])
+  );
+
   return (
     <>
       <View className="relative mb-4">
         <TextInput
+          ref={inputRef}
           placeholder="Search menu items..."
           value={query}
           onChangeText={onQueryChange}
