@@ -1,36 +1,10 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { collection, getDocs } from "firebase/firestore";
+import { createStoreCache } from "@/utils/storeCache";
 import { create } from "zustand";
 import { db } from "@/lib/firebaseConfig";
 
 const MENU_CHANGES_COLLECTION = "menuChanges";
-const MENU_CHANGES_CACHE_KEY = "@menuChanges:cache";
-
-async function saveMenuChangesCache(menuChanges: MenuChange[]): Promise<void> {
-  try {
-    await AsyncStorage.setItem(MENU_CHANGES_CACHE_KEY, JSON.stringify(menuChanges));
-  } catch (e) {
-    console.error("❌ Error saving menuChanges cache:", e);
-  }
-}
-
-async function loadMenuChangesCache(): Promise<MenuChange[] | null> {
-  try {
-    const raw = await AsyncStorage.getItem(MENU_CHANGES_CACHE_KEY);
-    return raw ? (JSON.parse(raw) as MenuChange[]) : null;
-  } catch (e) {
-    console.error("❌ Error loading menuChanges cache:", e);
-    return null;
-  }
-}
-
-async function clearMenuChangesCache(): Promise<void> {
-  try {
-    await AsyncStorage.removeItem(MENU_CHANGES_CACHE_KEY);
-  } catch (e) {
-    console.error("❌ Error clearing menuChanges cache:", e);
-  }
-}
+const cache = createStoreCache<MenuChange[]>("@menuChanges:cache");
 
 function sortMenuChanges(a: MenuChange, b: MenuChange): number {
   const from = a.from.localeCompare(b.from, undefined, { sensitivity: "base" });
@@ -58,16 +32,12 @@ export const useMenuChangesStore = create<MenuChangesState>((set, get) => ({
   hasFetched: false,
 
   fetchMenuChanges: async (opts) => {
-    const force = opts?.force === true;
-    if (get().hasFetched && !force) return;
+    if (get().hasFetched && opts?.force !== true) return;
 
     set({ loading: true, error: null });
 
-    // Serve cache immediately so UI is not blank on cold start.
-    loadMenuChangesCache().then((cached) => {
-      if (cached && cached.length > 0) {
-        set({ menuChanges: cached, loading: false });
-      }
+    cache.load().then((cached) => {
+      if (cached && cached.length > 0) set({ menuChanges: cached, loading: false });
     });
 
     try {
@@ -78,7 +48,7 @@ export const useMenuChangesStore = create<MenuChangesState>((set, get) => ({
       })) as MenuChange[];
       menuChanges.sort(sortMenuChanges);
       set({ menuChanges, loading: false, hasFetched: true });
-      void saveMenuChangesCache(menuChanges);
+      void cache.save(menuChanges);
     } catch (e) {
       console.error("❌ fetchMenuChanges failed:", e);
       set({
@@ -90,7 +60,7 @@ export const useMenuChangesStore = create<MenuChangesState>((set, get) => ({
   },
 
   clearData: () => {
-    void clearMenuChangesCache();
+    void cache.clear();
     set({ menuChanges: [], loading: false, error: null, hasFetched: false });
   },
 }));

@@ -1,46 +1,16 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { collection, getDocs, type Timestamp } from "firebase/firestore";
+import { createStoreCache } from "@/utils/storeCache";
 import { create } from "zustand";
 import { db } from "@/lib/firebaseConfig";
 
 const CREDITS_COLLECTION = "credits";
-const CREDITS_CACHE_KEY = "@credits:cache";
-
-async function saveCreditsCache(credits: Credit[]): Promise<void> {
-  try {
-    await AsyncStorage.setItem(CREDITS_CACHE_KEY, JSON.stringify(credits));
-  } catch (e) {
-    console.error("❌ Error saving credits cache:", e);
-  }
-}
-
-async function loadCreditsCache(): Promise<Credit[] | null> {
-  try {
-    const raw = await AsyncStorage.getItem(CREDITS_CACHE_KEY);
-    return raw ? (JSON.parse(raw) as Credit[]) : null;
-  } catch (e) {
-    console.error("❌ Error loading credits cache:", e);
-    return null;
-  }
-}
-
-async function clearCreditsCache(): Promise<void> {
-  try {
-    await AsyncStorage.removeItem(CREDITS_CACHE_KEY);
-  } catch (e) {
-    console.error("❌ Error clearing credits cache:", e);
-  }
-}
+const cache = createStoreCache<Credit[]>("@credits:cache");
 
 function createdAtMs(c: Credit): number {
   const t = c.createdAt as Timestamp | undefined;
-  if (t && typeof t.seconds === "number") {
-    return t.seconds * 1000;
-  }
-  return 0;
+  return t && typeof t.seconds === "number" ? t.seconds * 1000 : 0;
 }
 
-/** Newest first; missing `createdAt` sorts last. */
 function sortCredits(a: Credit, b: Credit): number {
   return createdAtMs(b) - createdAtMs(a);
 }
@@ -65,16 +35,12 @@ export const useCreditsStore = create<CreditsState>((set, get) => ({
   hasFetched: false,
 
   fetchCredits: async (opts) => {
-    const force = opts?.force === true;
-    if (get().hasFetched && !force) return;
+    if (get().hasFetched && opts?.force !== true) return;
 
     set({ loading: true, error: null });
 
-    // Serve cache immediately so UI is not blank on cold start.
-    loadCreditsCache().then((cached) => {
-      if (cached && cached.length > 0) {
-        set({ credits: cached, loading: false });
-      }
+    cache.load().then((cached) => {
+      if (cached && cached.length > 0) set({ credits: cached, loading: false });
     });
 
     try {
@@ -85,7 +51,7 @@ export const useCreditsStore = create<CreditsState>((set, get) => ({
       })) as Credit[];
       credits.sort(sortCredits);
       set({ credits, loading: false, hasFetched: true });
-      void saveCreditsCache(credits);
+      void cache.save(credits);
     } catch (e) {
       console.error("❌ fetchCredits failed:", e);
       set({
@@ -97,7 +63,7 @@ export const useCreditsStore = create<CreditsState>((set, get) => ({
   },
 
   clearData: () => {
-    void clearCreditsCache();
+    void cache.clear();
     set({ credits: [], loading: false, error: null, hasFetched: false });
   },
 }));

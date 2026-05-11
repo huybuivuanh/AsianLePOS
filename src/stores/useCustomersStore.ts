@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   addDoc,
   collection,
@@ -10,52 +9,21 @@ import {
 } from "firebase/firestore";
 import { extractPhoneDigits } from "../utils/customerPhone";
 import { syncFromCart } from "@/services/customerService";
+import { createStoreCache } from "@/utils/storeCache";
 import { create } from "zustand";
 import { db } from "../lib/firebaseConfig";
 
 const CUSTOMERS_COLLECTION = "customers";
-const CUSTOMERS_CACHE_KEY = "@customers:cache";
-
-async function saveCustomersCache(customers: Customer[]): Promise<void> {
-  try {
-    await AsyncStorage.setItem(CUSTOMERS_CACHE_KEY, JSON.stringify(customers));
-  } catch (e) {
-    console.error("❌ Error saving customers cache:", e);
-  }
-}
-
-async function loadCustomersCache(): Promise<Customer[] | null> {
-  try {
-    const raw = await AsyncStorage.getItem(CUSTOMERS_CACHE_KEY);
-    return raw ? (JSON.parse(raw) as Customer[]) : null;
-  } catch (e) {
-    console.error("❌ Error loading customers cache:", e);
-    return null;
-  }
-}
-
-async function clearCustomersCache(): Promise<void> {
-  try {
-    await AsyncStorage.removeItem(CUSTOMERS_CACHE_KEY);
-  } catch (e) {
-    console.error("❌ Error clearing customers cache:", e);
-  }
-}
+const cache = createStoreCache<Customer[]>("@customers:cache");
 
 type CustomersState = {
   customers: Customer[];
   loading: boolean;
   subscribeToCustomers: () => () => void;
   /** Returns new doc id, or `undefined` if name/phone missing (no write). */
-  addCustomer: (input: {
-    name: string;
-    phone: string;
-  }) => Promise<string | undefined>;
+  addCustomer: (input: { name: string; phone: string }) => Promise<string | undefined>;
   /** No-op if trimmed name is empty (never override with blank name). */
-  updateCustomer: (
-    id: string,
-    input: { name: string; phone: string },
-  ) => Promise<void>;
+  updateCustomer: (id: string, input: { name: string; phone: string }) => Promise<void>;
   /**
    * Writes to `customers` when name is non-empty and phone has ≥7 digits.
    * Accepts order data as a parameter — no store cross-dependency.
@@ -75,10 +43,8 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     set({ loading: true });
 
     // Serve cache immediately, then refresh from Firestore in the background.
-    loadCustomersCache().then((cached) => {
-      if (cached && cached.length > 0) {
-        set({ customers: cached, loading: false });
-      }
+    cache.load().then((cached) => {
+      if (cached && cached.length > 0) set({ customers: cached, loading: false });
     });
 
     void getDocs(query(collection(db, CUSTOMERS_COLLECTION)))
@@ -88,14 +54,13 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
           id: docSnap.id,
         }));
         set({ customers: data, loading: false });
-        void saveCustomersCache(data);
+        void cache.save(data);
       })
       .catch((e) => {
         console.error("❌ Error fetching customers:", e);
         set({ loading: false });
       });
 
-    // No realtime listener — return a no-op cleanup for compatibility.
     return () => {};
   },
 
@@ -110,11 +75,10 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
       createdAt: Timestamp.now(),
     });
 
-    // Write-through: reflect the new customer in local state immediately.
     const newCustomer = { id: ref.id, name: n, phone: p } as Customer;
     const updated = [...get().customers, newCustomer];
     set({ customers: updated });
-    void saveCustomersCache(updated);
+    void cache.save(updated);
 
     return ref.id;
   },
@@ -126,12 +90,11 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
 
     await updateDoc(doc(db, CUSTOMERS_COLLECTION, id), { name: n, phone: p });
 
-    // Write-through: update the matching customer in local state immediately.
     const updated = get().customers.map((c) =>
       c.id === id ? { ...c, name: n, phone: p } : c,
     );
     set({ customers: updated });
-    void saveCustomersCache(updated);
+    void cache.save(updated);
   },
 
   syncTakeOutCustomerFromCart: async (order) => {
@@ -144,7 +107,7 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
   },
 
   clearData: () => {
-    void clearCustomersCache();
+    void cache.clear();
     set({ customers: [], loading: true });
   },
 }));
