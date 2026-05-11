@@ -4,8 +4,8 @@ import {
   SpecialFlagsSelector,
 } from "@/features/order";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
+import { useCartStore } from "@/stores/useCartStore";
 import { useMenuStore } from "@/stores/useMenuStore";
-import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enums";
 import Header from "@/ui/Header";
 import {
@@ -35,7 +35,7 @@ export default function Item() {
   const router = useRouter();
   const { itemId, orderType, orderItemId } = useLocalSearchParams();
   const { menuItems, optionGroups, options } = useMenuStore();
-  const { addItem, updateOrderItem, order } = useOrderStore();
+  const { addItem, updateOrderItem, order } = useCartStore();
 
   const itemIdStr = Array.isArray(itemId) ? itemId[0] : itemId;
   const orderTypeStr = Array.isArray(orderType) ? orderType[0] : orderType;

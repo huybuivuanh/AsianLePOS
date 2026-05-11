@@ -1,4 +1,4 @@
-import { useOrderStore } from "@/stores/useOrderStore";
+import { useCartStore } from "@/stores/useCartStore";
 import { TakeOutFulfillmentKind } from "@/types/enums";
 import { timestampToDate } from "@/utils/helpers";
 import { Timestamp } from "firebase/firestore";
@@ -12,7 +12,7 @@ const READY_TIMES = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70];
 
 export default function ReadyTimeSelector() {
   const insets = useSafeAreaInsets();
-  const { order, updateOrder } = useOrderStore();
+  const { order, updateOrder } = useCartStore();
   const [pickerMode, setPickerMode] = useState<"date" | "time" | null>(null);
 
   const fulfillment = order.fulfillment;

@@ -3,6 +3,7 @@ import DiscountButtonModalAndSummary from "@/features/order/components/DiscountB
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useAuth } from "@/providers/AuthProvider";
 import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
+import { useCartStore } from "@/stores/useCartStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { OrderStatus } from "@/types/enums";
@@ -23,10 +24,10 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 export default function EditDinInOrder() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
   const router = useRouter();
-  const order = useOrderStore((s) => s.order);
+  const order = useCartStore((s) => s.order);
+  const clearOrder = useCartStore((s) => s.clearOrder);
+  const setOrder = useCartStore((s) => s.setOrder);
   const updateOrderOnFirestore = useOrderStore((s) => s.updateOrderOnFirestore);
-  const clearOrder = useOrderStore((s) => s.clearOrder);
-  const setOrder = useOrderStore((s) => s.setOrder);
 
   const { user } = useAuth();
 

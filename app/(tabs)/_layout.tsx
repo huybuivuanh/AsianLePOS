@@ -1,11 +1,11 @@
 // app/(tabs)/_layout.tsx
 import { useAuth } from "@/providers/AuthProvider";
+import { useCartStore } from "@/stores/useCartStore";
 import { useCreditsStore } from "@/stores/useCreditsStore";
 import { useCustomersStore } from "@/stores/useCustomersStore";
 import { useDineInOrdersStore } from "@/stores/useDineInOrdersStore";
 import { useMenuChangesStore } from "@/stores/useMenuChangesStore";
 import { useMenuStore } from "@/stores/useMenuStore";
-import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
 import { Ionicons } from "@expo/vector-icons";
@@ -42,7 +42,7 @@ export default function TabsLayout() {
     useCustomersStore();
   const { clearData: clearMenuChanges } = useMenuChangesStore();
   const { clearData: clearCredits } = useCreditsStore();
-  const { clearOrder } = useOrderStore();
+  const { clearOrder } = useCartStore();
 
   // Redirect to login if not authenticated and clear data
   useEffect(() => {

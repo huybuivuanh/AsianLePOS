@@ -2,6 +2,7 @@ import CashPaymentModal from "@/features/dinein/CashPaymentModal";
 import OrderItemsList from "@/features/order/components/OrderItemsList";
 import OrderTaxBreakdown from "@/features/order/components/OrderTaxBreakdown";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
+import { useCartStore } from "@/stores/useCartStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
 import { DiscountType, OrderStatus } from "@/types/enums";
@@ -349,8 +350,8 @@ export default function TakeOutOrdersTab() {
     null,
   );
   const router = useRouter();
+  const { setOrder } = useCartStore();
   const {
-    setOrder,
     cancelOrder,
     completeOrder,
     markOrderAsPaid,

@@ -1,6 +1,6 @@
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
-import { useOrderStore } from "@/stores/useOrderStore";
+import { useCartStore } from "@/stores/useCartStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { TableStatus } from "@/types/enums";
 import { useRouter } from "expo-router";
@@ -21,7 +21,7 @@ export default function Tables() {
   const contentWidth = windowWidth - OUTER_PADDING * 2;
   const cellWidth = (contentWidth - CELL_GAP * (NUM_COLUMNS - 1)) / NUM_COLUMNS;
   const router = useRouter();
-  const { clearOrder } = useOrderStore();
+  const { clearOrder } = useCartStore();
   const { activeDineInOrders } = useActiveDineInOrdersStore();
 
   useEffect(() => {

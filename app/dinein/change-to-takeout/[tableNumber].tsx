@@ -4,6 +4,7 @@ import { OrderFooter } from "@/features/takeout";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
 import { useCustomersStore } from "@/stores/useCustomersStore";
+import { useCartStore } from "@/stores/useCartStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { OrderStatus, OrderType } from "@/types/enums";
@@ -44,14 +45,14 @@ export default function ChangeDineInToTakeOutScreen() {
     state.tables.find((t) => t.tableNumber === tableNumber),
   );
   const { activeDineInOrders } = useActiveDineInOrdersStore();
-  const setOrder = useOrderStore((s) => s.setOrder);
-  const updateOrder = useOrderStore((s) => s.updateOrder);
-  const clearOrder = useOrderStore((s) => s.clearOrder);
+  const setOrder = useCartStore((s) => s.setOrder);
+  const updateOrder = useCartStore((s) => s.updateOrder);
+  const clearOrder = useCartStore((s) => s.clearOrder);
+  const order = useCartStore((s) => s.order);
+  const getTaxBreakdown = useCartStore((s) => s.getTaxBreakdown);
   const convertDineInOrderToTakeOut = useOrderStore(
     (s) => s.convertDineInOrderToTakeOut,
   );
-  const order = useOrderStore((s) => s.order);
-  const getTaxBreakdown = useOrderStore((s) => s.getTaxBreakdown);
 
   const [submitting, setSubmitting] = useState(false);
   const [footerVisible, setFooterVisible] = useState(true);
@@ -86,7 +87,7 @@ export default function ChangeDineInToTakeOutScreen() {
   const handleSubmit = async () => {
     if (!tableNumber || !currentOrder?.id) return;
 
-    const o = useOrderStore.getState().order;
+    const o = useCartStore.getState().order;
     if (!o.fulfillment) {
       showAlert("Error", "Choose ready time or pre-order.");
       return;
@@ -94,7 +95,7 @@ export default function ChangeDineInToTakeOutScreen() {
 
     try {
       setSubmitting(true);
-      await useCustomersStore.getState().syncTakeOutCustomerFromCart();
+      await useCustomersStore.getState().syncTakeOutCustomerFromCart(o);
       await convertDineInOrderToTakeOut({
         orderId: currentOrder.id,
         tableNumber,

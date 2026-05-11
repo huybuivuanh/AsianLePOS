@@ -7,7 +7,7 @@ import {
 } from "@/features/takeout";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useMenuStore } from "@/stores/useMenuStore";
-import { useOrderStore } from "@/stores/useOrderStore";
+import { useCartStore } from "@/stores/useCartStore";
 import { OrderType } from "@/types/enums";
 import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
@@ -16,7 +16,7 @@ import { Text, TouchableOpacity, View } from "react-native";
 export default function TakeOut() {
   const router = useRouter();
   const { categories, menuItems, loading } = useMenuStore();
-  const totalItems = useOrderStore((state) => state.getTotalItems());
+  const totalItems = useCartStore((state) => state.getTotalItems());
 
   const { query, debouncedQuery, handleQueryChange, clearSearch } =
     useDebouncedMenuSearch();

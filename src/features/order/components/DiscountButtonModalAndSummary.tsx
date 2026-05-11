@@ -1,4 +1,4 @@
-import { useOrderStore } from "@/stores/useOrderStore";
+import { useCartStore } from "@/stores/useCartStore";
 import { DiscountType, OrderType } from "@/types/enums";
 import {
   calculateDiscountAmount,
@@ -27,7 +27,7 @@ const DISCOUNT_TYPES: { type: DiscountType; label: string }[] = [
 export default function DiscountButtonModalAndSummary() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { order, updateOrder } = useOrderStore();
+  const { order, updateOrder } = useCartStore();
 
   const committedType =
     order.taxBreakDown?.discount?.discountType ?? DiscountType.None;

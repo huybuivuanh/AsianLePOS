@@ -1,6 +1,6 @@
 import { buildItemScreenParams } from "@/features/takeout";
 import { useMenuStore } from "@/stores/useMenuStore";
-import { useOrderStore } from "@/stores/useOrderStore";
+import { useCartStore } from "@/stores/useCartStore";
 import { OrderType } from "@/types/enums";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default function OrderItemCard({ item }: Props) {
-  const { updateQuantity, updateOrderItem, order } = useOrderStore();
+  const { updateQuantity, updateOrderItem, order } = useCartStore();
   const { menuItems } = useMenuStore();
   const router = useRouter();
 

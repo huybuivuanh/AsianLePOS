@@ -1,5 +1,5 @@
 import { useCustomersStore } from "@/stores/useCustomersStore";
-import { useOrderStore } from "@/stores/useOrderStore";
+import { useCartStore } from "@/stores/useCartStore";
 import {
   extractPhoneDigits,
   findBestCustomerByLast7,
@@ -21,14 +21,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function CustomerInfoForm() {
   const insets = useSafeAreaInsets();
-  const { order, updateOrder } = useOrderStore();
-  const dismissTakeOutCustomerNameSuggestion = useOrderStore(
+  const { order, updateOrder } = useCartStore();
+  const dismissTakeOutCustomerNameSuggestion = useCartStore(
     (s) => s.dismissTakeOutCustomerNameSuggestion,
   );
-  const takeOutCustomerSuggestDismissedLast7 = useOrderStore(
+  const takeOutCustomerSuggestDismissedLast7 = useCartStore(
     (s) => s.takeOutCustomerSuggestDismissedLast7,
   );
-  const clearTakeOutCustomerNameSuggestionDismissal = useOrderStore(
+  const clearTakeOutCustomerNameSuggestionDismissal = useCartStore(
     (s) => s.clearTakeOutCustomerNameSuggestionDismissal,
   );
   const customers = useCustomersStore((s) => s.customers);

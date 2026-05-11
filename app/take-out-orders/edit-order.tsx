@@ -4,6 +4,7 @@ import { OrderFooter } from "@/features/takeout";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useAuth } from "@/providers/AuthProvider";
 import { useCustomersStore } from "@/stores/useCustomersStore";
+import { useCartStore } from "@/stores/useCartStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import Header from "@/ui/Header";
@@ -21,8 +22,9 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 
 export default function EditOrder() {
   const router = useRouter();
-  const { updateOrderOnFirestore, clearOrder } = useOrderStore();
-  const order = useOrderStore((state) => state.order);
+  const { clearOrder } = useCartStore();
+  const order = useCartStore((state) => state.order);
+  const { updateOrderOnFirestore } = useOrderStore();
 
   const { user } = useAuth();
 
@@ -39,7 +41,7 @@ export default function EditOrder() {
 
     try {
       setSubmitting(true);
-      await useCustomersStore.getState().syncTakeOutCustomerFromCart();
+      await useCustomersStore.getState().syncTakeOutCustomerFromCart(order);
       // Create a clean order object with only defined values
       // Use conditional spreading for ALL optional fields to avoid undefined values
       await updateOrderOnFirestore({ ...order });

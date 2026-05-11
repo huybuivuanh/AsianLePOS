@@ -4,6 +4,7 @@ import { OrderFooter } from "@/features/takeout";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useAuth } from "@/providers/AuthProvider";
 import { useCustomersStore } from "@/stores/useCustomersStore";
+import { useCartStore } from "@/stores/useCartStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import Header from "@/ui/Header";
@@ -21,8 +22,9 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 
 export default function ReviewOrder() {
   const router = useRouter();
-  const { submitOrder, clearOrder } = useOrderStore();
-  const order = useOrderStore((state) => state.order);
+  const { clearOrder } = useCartStore();
+  const order = useCartStore((state) => state.order);
+  const { submitOrder } = useOrderStore();
 
   const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
@@ -47,7 +49,7 @@ export default function ReviewOrder() {
       };
 
       setSubmitting(true);
-      await useCustomersStore.getState().syncTakeOutCustomerFromCart();
+      await useCustomersStore.getState().syncTakeOutCustomerFromCart(order);
       await submitOrder(newOrder);
       router.push({
         pathname: "/(tabs)/take-out-orders",

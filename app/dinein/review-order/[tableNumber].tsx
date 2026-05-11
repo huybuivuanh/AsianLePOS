@@ -2,6 +2,7 @@ import { OrderLinesList } from "@/features/order";
 import DiscountButtonModalAndSummary from "@/features/order/components/DiscountButtonModalAndSummary";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useAuth } from "@/providers/AuthProvider";
+import { useCartStore } from "@/stores/useCartStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import Header from "@/ui/Header";
@@ -21,8 +22,9 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 export default function ReviewDineInOrder() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
   const router = useRouter();
-  const { clearOrder, getTotalItems, getTaxBreakdown, submitOrder } = useOrderStore();
-  const order = useOrderStore((state) => state.order);
+  const { clearOrder, getTotalItems, getTaxBreakdown } = useCartStore();
+  const order = useCartStore((state) => state.order);
+  const { submitOrder } = useOrderStore();
   const taxBreakDown = getTaxBreakdown();
 
   const { user } = useAuth();

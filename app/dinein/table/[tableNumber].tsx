@@ -4,6 +4,7 @@ import OrderItemsList from "@/features/order/components/OrderItemsList";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { db } from "@/lib/firebaseConfig";
 import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
+import { useCartStore } from "@/stores/useCartStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { DiscountType, OrderType } from "@/types/enums";
@@ -62,12 +63,11 @@ export default function TablePage() {
 
   const { activeDineInOrders, loading: ordersLoading } =
     useActiveDineInOrdersStore();
+  const { clearOrder, updateOrder } = useCartStore();
   const {
-    clearOrder,
     cancelOrder,
     completeOrder,
     markOrderAsPaid,
-    updateOrder,
     submitToPrintQueue,
     submitSelectedItemsToPrintQueue,
   } = useOrderStore();

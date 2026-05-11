@@ -130,6 +130,15 @@ declare global {
 
   type AnyOrder = TakeOutOrder | DineInOrder;
 
+  /** In-memory cart / Firestore write payload. Wider than `AnyOrder` because drafts are partial. */
+  type OrderDraft = Partial<Order> & {
+    customerName?: string;
+    phoneNumber?: string;
+    fulfillment?: TakeOutFulfillment;
+    tableNumber?: string;
+    guests?: number;
+  };
+
   interface Table {
     id?: string;
     tableNumber: string;

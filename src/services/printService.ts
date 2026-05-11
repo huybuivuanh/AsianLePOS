@@ -1,0 +1,45 @@
+import { db } from "@/lib/firebaseConfig";
+import { DiscountType } from "@/types/enums";
+import { groupOrderItemsBySignature } from "@/utils/groupOrderItems";
+import { calculateTaxBreakdown, generateFirestoreId } from "@/utils/helpers";
+import { doc, setDoc, Timestamp } from "firebase/firestore";
+
+export async function submitToPrintQueue(order: OrderDraft): Promise<void> {
+  if (!order.id) throw new Error("Order ID is required to print.");
+
+  await setDoc(
+    doc(db, "printQueue", order.id),
+    {
+      ...order,
+      orderItems: groupOrderItemsBySignature(order.orderItems ?? []),
+      id: order.id,
+      printed: false,
+      createdAt: Timestamp.now(),
+    } as Record<string, unknown>,
+    { merge: true },
+  );
+}
+
+export async function submitSelectedItemsToPrintQueue(
+  order: OrderDraft,
+  selectedItemIds: string[],
+): Promise<void> {
+  if (!order.id) throw new Error("Order ID is required to print.");
+  if (selectedItemIds.length === 0) throw new Error("At least one item must be selected.");
+
+  const selectedItems =
+    order.orderItems?.filter((item) => item.id && selectedItemIds.includes(item.id)) ?? [];
+
+  const selectedSubtotal = selectedItems.reduce((acc, i) => acc + i.price * i.quantity, 0);
+  const selectedTaxBreakDown = calculateTaxBreakdown(selectedSubtotal, DiscountType.None, 0);
+
+  const queueDocId = generateFirestoreId();
+  await setDoc(doc(db, "printQueue", queueDocId), {
+    ...order,
+    orderItems: groupOrderItemsBySignature(selectedItems),
+    taxBreakDown: selectedTaxBreakDown,
+    id: queueDocId,
+    printed: false,
+    createdAt: Timestamp.now(),
+  } as Record<string, unknown>);
+}

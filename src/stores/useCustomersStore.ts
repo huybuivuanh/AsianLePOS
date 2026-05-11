@@ -8,14 +8,10 @@ import {
   Timestamp,
   updateDoc,
 } from "firebase/firestore";
-import {
-  extractPhoneDigits,
-  findBestCustomerByLast7,
-  lastSevenDigits,
-} from "../utils/customerPhone";
+import { extractPhoneDigits } from "../utils/customerPhone";
+import { syncFromCart } from "@/services/customerService";
 import { create } from "zustand";
 import { db } from "../lib/firebaseConfig";
-import { useOrderStore } from "./useOrderStore";
 
 const CUSTOMERS_COLLECTION = "customers";
 const CUSTOMERS_CACHE_KEY = "@customers:cache";
@@ -61,11 +57,13 @@ type CustomersState = {
     input: { name: string; phone: string },
   ) => Promise<void>;
   /**
-   * Reads `customerName` / `phoneNumber` from the current take-out cart
-   * (`useOrderStore`). Writes to `customers` only when name is non-empty and
-   * phone has ≥7 digits. Does not throw (logs only) so order submit can proceed.
+   * Writes to `customers` when name is non-empty and phone has ≥7 digits.
+   * Accepts order data as a parameter — no store cross-dependency.
+   * Does not throw (logs only) so order submit can proceed.
    */
-  syncTakeOutCustomerFromCart: () => Promise<void>;
+  syncTakeOutCustomerFromCart: (
+    order: Pick<OrderDraft, "customerName" | "phoneNumber">,
+  ) => Promise<void>;
   clearData: () => void;
 };
 
@@ -136,27 +134,10 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     void saveCustomersCache(updated);
   },
 
-  syncTakeOutCustomerFromCart: async () => {
-    const { order } = useOrderStore.getState();
+  syncTakeOutCustomerFromCart: async (order) => {
     const { customers, addCustomer, updateCustomer } = get();
-
-    const name = (order.customerName || "").trim();
-    const digits = extractPhoneDigits(order.phoneNumber || "");
-    const last7 = lastSevenDigits(digits);
-    if (!last7 || !name) return;
-
-    const existing = findBestCustomerByLast7(customers, last7);
-    const upperName = name.toUpperCase();
-
     try {
-      if (existing?.id) {
-        const sameName = existing.name.trim().toUpperCase() === upperName;
-        const samePhone = extractPhoneDigits(existing.phone) === digits;
-        if (sameName && samePhone) return;
-        await updateCustomer(existing.id, { name: upperName, phone: digits });
-      } else {
-        await addCustomer({ name: upperName, phone: digits });
-      }
+      await syncFromCart(order, customers, addCustomer, updateCustomer);
     } catch (e) {
       console.error("Customer sync failed:", e);
     }

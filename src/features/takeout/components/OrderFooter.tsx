@@ -1,4 +1,4 @@
-import { useOrderStore } from "@/stores/useOrderStore";
+import { useCartStore } from "@/stores/useCartStore";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import CustomerInfoForm from "./CustomerInfoForm";
@@ -18,9 +18,9 @@ export default function OrderFooter({
   disabled,
   submitLabel,
 }: Props) {
-  const orderId = useOrderStore((s) => s.order.id);
-  const getTotalItems = useOrderStore((s) => s.getTotalItems);
-  const getTaxBreakdown = useOrderStore((s) => s.getTaxBreakdown);
+  const orderId = useCartStore((s) => s.order.id);
+  const getTotalItems = useCartStore((s) => s.getTotalItems);
+  const getTaxBreakdown = useCartStore((s) => s.getTaxBreakdown);
   const isUpdatingExistingOrder = Boolean(orderId);
 
   const totalItems = getTotalItems();

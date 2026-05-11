@@ -6,8 +6,8 @@ import {
   useDebouncedMenuSearch,
 } from "@/features/takeout";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
+import { useCartStore } from "@/stores/useCartStore";
 import { useMenuStore } from "@/stores/useMenuStore";
-import { useOrderStore } from "@/stores/useOrderStore";
 import { OrderType } from "@/types/enums";
 import Header from "@/ui/Header";
 import { useRouter } from "expo-router";
@@ -17,7 +17,7 @@ import { Text, TouchableOpacity, View } from "react-native";
 export default function AddItemPage() {
   const router = useRouter();
   const { categories, menuItems, loading } = useMenuStore();
-  const { order } = useOrderStore();
+  const { order } = useCartStore();
 
   const { query, debouncedQuery, handleQueryChange, clearSearch } =
     useDebouncedMenuSearch();
