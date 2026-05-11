@@ -1,3 +1,4 @@
+import { useCartStore } from "@/stores/useCartStore";
 import { useFocusEffect } from "expo-router";
 import { X } from "lucide-react-native";
 import React, { useCallback, useRef } from "react";
@@ -33,11 +34,20 @@ export default function MenuPickerBody({
   listWrapperClassName = "-mx-4",
 }: MenuPickerBodyProps) {
   const inputRef = useRef<TextInput>(null);
+  const cartCountOnLeave = useRef<number | null>(null);
 
   useFocusEffect(
     useCallback(() => {
-      const timer = setTimeout(() => inputRef.current?.focus(), 100);
-      return () => clearTimeout(timer);
+      const currentCount = useCartStore.getState().getTotalItems();
+
+      if (cartCountOnLeave.current !== null && currentCount > cartCountOnLeave.current) {
+        // Returned after an item was added — re-open keyboard so the user can keep searching.
+        const timer = setTimeout(() => inputRef.current?.focus(), 100);
+        cartCountOnLeave.current = currentCount;
+        return () => clearTimeout(timer);
+      }
+
+      cartCountOnLeave.current = currentCount;
     }, [])
   );
 

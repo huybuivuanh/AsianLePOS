@@ -63,12 +63,7 @@ export default function Item() {
   const onSubmit = () => {
     const success = handleSubmit();
     if (!success) return;
-    const shouldPopStack = orderTypeStr === OrderType.DineIn || Boolean(order.id);
-    if (shouldPopStack) {
-      router.back();
-    } else {
-      router.push("/(tabs)");
-    }
+    router.back();
   };
 
   return (
