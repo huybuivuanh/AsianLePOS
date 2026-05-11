@@ -241,6 +241,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
             appetizer: fields.appetizer ?? item.appetizer,
             kitchenType: fields.kitchenType ?? item.kitchenType,
             paid: fields.paid ?? item.paid,
+            completed: fields.completed ?? item.completed,
             ...(fields.instructions !== undefined
               ? fields.instructions.trim()
                 ? { instructions: fields.instructions.trim() }
@@ -371,6 +372,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         appetizer: item.appetizer,
         kitchenType: item.kitchenType,
         paid: item.paid,
+        completed: item.completed,
         options: item.options ?? [],
         extras: item.extras ?? [],
         changes: item.changes ?? [],
@@ -742,6 +744,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         appetizer: false,
         kitchenType: item.kitchenType,
         paid: item.paid,
+        completed: item.completed,
         options: item.options ?? [],
         extras: item.extras ?? [],
         changes: item.changes ?? [],
@@ -856,6 +859,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         appetizer: item.appetizer,
         kitchenType: item.kitchenType,
         paid: item.paid,
+        completed: item.completed,
         options: item.options ?? [],
         extras: item.extras ?? [],
         changes: item.changes ?? [],

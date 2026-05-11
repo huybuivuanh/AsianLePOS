@@ -129,6 +129,7 @@ function buildMergedLine(
     togo: template.togo,
     appetizer: template.appetizer,
     paid: template.paid,
+    completed: template.completed,
     ...(options ? { options } : {}),
     ...(changes ? { changes } : {}),
     ...(extras ? { extras } : {}),
@@ -199,6 +200,7 @@ function buildMergedDrinkFlavorLine(bucket: OrderItem[]): OrderItem {
     togo: template.togo,
     appetizer: template.appetizer,
     paid: template.paid,
+    completed: template.completed,
     options,
   };
 }

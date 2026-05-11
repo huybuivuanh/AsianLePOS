@@ -381,6 +381,7 @@ export default function Item() {
         // Keep order-level paid state: new lines on an already fully-paid order stay paid
         // (add-on collected immediately at the register).
         paid: orderPaidFromLineItems(order.orderItems ?? []),
+        completed: false,
         price: orderItemPrice,
         quantity,
         ...(instructions !== "" && { instructions }),
