@@ -178,31 +178,13 @@ const TakeOutOrderCard = memo(function TakeOutOrderCard({
                   </Text>
                 </View>
               )}
-            <View
-              className={`px-3 py-1 rounded-full ${
-                item.status === OrderStatus.InProgress
-                  ? "bg-blue-100"
-                  : item.status === OrderStatus.Completed
-                    ? "bg-green-100"
-                    : "bg-red-200"
-              }`}
+
+            <TouchableOpacity
+              className="bg-green-500 px-4 py-2 rounded-lg"
+              onPress={() => onComplete(item)}
             >
-              <Text
-                className={`text-xs font-semibold ${
-                  item.status === OrderStatus.InProgress
-                    ? "text-blue-700"
-                    : item.status === OrderStatus.Completed
-                      ? "text-green-700"
-                      : "text-red-700"
-                }`}
-              >
-                {item.status === OrderStatus.InProgress
-                  ? "In Progress"
-                  : item.status === OrderStatus.Completed
-                    ? "Completed"
-                    : "Cancelled"}
-              </Text>
-            </View>
+              <Text className="text-sm font-bold text-white">Complete</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </TouchableOpacity>
@@ -530,7 +512,9 @@ export default function TakeOutOrdersTab() {
           isSelectionMode={isSelectionMode}
           // Only pass live selectedItemIds to the card currently in selection
           // mode — all others get the stable empty set so their memo holds.
-          selectedItemIds={isSelectionMode ? selectedItemIds : EMPTY_SELECTED_IDS}
+          selectedItemIds={
+            isSelectionMode ? selectedItemIds : EMPTY_SELECTED_IDS
+          }
           onToggleExpand={toggleExpand}
           onComplete={handleComplete}
           onCancel={handleCancel}
