@@ -3,7 +3,6 @@ import { DiscountType, OrderStatus, OrderType, TableStatus, TakeOutFulfillmentKi
 import { groupOrderItemsBySignature, ungroupOrderItems } from "@/utils/groupOrderItems";
 import { calculateTaxBreakdown, orderItemsSubtotal } from "@/utils/helpers";
 import { normalizeOrderItemTextForDb } from "@/utils/normalizeOrderItemText";
-import { preprocessOrderItems } from "@/utils/preprocessOrderItems";
 import { doc, getDoc, Timestamp, writeBatch } from "firebase/firestore";
 
 export async function convertDineInToTakeOut(
@@ -80,7 +79,7 @@ export async function convertDineInToTakeOut(
     id: orderId,
     orderType: OrderType.TakeOut,
     staff: data.staff ?? "",
-    orderItems: groupOrderItemsBySignature(preprocessOrderItems(cleanItems)),
+    orderItems: groupOrderItemsBySignature(cleanItems),
     taxBreakDown,
     status: OrderStatus.InProgress,
     printed: data.printed ?? false,
@@ -145,7 +144,7 @@ export async function convertTakeOutToDineIn(
     d?.discountValue ?? 0,
   );
 
-  const cleanItems = preprocessOrderItems(ungroupOrderItems(orderItems)).map((item) =>
+  const cleanItems = ungroupOrderItems(orderItems).map((item) =>
     normalizeOrderItemTextForDb({
       id: item.id,
       name: item.name,

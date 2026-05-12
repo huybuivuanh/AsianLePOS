@@ -3,7 +3,6 @@ import { DiscountType, OrderStatus, OrderType, TableStatus } from "@/types/enums
 import { groupOrderItemsBySignature, ungroupOrderItems } from "@/utils/groupOrderItems";
 import { calculateTaxBreakdown, orderItemsSubtotal } from "@/utils/helpers";
 import { normalizeOrderItemTextForDb } from "@/utils/normalizeOrderItemText";
-import { preprocessOrderItems } from "@/utils/preprocessOrderItems";
 import { doc, enableNetwork, Timestamp, writeBatch } from "firebase/firestore";
 
 function discountInputs(order: OrderDraft): { type: DiscountType; value: number } {
@@ -27,7 +26,7 @@ export async function submitOrder(order: OrderDraft, tableDocId?: string): Promi
     order.orderType === OrderType.DineIn
       ? ungroupOrderItems(order.orderItems ?? [])
       : groupOrderItemsBySignature(order.orderItems ?? []);
-  const normalizedItems = preprocessOrderItems(rawItems).map(normalizeOrderItemTextForDb);
+  const normalizedItems = rawItems.map(normalizeOrderItemTextForDb);
 
   const payload: Record<string, unknown> = {
     id: order.id,
@@ -76,7 +75,7 @@ export async function updateOrder(order: OrderDraft): Promise<void> {
       ? ungroupOrderItems(order.orderItems ?? [])
       : groupOrderItemsBySignature(order.orderItems ?? []);
 
-  const cleanItems = preprocessOrderItems(rawItems).map((item) =>
+  const cleanItems = rawItems.map((item) =>
     normalizeOrderItemTextForDb({
       id: item.id,
       name: item.name,
