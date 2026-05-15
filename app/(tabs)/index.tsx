@@ -9,14 +9,22 @@ import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useCartStore } from "@/stores/useCartStore";
 import { OrderType } from "@/types/enums";
-import { useRouter } from "expo-router";
-import React, { useMemo } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useMemo } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
 export default function TakeOut() {
   const router = useRouter();
   const { categories, menuItems, loading } = useMenuStore();
   const totalItems = useCartStore((state) => state.getTotalItems());
+
+  useFocusEffect(
+    useCallback(() => {
+      if (useCartStore.getState().order.orderType === OrderType.DineIn) {
+        useCartStore.getState().clearOrder();
+      }
+    }, [])
+  );
 
   const { query, debouncedQuery, handleQueryChange, clearSearch } =
     useDebouncedMenuSearch();

@@ -11,7 +11,7 @@ import { useCartStore } from "@/stores/useCartStore";
 import { OrderType } from "@/types/enums";
 import Header from "@/ui/Header";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
 export default function TakeOrder() {
@@ -19,6 +19,12 @@ export default function TakeOrder() {
   const router = useRouter();
   const { categories, menuItems, loading } = useMenuStore();
   const totalItems = useCartStore((state) => state.getTotalItems());
+  const { clearOrder, updateOrder } = useCartStore();
+
+  useEffect(() => {
+    clearOrder();
+    updateOrder({ orderType: OrderType.DineIn });
+  }, []);
 
   const { query, debouncedQuery, handleQueryChange, clearSearch } =
     useDebouncedMenuSearch();
