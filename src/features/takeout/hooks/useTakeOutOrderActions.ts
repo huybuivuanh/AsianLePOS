@@ -15,6 +15,7 @@ export function useTakeOutOrderActions(takeOutOrders: TakeOutOrder[]) {
     submitSelectedItemsToPrintQueue,
   } = useOrderStore();
 
+  const [actionOverlay, setActionOverlay] = useState<{ title: string } | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [selectionMode, setSelectionMode] = useState<string | null>(null);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
@@ -56,7 +57,10 @@ export function useTakeOutOrderActions(takeOutOrders: TakeOutOrder[]) {
 
   const handlePrint = useCallback(
     async (order: TakeOutOrder) => {
-      try { await submitToPrintQueue(order); } catch (e) { console.error("❌ Error printing:", e); }
+      try {
+        setActionOverlay({ title: "Sending to printer…" });
+        await submitToPrintQueue(order);
+      } catch (e) { console.error("❌ Error printing:", e); } finally { setActionOverlay(null); }
     },
     [submitToPrintQueue],
   );
@@ -85,10 +89,11 @@ export function useTakeOutOrderActions(takeOutOrders: TakeOutOrder[]) {
   const handlePrintSelected = useCallback(
     async (order: TakeOutOrder) => {
       try {
+        setActionOverlay({ title: "Sending to printer…" });
         await submitSelectedItemsToPrintQueue(order, Array.from(selectedItemIdsRef.current));
         setSelectionMode(null);
         setSelectedItemIds(new Set());
-      } catch (e) { console.error("❌ Error printing selected:", e); }
+      } catch (e) { console.error("❌ Error printing selected:", e); } finally { setActionOverlay(null); }
     },
     [submitSelectedItemsToPrintQueue],
   );
@@ -127,6 +132,7 @@ export function useTakeOutOrderActions(takeOutOrders: TakeOutOrder[]) {
   );
 
   return {
+    actionOverlay,
     expandedOrderId,
     setExpandedOrderId,
     selectionMode,

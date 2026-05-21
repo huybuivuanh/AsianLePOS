@@ -3,6 +3,7 @@ import { TakeOutOrderCard } from "@/features/takeout/components/TakeOutOrderCard
 import { useTakeOutOrderActions } from "@/features/takeout/hooks/useTakeOutOrderActions";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
+import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import { FlashList } from "@shopify/flash-list";
 import { useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useMemo } from "react";
@@ -39,6 +40,7 @@ export default function TakeOutOrdersTab() {
   const orderIdParam = Array.isArray(params.orderId) ? params.orderId[0] : params.orderId;
 
   const {
+    actionOverlay,
     expandedOrderId,
     setExpandedOrderId,
     selectionMode,
@@ -145,6 +147,11 @@ export default function TakeOutOrdersTab() {
           orderTotal={cashPaymentModalTotal}
         />
       )}
+
+      <FullScreenLoadingOverlay
+        visible={Boolean(actionOverlay)}
+        title={actionOverlay?.title ?? ""}
+      />
     </SafeAreaViewWrapper>
   );
 }
