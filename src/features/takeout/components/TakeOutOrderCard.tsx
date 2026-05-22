@@ -1,6 +1,10 @@
 import OrderItemsList from "@/features/order/components/OrderItemsList";
 import OrderTaxBreakdown from "@/features/order/components/OrderTaxBreakdown";
-import { DiscountType, OrderStatus } from "@/types/enums";
+import {
+  DiscountType,
+  OrderStatus,
+  TakeOutFulfillmentKind,
+} from "@/types/enums";
 import {
   calculateTaxBreakdown,
   EMPTY_TAX_BREAKDOWN,
@@ -102,6 +106,12 @@ export const TakeOutOrderCard = memo(function TakeOutOrderCard({
           <Text className="font-semibold text-gray-800 text-base">
             Staff: {item.staff ?? "—"}
           </Text>
+          {item.fulfillment?.kind === TakeOutFulfillmentKind.Immediate &&
+            item.fulfillment.readyTimeMinutes != null && (
+            <Text className="font-semibold text-gray-800 text-base">
+              Ready In: {item.fulfillment.readyTimeMinutes} min
+            </Text>
+          )}
           <Text className="font-semibold text-gray-800 text-base">
             Ordered At: {formatDate(item.createdAt)}
           </Text>
@@ -115,10 +125,10 @@ export const TakeOutOrderCard = memo(function TakeOutOrderCard({
         <View>
           <View className="items-end space-y-2">
             <View
-              className={`px-3 py-1 rounded-full ${item.printed ? "bg-green-100" : "bg-yellow-100"}`}
+              className={`px-3 py-1 rounded-full ${item.printed ? "bg-indigo-100" : "bg-amber-100"}`}
             >
               <Text
-                className={`text-xs font-semibold ${item.printed ? "text-green-700" : "text-yellow-700"}`}
+                className={`text-xs font-semibold ${item.printed ? "text-indigo-700" : "text-amber-700"}`}
               >
                 {item.printed ? "Printed" : "Not Printed"}
               </Text>
@@ -126,17 +136,17 @@ export const TakeOutOrderCard = memo(function TakeOutOrderCard({
             {!(item.status === OrderStatus.Completed && !isPaid) &&
               item.status !== OrderStatus.Cancelled && (
                 <View
-                  className={`px-3 py-1 rounded-full ${isPaid ? "bg-green-100" : "bg-gray-100"}`}
+                  className={`px-3 py-1 rounded-full ${isPaid ? "bg-fuchsia-100" : "bg-slate-200"}`}
                 >
                   <Text
-                    className={`text-xs font-semibold ${isPaid ? "text-green-700" : "text-gray-700"}`}
+                    className={`text-xs font-semibold ${isPaid ? "text-fuchsia-700" : "text-slate-600"}`}
                   >
                     {isPaid ? "Paid" : "Unpaid"}
                   </Text>
                 </View>
               )}
             <TouchableOpacity
-              className="bg-green-500 px-4 py-2 rounded-lg"
+              className="bg-green-500 px-4 py-2 rounded-lg mt-3"
               onPress={() => onComplete(item)}
             >
               <Text className="text-sm font-bold text-white">Complete</Text>

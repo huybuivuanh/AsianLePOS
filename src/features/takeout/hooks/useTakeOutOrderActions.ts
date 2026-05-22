@@ -29,8 +29,22 @@ export function useTakeOutOrderActions(takeOutOrders: TakeOutOrder[]) {
   const cashPaymentModalTotal = useMemo(() => {
     if (!cashPaymentOrderId) return 0;
     const o = takeOutOrders.find((x) => x.id === cashPaymentOrderId);
-    return resolveTaxBreakdown(o!)?.total ?? 0;
+    if (!o) return 0;
+    return resolveTaxBreakdown(o)?.total ?? 0;
   }, [cashPaymentOrderId, takeOutOrders]);
+
+  useEffect(() => {
+    if (cashPaymentOrderId && !takeOutOrders.some((x) => x.id === cashPaymentOrderId)) {
+      setCashPaymentOrderId(null);
+    }
+  }, [cashPaymentOrderId, takeOutOrders]);
+
+  useEffect(() => {
+    if (selectionMode && !takeOutOrders.some((x) => x.id === selectionMode)) {
+      setSelectionMode(null);
+      setSelectedItemIds(new Set());
+    }
+  }, [selectionMode, takeOutOrders]);
 
   const extraData = useMemo(
     () => ({ expandedOrderId, selectionMode, selectedItemIdsSize: selectedItemIds.size }),
