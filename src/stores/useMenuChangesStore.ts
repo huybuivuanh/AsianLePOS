@@ -1,7 +1,7 @@
 import { collection, getDocs } from "firebase/firestore";
 import { createStoreCache } from "@/utils/storeCache";
 import { create } from "zustand";
-import { db } from "@/lib/firebaseConfig";
+import { firebase } from "@/lib/firebaseConfig";
 
 const MENU_CHANGES_COLLECTION = "menuChanges";
 const cache = createStoreCache<MenuChange[]>("@menuChanges:cache");
@@ -41,7 +41,7 @@ export const useMenuChangesStore = create<MenuChangesState>((set, get) => ({
     });
 
     try {
-      const snap = await getDocs(collection(db, MENU_CHANGES_COLLECTION));
+      const snap = await getDocs(collection(firebase.db, MENU_CHANGES_COLLECTION));
       const menuChanges = snap.docs.map((docSnap) => ({
         id: docSnap.id,
         ...(docSnap.data() as Omit<MenuChange, "id">),

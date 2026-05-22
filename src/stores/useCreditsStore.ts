@@ -1,7 +1,7 @@
 import { collection, getDocs, type Timestamp } from "firebase/firestore";
 import { createStoreCache } from "@/utils/storeCache";
 import { create } from "zustand";
-import { db } from "@/lib/firebaseConfig";
+import { firebase } from "@/lib/firebaseConfig";
 
 const CREDITS_COLLECTION = "credits";
 const cache = createStoreCache<Credit[]>("@credits:cache");
@@ -44,7 +44,7 @@ export const useCreditsStore = create<CreditsState>((set, get) => ({
     });
 
     try {
-      const snap = await getDocs(collection(db, CREDITS_COLLECTION));
+      const snap = await getDocs(collection(firebase.db, CREDITS_COLLECTION));
       const credits = snap.docs.map((docSnap) => ({
         id: docSnap.id,
         ...(docSnap.data() as Omit<Credit, "id">),

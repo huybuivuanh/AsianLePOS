@@ -1,4 +1,4 @@
-import { db } from "@/lib/firebaseConfig";
+import { firebase } from "@/lib/firebaseConfig";
 import { DiscountType } from "@/types/enums";
 import { groupOrderItemsBySignature } from "@/utils/groupOrderItems";
 import { calculateTaxBreakdown, generateFirestoreId } from "@/utils/helpers";
@@ -8,7 +8,7 @@ export async function submitToPrintQueue(order: OrderDraft): Promise<void> {
   if (!order.id) throw new Error("Order ID is required to print.");
 
   await setDoc(
-    doc(db, "printQueue", order.id),
+    doc(firebase.db, "printQueue", order.id),
     {
       ...order,
       orderItems: groupOrderItemsBySignature(order.orderItems ?? []),
@@ -34,7 +34,7 @@ export async function submitSelectedItemsToPrintQueue(
   const selectedTaxBreakDown = calculateTaxBreakdown(selectedSubtotal, DiscountType.None, 0);
 
   const queueDocId = generateFirestoreId();
-  await setDoc(doc(db, "printQueue", queueDocId), {
+  await setDoc(doc(firebase.db, "printQueue", queueDocId), {
     ...order,
     orderItems: groupOrderItemsBySignature(selectedItems),
     taxBreakDown: selectedTaxBreakDown,

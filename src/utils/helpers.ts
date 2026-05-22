@@ -2,7 +2,7 @@ import { OrderType, TakeOutFulfillmentKind } from "@/types/enums";
 import dayjs from "dayjs";
 import { collection, doc, Timestamp } from "firebase/firestore";
 import { Alert, Platform } from "react-native";
-import { db } from "../lib/firebaseConfig";
+import { firebase } from "../lib/firebaseConfig";
 
 // Re-export domain calculations so existing imports keep working
 export {
@@ -75,7 +75,7 @@ export const convertOrderTimestamps = (order: Partial<AnyOrder>): Partial<AnyOrd
   createdAt: order.createdAt,
 });
 
-export const generateFirestoreId = () => doc(collection(db, "dummy")).id;
+export const generateFirestoreId = () => doc(collection(firebase.db, "dummy")).id;
 
 export const sortTables = (tables: Table[]): Table[] =>
   [...tables].sort((a, b) => parseInt(a.tableNumber, 10) - parseInt(b.tableNumber, 10));

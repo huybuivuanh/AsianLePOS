@@ -2,7 +2,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { collection, doc, getDocs, onSnapshot } from "firebase/firestore";
 import { create } from "zustand";
-import { db } from "../lib/firebaseConfig";
+import { firebase } from "../lib/firebaseConfig";
 
 type MenuState = {
   categories: FoodCategory[];
@@ -31,7 +31,7 @@ export const useMenuStore = create<MenuState>((set) => ({
   loading: true,
 
   subscribeToMenuVersion: () => {
-    const versionDocRef = doc(db, "menuVersion", "versionDoc");
+    const versionDocRef = doc(firebase.db, "menuVersion", "versionDoc");
 
     const unsubscribe = onSnapshot(versionDocRef, async (snapshot) => {
       const remoteVersion = snapshot.data()?.version ?? 0;
@@ -77,6 +77,7 @@ export const useMenuStore = create<MenuState>((set) => ({
 
   clearData: () => {
     localMenuVersionCache = null;
+    void AsyncStorage.removeItem(VERSION_KEY);
     set({
       categories: [],
       menuItems: [],
@@ -90,10 +91,10 @@ export const useMenuStore = create<MenuState>((set) => ({
 // Fetch all menu-related collections in parallel
 const fetchMenuCollections = async (): Promise<Pick<MenuState, MenuArrayKeys>> => {
   const [catSnap, itemsSnap, groupsSnap, optionsSnap] = await Promise.all([
-    getDocs(collection(db, "categories")),
-    getDocs(collection(db, "menuItems")),
-    getDocs(collection(db, "optionGroups")),
-    getDocs(collection(db, "options")),
+    getDocs(collection(firebase.db, "categories")),
+    getDocs(collection(firebase.db, "menuItems")),
+    getDocs(collection(firebase.db, "optionGroups")),
+    getDocs(collection(firebase.db, "options")),
   ]);
 
   const categories = catSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as (FoodCategory & { order?: number })[];

@@ -1,4 +1,4 @@
-import { db } from "@/lib/firebaseConfig";
+import { firebase } from "@/lib/firebaseConfig";
 import { DiscountType, OrderStatus, OrderType, TableStatus, TakeOutFulfillmentKind } from "@/types/enums";
 import { groupOrderItemsBySignature, ungroupOrderItems } from "@/utils/groupOrderItems";
 import { calculateTaxBreakdown, orderItemsSubtotal } from "@/utils/helpers";
@@ -21,8 +21,8 @@ export async function convertDineInToTakeOut(
   const phone = phoneNumber?.trim() ?? "";
   if (!name && !phone) throw new Error("Enter a customer name or phone number.");
 
-  const orderRef = doc(db, "dineInOrders", orderId);
-  const tableRef = doc(db, "tables", tableDocId);
+  const orderRef = doc(firebase.db, "dineInOrders", orderId);
+  const tableRef = doc(firebase.db, "tables", tableDocId);
 
   const [orderSnap, tableSnap] = await Promise.all([getDoc(orderRef), getDoc(tableRef)]);
   if (!orderSnap.exists()) throw new Error("Dine-in order not found.");
@@ -89,9 +89,9 @@ export async function convertDineInToTakeOut(
     fulfillment,
   };
 
-  const batch = writeBatch(db);
+  const batch = writeBatch(firebase.db);
   batch.delete(orderRef);
-  batch.set(doc(db, "takeOutOrders", orderId), takeOutPayload);
+  batch.set(doc(firebase.db, "takeOutOrders", orderId), takeOutPayload);
   batch.update(tableRef, { status: TableStatus.Open, currentOrderId: null, guests: 0 });
   await batch.commit();
 }
@@ -109,8 +109,8 @@ export async function convertTakeOutToDineIn(
     throw new Error("Cannot find table in app. Open the Tables tab to sync, then try again.");
   }
 
-  const takeOutRef = doc(db, "takeOutOrders", orderId);
-  const tableRef = doc(db, "tables", tableDocId);
+  const takeOutRef = doc(firebase.db, "takeOutOrders", orderId);
+  const tableRef = doc(firebase.db, "tables", tableDocId);
 
   const [orderSnap, tableSnap] = await Promise.all([getDoc(takeOutRef), getDoc(tableRef)]);
   if (!orderSnap.exists()) throw new Error("Take-out order not found.");
@@ -175,9 +175,9 @@ export async function convertTakeOutToDineIn(
     guests: g,
   };
 
-  const batch = writeBatch(db);
+  const batch = writeBatch(firebase.db);
   batch.delete(takeOutRef);
-  batch.set(doc(db, "dineInOrders", orderId), dineInPayload);
+  batch.set(doc(firebase.db, "dineInOrders", orderId), dineInPayload);
   batch.update(tableRef, { status: TableStatus.Occupied, currentOrderId: orderId, guests: g });
   await batch.commit();
 }

@@ -15,7 +15,7 @@ import {
   SafeAreaProvider,
   initialWindowMetrics,
 } from "react-native-safe-area-context";
-import { db } from "@/lib/firebaseConfig";
+import { firebase } from "@/lib/firebaseConfig";
 import "../global.css";
 
 const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000;
@@ -77,7 +77,7 @@ export default function RootLayout({
         const t = backgroundTimeRef.current;
         backgroundTimeRef.current = null;
         if (t !== null && Date.now() - t >= INACTIVITY_TIMEOUT_MS) {
-          void enableNetwork(db);
+          void enableNetwork(firebase.db);
           setResetKey((k) => k + 1);
         }
       }

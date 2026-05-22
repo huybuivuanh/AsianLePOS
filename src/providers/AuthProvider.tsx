@@ -6,7 +6,9 @@ import {
   useEffect,
   useState,
 } from "react";
-import { auth } from "../lib/firebaseConfig";
+import { DEMO_EMAIL } from "../config/demo";
+import { activateDemoDb, activateProductionDb, auth } from "../lib/firebaseConfig";
+import { useMenuStore } from "../stores/useMenuStore";
 
 type AuthContextType = {
   user: User | null;
@@ -28,6 +30,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser?.email === DEMO_EMAIL) {
+        activateDemoDb();
+      } else {
+        activateProductionDb();
+      }
+      // Clear menu version cache so the next subscription fetches from the
+      // correct database instead of serving the previous account's cached menu.
+      useMenuStore.getState().clearData();
       setUser(firebaseUser);
       setLoading(false);
     });

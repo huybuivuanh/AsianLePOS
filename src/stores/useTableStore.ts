@@ -1,7 +1,7 @@
 import { sortTables } from "@/utils/helpers";
 import { collection, doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { create } from "zustand";
-import { db } from "../lib/firebaseConfig";
+import { firebase } from "../lib/firebaseConfig";
 
 type TableStore = {
   tables: Table[];
@@ -26,7 +26,7 @@ export const useTableStore = create<TableStore>((set, get) => ({
     get().tables.find((t) => t.tableNumber === tableNumber)?.id,
 
   updateTable: async (tableDocId, data) => {
-    const tableRef = doc(db, "tables", tableDocId);
+    const tableRef = doc(firebase.db, "tables", tableDocId);
     await updateDoc(tableRef, data);
     set((state) => ({
       tables: state.tables.map((t) =>
@@ -36,7 +36,7 @@ export const useTableStore = create<TableStore>((set, get) => ({
   },
 
   subscribeToTables: async () => {
-    const tablesRef = collection(db, "tables");
+    const tablesRef = collection(firebase.db, "tables");
     const unsubscribe = onSnapshot(tablesRef, (snapshot) => {
       const tablesData: Table[] = snapshot.docs.map((docSnap) => {
         const raw = docSnap.data() as Partial<Table>;

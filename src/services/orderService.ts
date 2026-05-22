@@ -1,4 +1,4 @@
-import { db } from "@/lib/firebaseConfig";
+import { firebase } from "@/lib/firebaseConfig";
 import { DiscountType, OrderStatus, OrderType, TableStatus } from "@/types/enums";
 import { groupOrderItemsBySignature, ungroupOrderItems } from "@/utils/groupOrderItems";
 import { calculateTaxBreakdown, orderItemsSubtotal } from "@/utils/helpers";
@@ -50,11 +50,11 @@ export async function submitOrder(order: OrderDraft, tableDocId?: string): Promi
   }
 
   const firestoreCollection = order.orderType === OrderType.DineIn ? "dineInOrders" : "takeOutOrders";
-  const batch = writeBatch(db);
-  batch.set(doc(db, firestoreCollection, order.id!), payload);
+  const batch = writeBatch(firebase.db);
+  batch.set(doc(firebase.db, firestoreCollection, order.id!), payload);
 
   if (order.orderType === OrderType.DineIn && tableDocId) {
-    batch.update(doc(db, "tables", tableDocId), {
+    batch.update(doc(firebase.db, "tables", tableDocId), {
       status: TableStatus.Occupied,
       currentOrderId: order.id,
     });
@@ -113,21 +113,21 @@ export async function updateOrder(order: OrderDraft): Promise<void> {
     if (order.guests !== undefined) updateData.guests = order.guests;
   }
 
-  const batch = writeBatch(db);
-  batch.update(doc(db, firestoreCollection, order.id), updateData);
+  const batch = writeBatch(firebase.db);
+  batch.update(doc(firebase.db, firestoreCollection, order.id), updateData);
   await batch.commit();
 }
 
 export async function cancelOrder(order: OrderDraft, tableDocId?: string | null): Promise<void> {
   if (!order.id) throw new Error("Order ID is required to cancel.");
 
-  await enableNetwork(db);
+  await enableNetwork(firebase.db);
   const firestoreCollection = order.orderType === OrderType.DineIn ? "dineInOrders" : "takeOutOrders";
-  const batch = writeBatch(db);
-  batch.update(doc(db, firestoreCollection, order.id), { status: OrderStatus.Cancelled });
+  const batch = writeBatch(firebase.db);
+  batch.update(doc(firebase.db, firestoreCollection, order.id), { status: OrderStatus.Cancelled });
 
   if (order.orderType === OrderType.DineIn && tableDocId) {
-    batch.update(doc(db, "tables", tableDocId), {
+    batch.update(doc(firebase.db, "tables", tableDocId), {
       status: TableStatus.Open,
       currentOrderId: null,
       guests: 0,
@@ -140,7 +140,7 @@ export async function cancelOrder(order: OrderDraft, tableDocId?: string | null)
 export async function completeOrder(order: OrderDraft, tableDocId?: string | null): Promise<void> {
   if (!order.id) throw new Error("Order ID is required to complete.");
 
-  await enableNetwork(db);
+  await enableNetwork(firebase.db);
   const firestoreCollection = order.orderType === OrderType.DineIn ? "dineInOrders" : "takeOutOrders";
 
   const nextStatus =
@@ -150,11 +150,11 @@ export async function completeOrder(order: OrderDraft, tableDocId?: string | nul
         ? OrderStatus.InProgress
         : OrderStatus.Completed;
 
-  const batch = writeBatch(db);
-  batch.update(doc(db, firestoreCollection, order.id), { status: nextStatus });
+  const batch = writeBatch(firebase.db);
+  batch.update(doc(firebase.db, firestoreCollection, order.id), { status: nextStatus });
 
   if (order.orderType === OrderType.DineIn && tableDocId && nextStatus === OrderStatus.Completed) {
-    batch.update(doc(db, "tables", tableDocId), {
+    batch.update(doc(firebase.db, "tables", tableDocId), {
       status: TableStatus.Open,
       currentOrderId: null,
       guests: 0,
@@ -166,8 +166,8 @@ export async function completeOrder(order: OrderDraft, tableDocId?: string | nul
 
 /** Writes an already-mutated orderItems array to Firestore (used by paid-toggle debounce). */
 export async function updateLineItemsPaid(orderId: string, items: OrderItem[]): Promise<void> {
-  const batch = writeBatch(db);
-  batch.update(doc(db, "dineInOrders", orderId), { orderItems: items });
+  const batch = writeBatch(firebase.db);
+  batch.update(doc(firebase.db, "dineInOrders", orderId), { orderItems: items });
   await batch.commit();
 }
 
@@ -176,7 +176,7 @@ export async function markPaid(order: OrderDraft, paid: boolean): Promise<void> 
 
   const firestoreCollection = order.orderType === OrderType.DineIn ? "dineInOrders" : "takeOutOrders";
   const nextItems = (order.orderItems ?? []).map((it) => ({ ...it, paid }));
-  const batch = writeBatch(db);
-  batch.update(doc(db, firestoreCollection, order.id), { orderItems: nextItems });
+  const batch = writeBatch(firebase.db);
+  batch.update(doc(firebase.db, firestoreCollection, order.id), { orderItems: nextItems });
   await batch.commit();
 }

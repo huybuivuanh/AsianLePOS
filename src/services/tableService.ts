@@ -1,4 +1,4 @@
-import { db } from "@/lib/firebaseConfig";
+import { firebase } from "@/lib/firebaseConfig";
 import { TableStatus } from "@/types/enums";
 import { doc, getDoc, writeBatch } from "firebase/firestore";
 
@@ -10,7 +10,7 @@ export async function changeDineInOrderTable(
 ): Promise<void> {
   if (fromTableNumber === toTableNumber) throw new Error("Select a different table.");
 
-  const orderRef = doc(db, "dineInOrders", orderId);
+  const orderRef = doc(firebase.db, "dineInOrders", orderId);
   const orderSnap = await getDoc(orderRef);
   if (!orderSnap.exists()) throw new Error("Order not found.");
 
@@ -27,8 +27,8 @@ export async function changeDineInOrderTable(
     throw new Error("Cannot find table in app. Open the Tables tab to sync, then try again.");
   }
 
-  const oldTableRef = doc(db, "tables", fromDocId);
-  const newTableRef = doc(db, "tables", toDocId);
+  const oldTableRef = doc(firebase.db, "tables", fromDocId);
+  const newTableRef = doc(firebase.db, "tables", toDocId);
 
   const [oldTableSnap, newTableSnap] = await Promise.all([
     getDoc(oldTableRef),
@@ -47,7 +47,7 @@ export async function changeDineInOrderTable(
     throw new Error("That table is not available. Choose another.");
   }
 
-  const batch = writeBatch(db);
+  const batch = writeBatch(firebase.db);
   batch.update(oldTableRef, { status: TableStatus.Open, currentOrderId: null, guests: 0 });
   batch.update(newTableRef, { status: TableStatus.Occupied, currentOrderId: orderId, guests: g });
   batch.update(orderRef, { tableNumber: toTableNumber, guests: g });

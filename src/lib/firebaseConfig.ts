@@ -65,10 +65,18 @@ if (Platform.OS === "web") {
   });
 }
 
-export const db = initializeFirestore(app, {
-  localCache: memoryLocalCache({
-    garbageCollector: memoryEagerGarbageCollector(),
-  }),
-});
+const firestoreSettings = {
+  localCache: memoryLocalCache({ garbageCollector: memoryEagerGarbageCollector() }),
+};
+
+const productionDb = initializeFirestore(app, firestoreSettings);
+const demoDb = initializeFirestore(app, firestoreSettings, "demo");
+
+// Mutable active database — all stores and services reference firebase.db so
+// switching this object's property is enough to redirect all Firestore calls.
+export const firebase = { db: productionDb };
+
+export function activateDemoDb() { firebase.db = demoDb; }
+export function activateProductionDb() { firebase.db = productionDb; }
 
 export { auth };

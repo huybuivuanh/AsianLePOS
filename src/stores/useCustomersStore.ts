@@ -11,7 +11,7 @@ import { extractPhoneDigits } from "../utils/customerPhone";
 import { syncFromCart } from "@/services/customerService";
 import { createStoreCache } from "@/utils/storeCache";
 import { create } from "zustand";
-import { db } from "../lib/firebaseConfig";
+import { firebase } from "../lib/firebaseConfig";
 
 const CUSTOMERS_COLLECTION = "customers";
 const cache = createStoreCache<Customer[]>("@customers:cache");
@@ -47,7 +47,7 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
       if (cached && cached.length > 0) set({ customers: cached, loading: false });
     });
 
-    void getDocs(query(collection(db, CUSTOMERS_COLLECTION)))
+    void getDocs(query(collection(firebase.db, CUSTOMERS_COLLECTION)))
       .then((snapshot) => {
         const data = snapshot.docs.map((docSnap) => ({
           ...(docSnap.data() as Customer),
@@ -69,7 +69,7 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     const p = extractPhoneDigits(phone) || phone.trim();
     if (!n || !p) return undefined;
 
-    const ref = await addDoc(collection(db, CUSTOMERS_COLLECTION), {
+    const ref = await addDoc(collection(firebase.db, CUSTOMERS_COLLECTION), {
       name: n,
       phone: p,
       createdAt: Timestamp.now(),
@@ -88,7 +88,7 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     const p = extractPhoneDigits(phone) || phone.trim();
     if (!n || !p) return;
 
-    await updateDoc(doc(db, CUSTOMERS_COLLECTION, id), { name: n, phone: p });
+    await updateDoc(doc(firebase.db, CUSTOMERS_COLLECTION, id), { name: n, phone: p });
 
     const updated = get().customers.map((c) =>
       c.id === id ? { ...c, name: n, phone: p } : c,

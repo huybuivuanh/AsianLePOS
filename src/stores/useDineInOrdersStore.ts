@@ -7,7 +7,7 @@ import {
   query,
 } from "firebase/firestore";
 import { create } from "zustand";
-import { db } from "../lib/firebaseConfig";
+import { firebase } from "../lib/firebaseConfig";
 import {
   clearDineInOrdersTabCache,
   loadDineInOrdersTabCache,
@@ -47,7 +47,7 @@ function debouncedSaveDineInCache(data: DineInOrder[]) {
 
 function dineInTabQuery() {
   return query(
-    collection(db, "dineInOrders"),
+    collection(firebase.db, "dineInOrders"),
     orderBy("createdAt", "desc"),
     limit(CACHE_LIMIT),
   );

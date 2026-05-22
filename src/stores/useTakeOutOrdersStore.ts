@@ -7,7 +7,7 @@ import {
   query,
 } from "firebase/firestore";
 import { create } from "zustand";
-import { db } from "../lib/firebaseConfig";
+import { firebase } from "../lib/firebaseConfig";
 import {
   clearTakeOutOrdersTabCache,
   loadTakeOutOrdersTabCache,
@@ -45,7 +45,7 @@ function debouncedSaveTakeOutCache(data: TakeOutOrder[]) {
 
 function takeOutTabQuery() {
   return query(
-    collection(db, "takeOutOrders"),
+    collection(firebase.db, "takeOutOrders"),
     orderBy("createdAt", "desc"),
     limit(CACHE_LIMIT),
   );
