@@ -10,8 +10,8 @@ import { useTableStore } from "@/stores/useTableStore";
 import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
-import { useEffect } from "react";
-import { Platform, Text, View } from "react-native";
+import { useCallback, useEffect, useRef } from "react";
+import { AppState, Platform, Text, View } from "react-native";
 
 const TAB_SCREEN_OPTIONS = {
   headerShown: false,
@@ -72,49 +72,65 @@ export default function TabsLayout() {
     clearOrder,
   ]);
 
-  // Subscriptions setup
-  useEffect(() => {
-    if (!user) return;
+  const unsubsRef = useRef<Array<() => void>>([]);
 
-    // Menu changes & credits: one fetch per signed-in session (stores skip if already loaded).
+  const stopListeners = useCallback(() => {
+    unsubsRef.current.forEach((fn) => fn());
+    unsubsRef.current = [];
+  }, []);
+
+  const startListeners = useCallback(() => {
+    stopListeners();
     void useMenuChangesStore.getState().fetchMenuChanges();
     void useCreditsStore.getState().fetchCredits();
 
-    // Set up all synchronous subscriptions immediately so cleanup is guaranteed
-    const unsubMenu = subscribeToMenuVersion();
-    const unsubTakeOut = subscribeToTakeOutOrders();
-    const unsubDineInTab = subscribeToDineInOrders();
-    const unsubCustomers = subscribeToCustomers();
+    const unsubs: Array<() => void> = [];
+    const add = (fn: (() => void) | undefined) => { if (fn) unsubs.push(fn); };
+    add(subscribeToMenuVersion());
+    add(subscribeToTakeOutOrders());
+    add(subscribeToDineInOrders());
+    add(subscribeToCustomers());
+    unsubsRef.current = unsubs;
 
-    // subscribeToTables is async; track mount state so we can clean it up
-    // immediately if the effect re-runs before the promise resolves
-    let mounted = true;
-    let unsubTables: (() => void) | undefined;
-
+    let active = true;
     subscribeToTables().then((unsub) => {
-      if (mounted) {
-        unsubTables = unsub;
-      } else {
-        unsub?.();
-      }
+      if (active && unsub) unsubsRef.current.push(unsub);
+      else unsub?.();
     });
 
-    return () => {
-      mounted = false;
-      unsubMenu?.();
-      unsubTakeOut?.();
-      unsubDineInTab?.();
-      unsubCustomers?.();
-      unsubTables?.();
-    };
+    return () => { active = false; };
   }, [
-    user,
+    stopListeners,
     subscribeToMenuVersion,
     subscribeToTakeOutOrders,
     subscribeToDineInOrders,
     subscribeToCustomers,
     subscribeToTables,
   ]);
+
+  useEffect(() => {
+    if (!user) return;
+    const cleanup = startListeners();
+    return () => {
+      cleanup?.();
+      stopListeners();
+    };
+  }, [user, startListeners, stopListeners]);
+
+  // Tear down listeners when screen locks, restart on resume to prevent
+  // use-after-free crashes from stale Firebase callbacks firing against
+  // memory iOS reclaimed during a long background period.
+  useEffect(() => {
+    if (!user) return;
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "background") {
+        stopListeners();
+      } else if (state === "active" && unsubsRef.current.length === 0) {
+        startListeners();
+      }
+    });
+    return () => sub.remove();
+  }, [user, startListeners, stopListeners]);
 
   if (authLoading || !user) {
     return (

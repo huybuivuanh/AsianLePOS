@@ -1,7 +1,10 @@
 import { sortTables } from "@/utils/helpers";
+import { createStoreCache } from "@/utils/storeCache";
 import { collection, doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { create } from "zustand";
 import { firebase } from "../lib/firebaseConfig";
+
+const cache = createStoreCache<Table[]>("@tables:cache");
 
 type TableStore = {
   tables: Table[];
@@ -36,6 +39,17 @@ export const useTableStore = create<TableStore>((set, get) => ({
   },
 
   subscribeToTables: async () => {
+    // Serve cache immediately while waiting for first snapshot
+    cache.load().then((cached) => {
+      if (
+        cached &&
+        cached.length > 0 &&
+        useTableStore.getState().tables.length === 0
+      ) {
+        set({ tables: cached });
+      }
+    });
+
     const tablesRef = collection(firebase.db, "tables");
     const unsubscribe = onSnapshot(tablesRef, (snapshot) => {
       const tablesData: Table[] = snapshot.docs.map((docSnap) => {
@@ -48,11 +62,13 @@ export const useTableStore = create<TableStore>((set, get) => ({
       });
       const sortedTables = sortTables(tablesData);
       set({ tables: sortedTables });
+      void cache.save(sortedTables);
     });
     return unsubscribe;
   },
 
   clearData: () => {
+    void cache.clear();
     set({ tables: [] });
   },
 }));

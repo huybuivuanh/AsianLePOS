@@ -9,8 +9,8 @@ import {
 } from "firebase/auth";
 import {
   initializeFirestore,
-  memoryEagerGarbageCollector,
   memoryLocalCache,
+  memoryLruGarbageCollector,
 } from "firebase/firestore";
 import { Platform } from "react-native";
 
@@ -66,7 +66,9 @@ if (Platform.OS === "web") {
 }
 
 const firestoreSettings = {
-  localCache: memoryLocalCache({ garbageCollector: memoryEagerGarbageCollector() }),
+  localCache: memoryLocalCache({
+    garbageCollector: memoryLruGarbageCollector(),
+  }),
 };
 
 const productionDb = initializeFirestore(app, firestoreSettings);
@@ -76,7 +78,11 @@ const demoDb = initializeFirestore(app, firestoreSettings, "demo");
 // switching this object's property is enough to redirect all Firestore calls.
 export const firebase = { db: productionDb };
 
-export function activateDemoDb() { firebase.db = demoDb; }
-export function activateProductionDb() { firebase.db = productionDb; }
+export function activateDemoDb() {
+  firebase.db = demoDb;
+}
+export function activateProductionDb() {
+  firebase.db = productionDb;
+}
 
 export { auth };
