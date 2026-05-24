@@ -9,8 +9,8 @@ import {
 } from "firebase/auth";
 import {
   initializeFirestore,
-  memoryEagerGarbageCollector,
   memoryLocalCache,
+  memoryLruGarbageCollector,
 } from "firebase/firestore";
 import { Platform } from "react-native";
 
@@ -67,7 +67,7 @@ if (Platform.OS === "web") {
 
 export const db = initializeFirestore(app, {
   localCache: memoryLocalCache({
-    garbageCollector: memoryEagerGarbageCollector(),
+    garbageCollector: memoryLruGarbageCollector(),
   }),
 });
 
