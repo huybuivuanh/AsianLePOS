@@ -2,6 +2,7 @@ import { DineInOrderCard } from "@/features/dinein/components/DineInOrderCard";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useDineInOrdersStore } from "@/stores/useDineInOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
+import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import { FlashList } from "@shopify/flash-list";
 import { useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -26,6 +27,7 @@ export default function DineInOrdersTab() {
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(orderIdParam || null);
   const [selectionMode, setSelectionMode] = useState<string | null>(null);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
+  const [actionOverlay, setActionOverlay] = useState<{ title: string } | null>(null);
 
   const { markOrderAsPaid, submitToPrintQueue, submitSelectedItemsToPrintQueue } = useOrderStore();
 
@@ -37,7 +39,10 @@ export default function DineInOrdersTab() {
 
   const handlePrint = useCallback(
     async (order: DineInOrder) => {
-      try { await submitToPrintQueue(order); } catch (e) { console.error("❌ Error submitting to print queue:", e); }
+      try {
+        setActionOverlay({ title: "Sending to printer…" });
+        await submitToPrintQueue(order);
+      } catch (e) { console.error("❌ Error submitting to print queue:", e); } finally { setActionOverlay(null); }
     },
     [submitToPrintQueue],
   );
@@ -58,10 +63,11 @@ export default function DineInOrdersTab() {
   const handlePrintSelected = useCallback(
     async (order: DineInOrder) => {
       try {
+        setActionOverlay({ title: "Sending to printer…" });
         await submitSelectedItemsToPrintQueue(order, Array.from(selectedItemIds));
         setSelectionMode(null);
         setSelectedItemIds(new Set());
-      } catch (e) { console.error("❌ Error printing selected items:", e); }
+      } catch (e) { console.error("❌ Error printing selected items:", e); } finally { setActionOverlay(null); }
     },
     [submitSelectedItemsToPrintQueue, selectedItemIds],
   );
@@ -138,6 +144,10 @@ export default function DineInOrdersTab() {
           }
         />
       )}
+      <FullScreenLoadingOverlay
+        visible={Boolean(actionOverlay)}
+        title={actionOverlay?.title ?? "Please wait…"}
+      />
     </SafeAreaViewWrapper>
   );
 }
