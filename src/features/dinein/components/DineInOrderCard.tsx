@@ -8,7 +8,6 @@ import { Text, TouchableOpacity, View } from "react-native";
 
 type Props = {
   item: DineInOrder;
-  groupedOrderItems: OrderItem[];
   expanded: boolean;
   isSelectionMode: boolean;
   selectedItemIds: Set<string>;
@@ -22,7 +21,6 @@ type Props = {
 
 export const DineInOrderCard = memo(function DineInOrderCard({
   item,
-  groupedOrderItems,
   expanded,
   isSelectionMode,
   selectedItemIds,
@@ -36,10 +34,7 @@ export const DineInOrderCard = memo(function DineInOrderCard({
   const taxBreakDown = useMemo(() => resolveTaxBreakdown(item), [item]);
   const isPaid = useMemo(() => orderPaidFromLineItems(item.orderItems ?? []), [item.orderItems]);
 
-  const displayOrderItems = useMemo(
-    () => (!isSelectionMode ? groupedOrderItems : item.orderItems ?? []),
-    [isSelectionMode, groupedOrderItems, item.orderItems],
-  );
+  const displayOrderItems = item.orderItems ?? [];
 
   const selectedItemsTotal = useMemo(() => {
     if (!isSelectionMode || !item.orderItems || selectedItemIds.size === 0) return 0;

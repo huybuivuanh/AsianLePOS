@@ -1,6 +1,6 @@
 import { firebase } from "@/lib/firebaseConfig";
 import { DiscountType, OrderStatus, OrderType, TableStatus, TakeOutFulfillmentKind } from "@/types/enums";
-import { groupOrderItemsBySignature, ungroupOrderItems } from "@/utils/groupOrderItems";
+import { ungroupOrderItems } from "@/utils/groupOrderItems";
 import { calculateTaxBreakdown, orderItemsSubtotal } from "@/utils/helpers";
 import { normalizeOrderItemTextForDb } from "@/utils/normalizeOrderItemText";
 import { doc, getDoc, Timestamp, writeBatch } from "firebase/firestore";
@@ -79,7 +79,7 @@ export async function convertDineInToTakeOut(
     id: orderId,
     orderType: OrderType.TakeOut,
     staff: data.staff ?? "",
-    orderItems: groupOrderItemsBySignature(cleanItems),
+    orderItems: cleanItems.map(normalizeOrderItemTextForDb),
     taxBreakDown,
     status: OrderStatus.InProgress,
     printed: data.printed ?? false,

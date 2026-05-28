@@ -2,7 +2,6 @@ import { DineInOrderCard } from "@/features/dinein/components/DineInOrderCard";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useDineInOrdersStore } from "@/stores/useDineInOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
-import { groupOrderItemsBySignature } from "@/utils/groupOrderItems";
 import { FlashList } from "@shopify/flash-list";
 import { useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -79,22 +78,12 @@ export default function DineInOrdersTab() {
     [expandedOrderId, selectionMode, selectedItemIds.size],
   );
 
-  const groupedItemsByOrderId = useMemo(() => {
-    const map = new Map<string, OrderItem[]>();
-    for (const o of dineInOrders) {
-      if (!o.id) continue;
-      map.set(o.id, groupOrderItemsBySignature(o.orderItems ?? []));
-    }
-    return map;
-  }, [dineInOrders]);
-
   const renderOrder = useCallback(
     ({ item }: { item: DineInOrder }) => {
       const isSelectionMode = selectionMode === item.id;
       return (
         <DineInOrderCard
           item={item}
-          groupedOrderItems={groupedItemsByOrderId.get(item.id!) ?? item.orderItems ?? []}
           expanded={expandedOrderId === item.id}
           isSelectionMode={isSelectionMode}
           selectedItemIds={isSelectionMode ? selectedItemIds : EMPTY_SELECTED_IDS}
@@ -108,7 +97,7 @@ export default function DineInOrdersTab() {
       );
     },
     [
-      expandedOrderId, selectionMode, selectedItemIds, groupedItemsByOrderId,
+      expandedOrderId, selectionMode, selectedItemIds,
       toggleExpand, handlePrint, handleToggleSelectionMode, handleToggleItemSelection,
       handlePrintSelected, handleMarkAsPaid,
     ],

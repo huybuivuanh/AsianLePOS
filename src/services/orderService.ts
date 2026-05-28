@@ -1,6 +1,6 @@
 import { firebase } from "@/lib/firebaseConfig";
 import { DiscountType, OrderStatus, OrderType, TableStatus } from "@/types/enums";
-import { groupOrderItemsBySignature, ungroupOrderItems } from "@/utils/groupOrderItems";
+import { ungroupOrderItems } from "@/utils/groupOrderItems";
 import { calculateTaxBreakdown, orderItemsSubtotal } from "@/utils/helpers";
 import { normalizeOrderItemTextForDb } from "@/utils/normalizeOrderItemText";
 import { doc, enableNetwork, Timestamp, writeBatch } from "firebase/firestore";
@@ -22,10 +22,7 @@ export async function submitOrder(order: OrderDraft, tableDocId?: string): Promi
   const { type, value } = discountInputs(order);
   const taxBreakDown = calculateTaxBreakdown(orderItemsSubtotal(order.orderItems), type, value);
 
-  const rawItems =
-    order.orderType === OrderType.DineIn
-      ? ungroupOrderItems(order.orderItems ?? [])
-      : groupOrderItemsBySignature(order.orderItems ?? []);
+  const rawItems = ungroupOrderItems(order.orderItems ?? []);
   const normalizedItems = rawItems.map(normalizeOrderItemTextForDb);
 
   const payload: Record<string, unknown> = {
@@ -70,10 +67,7 @@ export async function updateOrder(order: OrderDraft): Promise<void> {
   const { type, value } = discountInputs(order);
   const taxBreakDown = calculateTaxBreakdown(orderItemsSubtotal(order.orderItems), type, value);
 
-  const rawItems =
-    order.orderType === OrderType.DineIn
-      ? ungroupOrderItems(order.orderItems ?? [])
-      : groupOrderItemsBySignature(order.orderItems ?? []);
+  const rawItems = ungroupOrderItems(order.orderItems ?? []);
 
   const cleanItems = rawItems.map((item) =>
     normalizeOrderItemTextForDb({
