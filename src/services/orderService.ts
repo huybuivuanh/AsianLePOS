@@ -1,5 +1,6 @@
 import { firebase } from "@/lib/firebaseConfig";
 import { DiscountType, OrderStatus, OrderType, TableStatus } from "@/types/enums";
+import { kitchenTypeSortRank } from "@/features/order/orderItemSections";
 import { ungroupOrderItems } from "@/utils/groupOrderItems";
 import { calculateTaxBreakdown, orderItemsSubtotal } from "@/utils/helpers";
 import { normalizeOrderItemTextForDb } from "@/utils/normalizeOrderItemText";
@@ -22,7 +23,12 @@ export async function submitOrder(order: OrderDraft, tableDocId?: string): Promi
   const { type, value } = discountInputs(order);
   const taxBreakDown = calculateTaxBreakdown(orderItemsSubtotal(order.orderItems), type, value);
 
-  const rawItems = ungroupOrderItems(order.orderItems ?? []);
+  const rawItems = ungroupOrderItems(order.orderItems ?? []).sort((a, b) => {
+    const ra = kitchenTypeSortRank(a.kitchenType);
+    const rb = kitchenTypeSortRank(b.kitchenType);
+    if (ra !== rb) return ra - rb;
+    return a.name.localeCompare(b.name);
+  });
   const normalizedItems = rawItems.map(normalizeOrderItemTextForDb);
 
   const payload: Record<string, unknown> = {
@@ -67,7 +73,12 @@ export async function updateOrder(order: OrderDraft): Promise<void> {
   const { type, value } = discountInputs(order);
   const taxBreakDown = calculateTaxBreakdown(orderItemsSubtotal(order.orderItems), type, value);
 
-  const rawItems = ungroupOrderItems(order.orderItems ?? []);
+  const rawItems = ungroupOrderItems(order.orderItems ?? []).sort((a, b) => {
+    const ra = kitchenTypeSortRank(a.kitchenType);
+    const rb = kitchenTypeSortRank(b.kitchenType);
+    if (ra !== rb) return ra - rb;
+    return a.name.localeCompare(b.name);
+  });
 
   const cleanItems = rawItems.map((item) =>
     normalizeOrderItemTextForDb({

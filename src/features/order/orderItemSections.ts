@@ -22,14 +22,15 @@ export function dineInItemSortTier(item: OrderItem): OrderItemDisplayTier {
 }
 
 export function sortOrderItemsForDisplay(items: OrderItem[]): OrderItem[] {
-  const indexed = items.map((item, index) => ({ item, index }));
-  indexed.sort((a, b) => {
-    const ta = dineInItemSortTier(a.item);
-    const tb = dineInItemSortTier(b.item);
+  return [...items].sort((a, b) => {
+    const ta = dineInItemSortTier(a);
+    const tb = dineInItemSortTier(b);
     if (ta !== tb) return ta - tb;
-    return a.index - b.index;
+    const ra = kitchenTypeSortRank(a.kitchenType);
+    const rb = kitchenTypeSortRank(b.kitchenType);
+    if (ra !== rb) return ra - rb;
+    return a.name.localeCompare(b.name);
   });
-  return indexed.map(({ item }) => item);
 }
 
 /**
@@ -79,45 +80,23 @@ export function groupOrderItemsByDisplaySection(
   if (sorted.length === 0) return [];
 
   const sections: OrderItemDisplaySection[] = [];
-  const sectionIndexedItems: {
-    tier: OrderItemDisplayTier;
-    item: OrderItem;
-    index: number;
-  }[] = [];
 
-  for (const [index, item] of sorted.entries()) {
-    const tier = dineInItemSortTier(item);
-    sectionIndexedItems.push({ tier, item, index });
-  }
-
-  // Split into contiguous tiers (Appetizers → Table → To Go), then group lines within each tier by kitchen station.
-  const byTier: Record<
-    OrderItemDisplayTier,
-    { item: OrderItem; index: number }[]
-  > = {
-    0: [],
-    1: [],
-    2: [],
-  };
-  for (const entry of sectionIndexedItems)
-    byTier[entry.tier].push({ item: entry.item, index: entry.index });
+  const byTier: Record<OrderItemDisplayTier, OrderItem[]> = { 0: [], 1: [], 2: [] };
+  for (const item of sorted)
+    byTier[dineInItemSortTier(item)].push(item);
 
   for (const tier of [0, 1, 2] as const) {
     const tierItems = byTier[tier];
     if (tierItems.length === 0) continue;
 
     tierItems.sort((a, b) => {
-      const ra = kitchenTypeSortRank(a.item.kitchenType);
-      const rb = kitchenTypeSortRank(b.item.kitchenType);
+      const ra = kitchenTypeSortRank(a.kitchenType);
+      const rb = kitchenTypeSortRank(b.kitchenType);
       if (ra !== rb) return ra - rb;
-      return a.index - b.index;
+      return a.name.localeCompare(b.name);
     });
 
-    sections.push({
-      tier,
-      title: SECTION_TITLES[tier],
-      items: tierItems.map(({ item }) => item),
-    });
+    sections.push({ tier, title: SECTION_TITLES[tier], items: tierItems });
   }
 
   return sections;
