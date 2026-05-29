@@ -238,7 +238,7 @@ export function useItemCustomizer({
         kitchenType: item.kitchenType,
         price: orderItemPrice,
         quantity,
-        ...(instructions.trim() && { instructions: instructions.trim() }),
+        instructions: instructions.trim(),
         options: optionsToSubmit,
         extras,
         changes,
