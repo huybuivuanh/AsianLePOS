@@ -33,7 +33,7 @@ function matchesSearch(c: Credit, queryRaw: string): boolean {
 
 export default function CreditsPreviewScreen() {
   const router = useRouter();
-  const { credits, loading, error, hasFetched } = useCreditsStore();
+  const { credits, loading, error, lastFetchedAt } = useCreditsStore();
 
   const [query, setQuery] = useState("");
 
@@ -41,7 +41,7 @@ export default function CreditsPreviewScreen() {
     return credits.filter((c) => matchesSearch(c, query));
   }, [credits, query]);
 
-  const showSpinner = loading && !hasFetched;
+  const showSpinner = loading && lastFetchedAt === null;
 
   return (
     <SafeAreaViewWrapper className="flex-1 bg-white">
@@ -84,7 +84,7 @@ export default function CreditsPreviewScreen() {
           keyboardShouldPersistTaps="handled"
           ListEmptyComponent={
             <Text className="py-8 text-center text-gray-500">
-              {!hasFetched
+              {lastFetchedAt === null
                 ? ""
                 : query.trim()
                   ? "No matches for your search."

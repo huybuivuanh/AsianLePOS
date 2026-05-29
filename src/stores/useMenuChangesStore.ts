@@ -5,6 +5,7 @@ import { firebase } from "@/lib/firebaseConfig";
 
 const MENU_CHANGES_COLLECTION = "menuChanges";
 const cache = createStoreCache<MenuChange[]>("@menuChanges:cache");
+const STALE_AFTER_MS = 24 * 60 * 60 * 1000;
 
 function sortMenuChanges(a: MenuChange, b: MenuChange): number {
   const from = a.from.localeCompare(b.from, undefined, { sensitivity: "base" });
@@ -16,10 +17,10 @@ type MenuChangesState = {
   menuChanges: MenuChange[];
   loading: boolean;
   error: string | null;
-  hasFetched: boolean;
+  lastFetchedAt: number | null;
   /**
    * Serves cache immediately, then refreshes from Firestore in the background.
-   * No-op if already fetched this session unless `{ force: true }`.
+   * No-op if fetched within the last 24 h unless `{ force: true }`.
    */
   fetchMenuChanges: (opts?: { force?: boolean }) => Promise<void>;
   clearData: () => void;
@@ -29,10 +30,11 @@ export const useMenuChangesStore = create<MenuChangesState>((set, get) => ({
   menuChanges: [],
   loading: false,
   error: null,
-  hasFetched: false,
+  lastFetchedAt: null,
 
   fetchMenuChanges: async (opts) => {
-    if (get().hasFetched && opts?.force !== true) return;
+    const { lastFetchedAt } = get();
+    if (lastFetchedAt !== null && Date.now() - lastFetchedAt < STALE_AFTER_MS && opts?.force !== true) return;
 
     set({ loading: true, error: null });
 
@@ -47,13 +49,12 @@ export const useMenuChangesStore = create<MenuChangesState>((set, get) => ({
         ...(docSnap.data() as Omit<MenuChange, "id">),
       })) as MenuChange[];
       menuChanges.sort(sortMenuChanges);
-      set({ menuChanges, loading: false, hasFetched: true });
+      set({ menuChanges, loading: false, lastFetchedAt: Date.now() });
       void cache.save(menuChanges);
     } catch (e) {
       console.error("❌ fetchMenuChanges failed:", e);
       set({
         loading: false,
-        hasFetched: false,
         error: e instanceof Error ? e.message : "Failed to load menu changes",
       });
     }
@@ -61,6 +62,6 @@ export const useMenuChangesStore = create<MenuChangesState>((set, get) => ({
 
   clearData: () => {
     void cache.clear();
-    set({ menuChanges: [], loading: false, error: null, hasFetched: false });
+    set({ menuChanges: [], loading: false, error: null, lastFetchedAt: null });
   },
 }));

@@ -15,10 +15,12 @@ import { firebase } from "../lib/firebaseConfig";
 
 const CUSTOMERS_COLLECTION = "customers";
 const cache = createStoreCache<Customer[]>("@customers:cache");
+const STALE_AFTER_MS = 24 * 60 * 60 * 1000;
 
 type CustomersState = {
   customers: Customer[];
   loading: boolean;
+  lastFetchedAt: number | null;
   subscribeToCustomers: () => () => void;
   /** Returns new doc id, or `undefined` if name/phone missing (no write). */
   addCustomer: (input: { name: string; phone: string }) => Promise<string | undefined>;
@@ -38,8 +40,12 @@ type CustomersState = {
 export const useCustomersStore = create<CustomersState>((set, get) => ({
   customers: [],
   loading: true,
+  lastFetchedAt: null,
 
   subscribeToCustomers: () => {
+    const { lastFetchedAt } = get();
+    if (lastFetchedAt !== null && Date.now() - lastFetchedAt < STALE_AFTER_MS) return () => {};
+
     set({ loading: true });
 
     // Serve cache immediately, then refresh from Firestore in the background.
@@ -53,7 +59,7 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
           ...(docSnap.data() as Customer),
           id: docSnap.id,
         }));
-        set({ customers: data, loading: false });
+        set({ customers: data, loading: false, lastFetchedAt: Date.now() });
         void cache.save(data);
       })
       .catch((e) => {
@@ -108,6 +114,6 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
 
   clearData: () => {
     void cache.clear();
-    set({ customers: [], loading: true });
+    set({ customers: [], loading: true, lastFetchedAt: null });
   },
 }));

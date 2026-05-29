@@ -13,7 +13,7 @@ import {
 
 export default function MenuChangesScreen() {
   const router = useRouter();
-  const { menuChanges, loading, error, hasFetched } = useMenuChangesStore();
+  const { menuChanges, loading, error, lastFetchedAt } = useMenuChangesStore();
 
   const [query, setQuery] = useState("");
 
@@ -27,7 +27,7 @@ export default function MenuChangesScreen() {
     });
   }, [menuChanges, query]);
 
-  const showSpinner = loading && !hasFetched;
+  const showSpinner = loading && lastFetchedAt === null;
 
   return (
     <SafeAreaViewWrapper className="flex-1 bg-white">
@@ -69,7 +69,7 @@ export default function MenuChangesScreen() {
           keyboardShouldPersistTaps="handled"
           ListEmptyComponent={
             <Text className="py-8 text-center text-gray-500">
-              {!hasFetched
+              {lastFetchedAt === null
                 ? ""
                 : query.trim()
                   ? "No matches for your search."

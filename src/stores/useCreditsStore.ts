@@ -5,6 +5,7 @@ import { firebase } from "@/lib/firebaseConfig";
 
 const CREDITS_COLLECTION = "credits";
 const cache = createStoreCache<Credit[]>("@credits:cache");
+const STALE_AFTER_MS = 24 * 60 * 60 * 1000;
 
 function createdAtMs(c: Credit): number {
   const t = c.createdAt as Timestamp | undefined;
@@ -19,10 +20,10 @@ type CreditsState = {
   credits: Credit[];
   loading: boolean;
   error: string | null;
-  hasFetched: boolean;
+  lastFetchedAt: number | null;
   /**
    * Serves cache immediately, then refreshes from Firestore in the background.
-   * No-op if already fetched this session unless `{ force: true }`.
+   * No-op if fetched within the last 24 h unless `{ force: true }`.
    */
   fetchCredits: (opts?: { force?: boolean }) => Promise<void>;
   clearData: () => void;
@@ -32,10 +33,11 @@ export const useCreditsStore = create<CreditsState>((set, get) => ({
   credits: [],
   loading: false,
   error: null,
-  hasFetched: false,
+  lastFetchedAt: null,
 
   fetchCredits: async (opts) => {
-    if (get().hasFetched && opts?.force !== true) return;
+    const { lastFetchedAt } = get();
+    if (lastFetchedAt !== null && Date.now() - lastFetchedAt < STALE_AFTER_MS && opts?.force !== true) return;
 
     set({ loading: true, error: null });
 
@@ -50,13 +52,12 @@ export const useCreditsStore = create<CreditsState>((set, get) => ({
         ...(docSnap.data() as Omit<Credit, "id">),
       })) as Credit[];
       credits.sort(sortCredits);
-      set({ credits, loading: false, hasFetched: true });
+      set({ credits, loading: false, lastFetchedAt: Date.now() });
       void cache.save(credits);
     } catch (e) {
       console.error("❌ fetchCredits failed:", e);
       set({
         loading: false,
-        hasFetched: false,
         error: e instanceof Error ? e.message : "Failed to load credits",
       });
     }
@@ -64,6 +65,6 @@ export const useCreditsStore = create<CreditsState>((set, get) => ({
 
   clearData: () => {
     void cache.clear();
-    set({ credits: [], loading: false, error: null, hasFetched: false });
+    set({ credits: [], loading: false, error: null, lastFetchedAt: null });
   },
 }));
