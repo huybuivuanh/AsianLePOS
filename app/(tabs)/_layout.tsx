@@ -13,6 +13,8 @@ import { Tabs, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef } from "react";
 import { AppState, Platform, Text, View } from "react-native";
 
+const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000;
+
 const TAB_SCREEN_OPTIONS = {
   headerShown: false,
   tabBarActiveTintColor: "#1D4ED8",
@@ -117,16 +119,23 @@ export default function TabsLayout() {
     };
   }, [user, startListeners, stopListeners]);
 
-  // Tear down listeners when screen locks, restart on resume to prevent
+  // Tear down listeners only after a long background period to prevent
   // use-after-free crashes from stale Firebase callbacks firing against
   // memory iOS reclaimed during a long background period.
+  // Short background events (phone lock, app switch) are ignored — Firebase
+  // reconnects automatically and restarting would cost hundreds of reads.
+  const backgroundAtRef = useRef<number | null>(null);
   useEffect(() => {
     if (!user) return;
     const sub = AppState.addEventListener("change", (state) => {
       if (state === "background") {
-        stopListeners();
-      } else if (state === "active" && unsubsRef.current.length === 0) {
-        startListeners();
+        backgroundAtRef.current = Date.now();
+      } else if (state === "active") {
+        const elapsed = backgroundAtRef.current ? Date.now() - backgroundAtRef.current : 0;
+        backgroundAtRef.current = null;
+        if (elapsed >= INACTIVITY_TIMEOUT_MS) {
+          startListeners();
+        }
       }
     });
     return () => sub.remove();
