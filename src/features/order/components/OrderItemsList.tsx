@@ -137,7 +137,7 @@ const OrderItemRow = memo(function OrderItemRow({
                       Add {extra.description}
                       <Text className="text-stone-500">
                         {" "}
-                        · ${extra.price.toFixed(2)}
+                        · ${extra.price > 0 ? extra.price.toFixed(2) : ""}
                       </Text>
                     </Text>
                   ))}
@@ -155,7 +155,7 @@ const OrderItemRow = memo(function OrderItemRow({
                       {change.from} → {change.to}
                       <Text className="text-stone-500">
                         {" "}
-                        · ${change.price.toFixed(2)}
+                        · ${change.price > 0 ? change.price.toFixed(2) : ""}
                       </Text>
                     </Text>
                   ))}
@@ -226,7 +226,9 @@ const OrderItemsList = memo(function OrderItemsList({
             key={`${orderItem.id ?? "item"}-flat-${index}`}
             orderItem={orderItem}
             isSelectionMode={isSelectionMode}
-            isSelected={orderItem.id ? selectedItemIds.has(orderItem.id) : false}
+            isSelected={
+              orderItem.id ? selectedItemIds.has(orderItem.id) : false
+            }
             linePaidToggleEnabled={linePaidToggleEnabled}
             onToggleItemSelection={onToggleItemSelection}
             onToggleLinePaid={onToggleLinePaid}
@@ -250,7 +252,9 @@ const OrderItemsList = memo(function OrderItemsList({
               key={`${orderItem.id ?? "item"}-${section.tier}-${index}`}
               orderItem={orderItem}
               isSelectionMode={isSelectionMode}
-              isSelected={orderItem.id ? selectedItemIds.has(orderItem.id) : false}
+              isSelected={
+                orderItem.id ? selectedItemIds.has(orderItem.id) : false
+              }
               linePaidToggleEnabled={linePaidToggleEnabled}
               onToggleItemSelection={onToggleItemSelection}
               onToggleLinePaid={onToggleLinePaid}

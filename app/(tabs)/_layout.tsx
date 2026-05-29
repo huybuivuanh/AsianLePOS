@@ -72,7 +72,7 @@ export default function TabsLayout() {
     clearOrder,
   ]);
 
-  const unsubsRef = useRef<Array<() => void>>([]);
+  const unsubsRef = useRef<(() => void)[]>([]);
 
   const stopListeners = useCallback(() => {
     unsubsRef.current.forEach((fn) => fn());
@@ -84,7 +84,7 @@ export default function TabsLayout() {
     void useMenuChangesStore.getState().fetchMenuChanges();
     void useCreditsStore.getState().fetchCredits();
 
-    const unsubs: Array<() => void> = [];
+    const unsubs: (() => void)[] = [];
     const add = (fn: (() => void) | undefined) => { if (fn) unsubs.push(fn); };
     add(subscribeToMenuVersion());
     add(subscribeToTakeOutOrders());

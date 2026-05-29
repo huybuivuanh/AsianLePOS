@@ -1,8 +1,14 @@
 import OrderItemsList from "@/features/order/components/OrderItemsList";
 import OrderTaxBreakdown from "@/features/order/components/OrderTaxBreakdown";
-import { calculateTaxBreakdown, EMPTY_TAX_BREAKDOWN, orderPaidFromLineItems, orderSubtotal, resolveTaxBreakdown } from "@/utils/helpers";
+import {
+  calculateTaxBreakdown,
+  EMPTY_TAX_BREAKDOWN,
+  orderPaidFromLineItems,
+  orderSubtotal,
+  resolveTaxBreakdown,
+  formatDate,
+} from "@/utils/helpers";
 import { DiscountType, OrderStatus } from "@/types/enums";
-import { formatDate } from "@/utils/helpers";
 import React, { memo, useMemo } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
@@ -32,19 +38,26 @@ export const DineInOrderCard = memo(function DineInOrderCard({
   onMarkAsPaid,
 }: Props) {
   const taxBreakDown = useMemo(() => resolveTaxBreakdown(item), [item]);
-  const isPaid = useMemo(() => orderPaidFromLineItems(item.orderItems ?? []), [item.orderItems]);
+  const isPaid = useMemo(
+    () => orderPaidFromLineItems(item.orderItems ?? []),
+    [item.orderItems],
+  );
 
   const displayOrderItems = item.orderItems ?? [];
 
   const selectedItemsTotal = useMemo(() => {
-    if (!isSelectionMode || !item.orderItems || selectedItemIds.size === 0) return 0;
+    if (!isSelectionMode || !item.orderItems || selectedItemIds.size === 0)
+      return 0;
     return item.orderItems
       .filter((oi) => oi.id && selectedItemIds.has(oi.id))
       .reduce((sum, oi) => sum + oi.price * oi.quantity, 0);
   }, [isSelectionMode, item.orderItems, selectedItemIds]);
 
   const selectedItemsTaxBreakDown = useMemo(
-    () => (selectedItemsTotal === 0 ? EMPTY_TAX_BREAKDOWN : calculateTaxBreakdown(selectedItemsTotal, DiscountType.None, 0)),
+    () =>
+      selectedItemsTotal === 0
+        ? EMPTY_TAX_BREAKDOWN
+        : calculateTaxBreakdown(selectedItemsTotal, DiscountType.None, 0),
     [selectedItemsTotal],
   );
 
@@ -63,26 +76,43 @@ export const DineInOrderCard = memo(function DineInOrderCard({
         onPress={() => onToggleExpand(item.id!)}
       >
         <View>
-          <Text className="font-semibold text-gray-800 text-base">Table: {item.tableNumber}</Text>
-          <Text className="font-semibold text-gray-800 text-base">Guests: {item.guests ?? 0}</Text>
-          <Text className="font-semibold text-gray-800 text-base">Staff: {item.staff ?? "—"}</Text>
-          <Text className="font-semibold text-gray-800 text-base">Ordered At: {formatDate(item.createdAt)}</Text>
+          <Text className="font-semibold text-gray-800 text-base">
+            Table: {item.tableNumber}
+          </Text>
+          <Text className="font-semibold text-gray-800 text-base">
+            Guests: {item.guests ?? 0}
+          </Text>
+          <Text className="font-semibold text-gray-800 text-base">
+            Staff: {item.staff ?? "—"}
+          </Text>
+          <Text className="font-semibold text-gray-800 text-base">
+            Ordered At: {formatDate(item.createdAt)}
+          </Text>
         </View>
 
         <View>
           <View className="items-end space-y-2">
-            <View className={`px-3 py-1 rounded-full ${item.printed ? "bg-green-100" : "bg-yellow-100"}`}>
-              <Text className={`text-xs font-semibold ${item.printed ? "text-green-700" : "text-yellow-700"}`}>
+            <View
+              className={`px-3 py-1 rounded-full ${item.printed ? "bg-green-100" : "bg-yellow-100"}`}
+            >
+              <Text
+                className={`text-xs font-semibold ${item.printed ? "text-green-700" : "text-yellow-700"}`}
+              >
                 {item.printed ? "Printed" : "Not Printed"}
               </Text>
             </View>
-            {!(item.status === OrderStatus.Completed && !isPaid) && item.status !== OrderStatus.Cancelled && (
-              <View className={`px-3 py-1 rounded-full ${isPaid ? "bg-green-100" : "bg-gray-100"}`}>
-                <Text className={`text-xs font-semibold ${isPaid ? "text-green-700" : "text-gray-700"}`}>
-                  {isPaid ? "Paid" : "Unpaid"}
-                </Text>
-              </View>
-            )}
+            {!(item.status === OrderStatus.Completed && !isPaid) &&
+              item.status !== OrderStatus.Cancelled && (
+                <View
+                  className={`px-3 py-1 rounded-full ${isPaid ? "bg-green-100" : "bg-gray-100"}`}
+                >
+                  <Text
+                    className={`text-xs font-semibold ${isPaid ? "text-green-700" : "text-gray-700"}`}
+                  >
+                    {isPaid ? "Paid" : "Unpaid"}
+                  </Text>
+                </View>
+              )}
           </View>
           <View
             className={`px-3 py-1 rounded-full ${
@@ -149,7 +179,9 @@ export const DineInOrderCard = memo(function DineInOrderCard({
                   className="bg-gray-700 px-4 py-3 rounded-md flex-1 ml-2"
                   onPress={() => onToggleSelectionMode(item.id!)}
                 >
-                  <Text className="text-white font-semibold text-center">Cancel Selection</Text>
+                  <Text className="text-white font-semibold text-center">
+                    Cancel Selection
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -167,13 +199,17 @@ export const DineInOrderCard = memo(function DineInOrderCard({
                 className="bg-purple-500 px-3 py-3 rounded-md flex-1 mx-1"
                 onPress={() => onToggleSelectionMode(item.id!)}
               >
-                <Text className="text-white font-semibold text-center text-sm">Select Items</Text>
+                <Text className="text-white font-semibold text-center text-sm">
+                  Select Items
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 className="bg-blue-500 px-3 py-3 rounded-md flex-1 ml-2"
                 onPress={() => onPrint(item)}
               >
-                <Text className="text-white font-semibold text-center text-sm">Print</Text>
+                <Text className="text-white font-semibold text-center text-sm">
+                  Print
+                </Text>
               </TouchableOpacity>
             </View>
           )}
