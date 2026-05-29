@@ -80,7 +80,7 @@ export default function OrderItemCard({ item }: Props) {
                   Add {extra.description}
                   <Text className="text-stone-500">
                     {" "}
-                    · ${extra.price.toFixed(2)}
+                    {extra.price > 0 && `· $${extra.price.toFixed(2)}`}
                   </Text>
                 </Text>
               ))}
@@ -98,7 +98,7 @@ export default function OrderItemCard({ item }: Props) {
                   {change.from} → {change.to}
                   <Text className="text-stone-500">
                     {" "}
-                    · ${change.price.toFixed(2)}
+                    {change.price > 0 && `· $${change.price.toFixed(2)}`}
                   </Text>
                 </Text>
               ))}

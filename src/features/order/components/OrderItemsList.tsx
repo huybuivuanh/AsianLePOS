@@ -134,10 +134,9 @@ const OrderItemRow = memo(function OrderItemRow({
                       className="text-[15px] leading-5 text-stone-600"
                     >
                       <Text className="text-stone-400">· </Text>
-                      Add {extra.description}
+                      Add: {extra.description}
                       <Text className="text-stone-500">
-                        {" "}
-                        · ${extra.price > 0 ? extra.price.toFixed(2) : ""}
+                        {extra.price > 0 && `· $${extra.price.toFixed(2)}`}
                       </Text>
                     </Text>
                   ))}
@@ -154,8 +153,7 @@ const OrderItemRow = memo(function OrderItemRow({
                       <Text className="text-stone-400">· </Text>
                       {change.from} → {change.to}
                       <Text className="text-stone-500">
-                        {" "}
-                        · ${change.price > 0 ? change.price.toFixed(2) : ""}
+                        {change.price > 0 && `· $${change.price.toFixed(2)}`}
                       </Text>
                     </Text>
                   ))}
