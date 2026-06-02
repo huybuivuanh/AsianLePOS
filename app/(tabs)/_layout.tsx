@@ -42,8 +42,8 @@ export default function TabsLayout() {
   const { subscribeToTables, clearData: clearTables } = useTableStore();
   const { subscribeToCustomersVersion, clearData: clearCustomers } =
     useCustomersStore();
-  const { clearData: clearMenuChanges } = useMenuChangesStore();
-  const { clearData: clearCredits } = useCreditsStore();
+  const { subscribeToMenuChanges, clearData: clearMenuChanges } = useMenuChangesStore();
+  const { subscribeToCredits, clearData: clearCredits } = useCreditsStore();
   const { clearOrder } = useCartStore();
 
   // Redirect to login if not authenticated and clear data
@@ -83,15 +83,14 @@ export default function TabsLayout() {
 
   const startListeners = useCallback(() => {
     stopListeners();
-    void useMenuChangesStore.getState().fetchMenuChanges();
-    void useCreditsStore.getState().fetchCredits();
-
     const unsubs: (() => void)[] = [];
     const add = (fn: (() => void) | undefined) => { if (fn) unsubs.push(fn); };
     add(subscribeToMenuVersion());
     add(subscribeToTakeOutOrders());
     add(subscribeToDineInOrders());
     add(subscribeToCustomersVersion());
+    add(subscribeToCredits());
+    add(subscribeToMenuChanges());
     unsubsRef.current = unsubs;
 
     let active = true;
@@ -107,6 +106,8 @@ export default function TabsLayout() {
     subscribeToTakeOutOrders,
     subscribeToDineInOrders,
     subscribeToCustomersVersion,
+    subscribeToCredits,
+    subscribeToMenuChanges,
     subscribeToTables,
   ]);
 

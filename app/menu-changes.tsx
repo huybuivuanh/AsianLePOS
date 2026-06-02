@@ -13,7 +13,7 @@ import {
 
 export default function MenuChangesScreen() {
   const router = useRouter();
-  const { menuChanges, loading, error, lastFetchedAt } = useMenuChangesStore();
+  const { menuChanges, loading } = useMenuChangesStore();
 
   const [query, setQuery] = useState("");
 
@@ -27,7 +27,7 @@ export default function MenuChangesScreen() {
     });
   }, [menuChanges, query]);
 
-  const showSpinner = loading && lastFetchedAt === null;
+  const showSpinner = loading;
 
   return (
     <SafeAreaViewWrapper className="flex-1 bg-white">
@@ -44,12 +44,6 @@ export default function MenuChangesScreen() {
           returnKeyType="search"
         />
       </View>
-
-      {error ? (
-        <View className="px-4 py-2">
-          <Text className="text-center text-red-600">{error}</Text>
-        </View>
-      ) : null}
 
       {showSpinner ? (
         <View className="flex-1 items-center justify-center py-12">
@@ -69,7 +63,7 @@ export default function MenuChangesScreen() {
           keyboardShouldPersistTaps="handled"
           ListEmptyComponent={
             <Text className="py-8 text-center text-gray-500">
-              {lastFetchedAt === null
+              {loading
                 ? ""
                 : query.trim()
                   ? "No matches for your search."
