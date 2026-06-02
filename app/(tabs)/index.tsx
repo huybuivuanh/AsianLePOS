@@ -39,7 +39,12 @@ export default function TakeOut() {
     [categories, menuItems],
   );
 
-  if (loading) return <Text>Loading Menu...</Text>;
+  if (loading)
+    return (
+      <View className="flex-1 justify-center items-center bg-gray-100">
+        <Text className="text-lg font-medium">Loading...</Text>
+      </View>
+    );
   if (!categories.length) return <Text>No categories found</Text>;
 
   return (
