@@ -1,27 +1,35 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   addDoc,
   collection,
   doc,
   getDocs,
+  onSnapshot,
   query,
+  setDoc,
   Timestamp,
   updateDoc,
+  where,
 } from "firebase/firestore";
-import { extractPhoneDigits } from "../utils/customerPhone";
-import { syncFromCart } from "@/services/customerService";
-import { createStoreCache } from "@/utils/storeCache";
 import { create } from "zustand";
+import { syncFromCart } from "@/services/customerService";
+import { extractPhoneDigits } from "../utils/customerPhone";
 import { firebase } from "../lib/firebaseConfig";
 
 const CUSTOMERS_COLLECTION = "customers";
-const cache = createStoreCache<Customer[]>("@customers:cache");
-const STALE_AFTER_MS = 24 * 60 * 60 * 1000;
+const CUSTOMERS_VERSION_COLLECTION = "customersVersion";
+const CUSTOMERS_VERSION_DOC = "versionDoc";
+const CACHE_KEY = "@customers:cache";
+const LAST_FETCHED_KEY = "@customers:lastFetchedAt";
+const VERSION_KEY = "@customers:version";
+
+// In-memory version cache to avoid AsyncStorage reads on every Firestore event
+let localCustomersVersionCache: number | null = null;
 
 type CustomersState = {
   customers: Customer[];
   loading: boolean;
-  lastFetchedAt: number | null;
-  subscribeToCustomers: () => () => void;
+  subscribeToCustomersVersion: () => () => void;
   /** Returns new doc id, or `undefined` if name/phone missing (no write). */
   addCustomer: (input: { name: string; phone: string }) => Promise<string | undefined>;
   /** No-op if trimmed name is empty (never override with blank name). */
@@ -37,37 +45,90 @@ type CustomersState = {
   clearData: () => void;
 };
 
+function mergeCustomers(existing: Customer[], incoming: Customer[]): Customer[] {
+  const map = new Map(existing.map((c) => [c.id!, c]));
+  for (const c of incoming) {
+    map.set(c.id!, c);
+  }
+  return Array.from(map.values());
+}
+
+// Sets localCustomersVersionCache synchronously before the Firestore write so
+// when the snapshot fires for our own write it is already a no-op.
+async function bumpVersion(): Promise<void> {
+  const version = Date.now();
+  localCustomersVersionCache = version;
+  await setDoc(
+    doc(firebase.db, CUSTOMERS_VERSION_COLLECTION, CUSTOMERS_VERSION_DOC),
+    { version },
+    { merge: true },
+  );
+}
+
 export const useCustomersStore = create<CustomersState>((set, get) => ({
   customers: [],
   loading: true,
-  lastFetchedAt: null,
 
-  subscribeToCustomers: () => {
-    const { lastFetchedAt } = get();
-    if (lastFetchedAt !== null && Date.now() - lastFetchedAt < STALE_AFTER_MS) return () => {};
+  subscribeToCustomersVersion: () => {
+    const versionDocRef = doc(firebase.db, CUSTOMERS_VERSION_COLLECTION, CUSTOMERS_VERSION_DOC);
 
-    set({ loading: true });
+    const unsubscribe = onSnapshot(versionDocRef, async (snapshot) => {
+      const remoteVersion = snapshot.data()?.version ?? 0;
 
-    // Serve cache immediately, then refresh from Firestore in the background.
-    cache.load().then((cached) => {
-      if (cached && cached.length > 0) set({ customers: cached, loading: false });
+      // Read from AsyncStorage only once per session; use memory cache after that
+      if (localCustomersVersionCache === null) {
+        const stored = await AsyncStorage.getItem(VERSION_KEY);
+        localCustomersVersionCache = stored ? parseInt(stored) : -1;
+      }
+
+      if (remoteVersion > localCustomersVersionCache) {
+        try {
+          const lastFetchedStr = await AsyncStorage.getItem(LAST_FETCHED_KEY);
+          const lastFetchedAt = lastFetchedStr ? parseInt(lastFetchedStr) : 0;
+          const fetchStart = Date.now();
+
+          // First ever load → full fetch; subsequent → incremental by createdAt
+          const snap =
+            lastFetchedAt === 0
+              ? await getDocs(collection(firebase.db, CUSTOMERS_COLLECTION))
+              : await getDocs(
+                  query(
+                    collection(firebase.db, CUSTOMERS_COLLECTION),
+                    where("createdAt", ">", Timestamp.fromMillis(lastFetchedAt)),
+                  ),
+                );
+
+          const incoming = snap.docs.map((d) => ({
+            ...(d.data() as Customer),
+            id: d.id,
+          }));
+
+          const merged =
+            lastFetchedAt === 0 ? incoming : mergeCustomers(get().customers, incoming);
+
+          set({ customers: merged, loading: false });
+          await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(merged));
+          await AsyncStorage.setItem(LAST_FETCHED_KEY, String(fetchStart));
+          await AsyncStorage.setItem(VERSION_KEY, String(remoteVersion));
+          localCustomersVersionCache = remoteVersion;
+        } catch (e) {
+          console.error("❌ Failed to fetch customers:", e);
+          set({ loading: false });
+        }
+      } else {
+        // Version unchanged — only hydrate from cache if the store hasn't loaded yet
+        if (useCustomersStore.getState().loading) {
+          const cached = await AsyncStorage.getItem(CACHE_KEY);
+          if (cached) {
+            set({ customers: JSON.parse(cached), loading: false });
+          } else {
+            set({ loading: false });
+          }
+        }
+      }
     });
 
-    void getDocs(query(collection(firebase.db, CUSTOMERS_COLLECTION)))
-      .then((snapshot) => {
-        const data = snapshot.docs.map((docSnap) => ({
-          ...(docSnap.data() as Customer),
-          id: docSnap.id,
-        }));
-        set({ customers: data, loading: false, lastFetchedAt: Date.now() });
-        void cache.save(data);
-      })
-      .catch((e) => {
-        console.error("❌ Error fetching customers:", e);
-        set({ loading: false });
-      });
-
-    return () => {};
+    return unsubscribe;
   },
 
   addCustomer: async ({ name, phone }) => {
@@ -75,16 +136,18 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     const p = extractPhoneDigits(phone) || phone.trim();
     if (!n || !p) return undefined;
 
+    const now = Timestamp.now();
     const ref = await addDoc(collection(firebase.db, CUSTOMERS_COLLECTION), {
       name: n,
       phone: p,
-      createdAt: Timestamp.now(),
+      createdAt: now,
     });
 
-    const newCustomer = { id: ref.id, name: n, phone: p } as Customer;
+    const newCustomer: Customer = { id: ref.id, name: n, phone: p, createdAt: now };
     const updated = [...get().customers, newCustomer];
     set({ customers: updated });
-    void cache.save(updated);
+    void AsyncStorage.setItem(CACHE_KEY, JSON.stringify(updated));
+    void bumpVersion();
 
     return ref.id;
   },
@@ -94,13 +157,19 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     const p = extractPhoneDigits(phone) || phone.trim();
     if (!n || !p) return;
 
-    await updateDoc(doc(firebase.db, CUSTOMERS_COLLECTION, id), { name: n, phone: p });
+    const now = Timestamp.now();
+    await updateDoc(doc(firebase.db, CUSTOMERS_COLLECTION, id), {
+      name: n,
+      phone: p,
+      createdAt: now,
+    });
 
     const updated = get().customers.map((c) =>
       c.id === id ? { ...c, name: n, phone: p } : c,
     );
     set({ customers: updated });
-    void cache.save(updated);
+    void AsyncStorage.setItem(CACHE_KEY, JSON.stringify(updated));
+    void bumpVersion();
   },
 
   syncTakeOutCustomerFromCart: async (order) => {
@@ -113,7 +182,17 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
   },
 
   clearData: () => {
-    void cache.clear();
-    set({ customers: [], loading: true, lastFetchedAt: null });
+    localCustomersVersionCache = null;
+    void AsyncStorage.multiRemove([CACHE_KEY, LAST_FETCHED_KEY, VERSION_KEY]);
+    set({ customers: [], loading: true });
   },
 }));
+
+export const loadCachedCustomers = async () => {
+  const cached = await AsyncStorage.getItem(CACHE_KEY);
+  if (cached) {
+    useCustomersStore.setState({ customers: JSON.parse(cached), loading: false });
+  } else {
+    useCustomersStore.setState({ loading: false });
+  }
+};

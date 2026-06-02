@@ -40,7 +40,7 @@ export default function TabsLayout() {
   const { subscribeToDineInOrders, clearData: clearDineInOrdersTab } =
     useDineInOrdersStore();
   const { subscribeToTables, clearData: clearTables } = useTableStore();
-  const { subscribeToCustomers, clearData: clearCustomers } =
+  const { subscribeToCustomersVersion, clearData: clearCustomers } =
     useCustomersStore();
   const { clearData: clearMenuChanges } = useMenuChangesStore();
   const { clearData: clearCredits } = useCreditsStore();
@@ -91,7 +91,7 @@ export default function TabsLayout() {
     add(subscribeToMenuVersion());
     add(subscribeToTakeOutOrders());
     add(subscribeToDineInOrders());
-    add(subscribeToCustomers());
+    add(subscribeToCustomersVersion());
     unsubsRef.current = unsubs;
 
     let active = true;
@@ -106,7 +106,7 @@ export default function TabsLayout() {
     subscribeToMenuVersion,
     subscribeToTakeOutOrders,
     subscribeToDineInOrders,
-    subscribeToCustomers,
+    subscribeToCustomersVersion,
     subscribeToTables,
   ]);
 
