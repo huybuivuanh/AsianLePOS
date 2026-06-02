@@ -23,7 +23,7 @@ export default function TakeOut() {
       if (useCartStore.getState().order.orderType === OrderType.DineIn) {
         useCartStore.getState().clearOrder();
       }
-    }, [])
+    }, []),
   );
 
   const { query, debouncedQuery, handleQueryChange, clearSearch } =
@@ -39,7 +39,7 @@ export default function TakeOut() {
     [categories, menuItems],
   );
 
-  if (loading) return <Text>Loading...</Text>;
+  if (loading) return <Text>Loading Menu...</Text>;
   if (!categories.length) return <Text>No categories found</Text>;
 
   return (

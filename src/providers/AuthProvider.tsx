@@ -35,9 +35,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         activateProductionDb();
       }
-      // Clear menu version cache so the next subscription fetches from the
-      // correct database instead of serving the previous account's cached menu.
-      useMenuStore.getState().clearData();
+      // Reset version cache so the next subscription re-checks the remote
+      // version against the correct database. Preserves cached menu data so
+      // the UI doesn't blank out waiting for a Firestore round-trip on startup.
+      useMenuStore.getState().resetVersionCache();
       setUser(firebaseUser);
       setLoading(false);
     });

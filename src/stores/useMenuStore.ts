@@ -11,6 +11,7 @@ type MenuState = {
   options: ItemOption[];
   loading: boolean;
   subscribeToMenuVersion: () => () => void;
+  resetVersionCache: () => void;
   clearData: () => void;
 };
 
@@ -73,6 +74,10 @@ export const useMenuStore = create<MenuState>((set) => ({
     });
 
     return unsubscribe;
+  },
+
+  resetVersionCache: () => {
+    localMenuVersionCache = null;
   },
 
   clearData: () => {
