@@ -6,8 +6,12 @@ import {
   useEffect,
   useState,
 } from "react";
-import { DEMO_EMAIL } from "../config/demo";
-import { activateDemoDb, activateProductionDb, auth } from "../lib/firebaseConfig";
+import { DEMO_EMAIL, TEST_EMAIL } from "../config/demo";
+import {
+  activateDemoDb,
+  activateProductionDb,
+  auth,
+} from "../lib/firebaseConfig";
 import { useMenuStore } from "../stores/useMenuStore";
 
 type AuthContextType = {
@@ -30,7 +34,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser?.email === DEMO_EMAIL) {
+      if (
+        firebaseUser?.email === DEMO_EMAIL ||
+        firebaseUser?.email === TEST_EMAIL
+      ) {
         activateDemoDb();
       } else {
         activateProductionDb();

@@ -5,6 +5,7 @@ import { useLinePaidDebounce } from "@/features/dinein/hooks/useLinePaidDebounce
 import OrderItemsList from "@/features/order/components/OrderItemsList";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
+import { useDineInOrdersStore } from "@/stores/useDineInOrdersStore";
 import { useCartStore } from "@/stores/useCartStore";
 import { DiscountType, OrderType } from "@/types/enums";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
@@ -42,6 +43,7 @@ export default function TablePage() {
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(() => new Set());
 
   const { activeDineInOrders, loading: ordersLoading } = useActiveDineInOrdersStore();
+  const fullDineInOrders = useDineInOrdersStore((s) => s.fullDineInOrders);
   const { clearOrder, updateOrder } = useCartStore();
 
   const {
@@ -116,7 +118,13 @@ export default function TablePage() {
     [order?.id, order?.orderItems, handleToggleLinePaid],
   );
 
-  if (!table || ordersLoading) {
+  const orderPending = Boolean(
+    table?.currentOrderId &&
+    !ordersLoading &&
+    !fullDineInOrders.some((o) => o.id === table.currentOrderId)
+  );
+
+  if (!table || ordersLoading || orderPending) {
     return (
       <SafeAreaViewWrapper className="flex-1 justify-center items-center bg-gray-100">
         <ActivityIndicator size="large" color="#000" />
