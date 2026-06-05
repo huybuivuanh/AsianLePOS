@@ -2,6 +2,7 @@
 import { AuthProvider } from "@/providers/AuthProvider";
 import { loadCachedCustomers } from "@/stores/useCustomersStore";
 import { loadCachedMenu } from "@/stores/useMenuStore";
+import { loadCachedStaff } from "@/stores/useStaffStore";
 import { useNetworkStore } from "@/stores/useNetworkStore";
 import OfflineBanner from "@/ui/OfflineBanner";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -103,6 +104,7 @@ export default function RootLayout({
   useEffect(() => {
     void loadCachedMenu();
     void loadCachedCustomers();
+    void loadCachedStaff();
   }, []);
 
   if (webFontsBlocking) {

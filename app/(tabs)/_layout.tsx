@@ -6,6 +6,7 @@ import { useCustomersStore } from "@/stores/useCustomersStore";
 import { useDineInOrdersStore } from "@/stores/useDineInOrdersStore";
 import { useMenuChangesStore } from "@/stores/useMenuChangesStore";
 import { useMenuStore } from "@/stores/useMenuStore";
+import { useStaffStore } from "@/stores/useStaffStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
 import { Ionicons } from "@expo/vector-icons";
@@ -44,6 +45,7 @@ export default function TabsLayout() {
     useCustomersStore();
   const { subscribeToMenuChanges, clearData: clearMenuChanges } = useMenuChangesStore();
   const { subscribeToCredits, clearData: clearCredits } = useCreditsStore();
+  const { fetchStaff, clearData: clearStaff } = useStaffStore();
   const { clearOrder } = useCartStore();
 
   // Redirect to login if not authenticated and clear data
@@ -57,6 +59,7 @@ export default function TabsLayout() {
       clearCustomers();
       clearMenuChanges();
       clearCredits();
+      clearStaff();
       clearOrder();
       router.push("/login");
     }
@@ -71,6 +74,7 @@ export default function TabsLayout() {
     clearCustomers,
     clearMenuChanges,
     clearCredits,
+    clearStaff,
     clearOrder,
   ]);
 
@@ -91,6 +95,7 @@ export default function TabsLayout() {
     add(subscribeToCustomersVersion());
     add(subscribeToCredits());
     add(subscribeToMenuChanges());
+    void fetchStaff();
     unsubsRef.current = unsubs;
 
     let active = true;
@@ -108,6 +113,7 @@ export default function TabsLayout() {
     subscribeToCustomersVersion,
     subscribeToCredits,
     subscribeToMenuChanges,
+    fetchStaff,
     subscribeToTables,
   ]);
 

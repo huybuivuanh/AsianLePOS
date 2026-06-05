@@ -168,4 +168,12 @@ declare global {
     completed: boolean;
     createdAt: Timestamp;
   }
+
+  interface StaffMember {
+    id?: string;
+    name: string;
+    email: string;
+    role: string;
+    createdAt: Timestamp;
+  }
 }

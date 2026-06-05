@@ -1,9 +1,11 @@
 import { OrderLinesList } from "@/features/order";
 import DiscountButtonModalAndSummary from "@/features/order/components/DiscountButtonModalAndSummary";
+import StaffPickerModal from "@/features/order/components/StaffPickerModal";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useAuth } from "@/providers/AuthProvider";
 import { useCartStore } from "@/stores/useCartStore";
 import { useOrderStore } from "@/stores/useOrderStore";
+import { useStaffStore } from "@/stores/useStaffStore";
 import { useTableStore } from "@/stores/useTableStore";
 import Header from "@/ui/Header";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
@@ -28,10 +30,12 @@ export default function ReviewDineInOrder() {
   const taxBreakDown = getTaxBreakdown();
 
   const { user } = useAuth();
+  const sharedDeskMode = useStaffStore((s) => s.sharedDeskMode);
   const [submitting, setSubmitting] = useState(false);
+  const [showStaffModal, setShowStaffModal] = useState(false);
   const { getTable } = useTableStore();
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (overrideStaffName?: string) => {
     if (!user) {
       showAlert("Error", "You must be logged in to submit an order.");
       return;
@@ -41,7 +45,10 @@ export default function ReviewDineInOrder() {
       setSubmitting(true);
 
       const staffName =
-        user.displayName?.trim() || user.email?.trim() || "Unknown";
+        overrideStaffName ||
+        user.displayName?.trim() ||
+        user.email?.trim() ||
+        "Unknown";
 
       const newOrder = {
         ...order,
@@ -58,6 +65,14 @@ export default function ReviewDineInOrder() {
       showAlert("Error", error.message || "Failed to submit order.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSubmitPress = () => {
+    if (sharedDeskMode) {
+      setShowStaffModal(true);
+    } else {
+      void handleSubmit();
     }
   };
 
@@ -90,7 +105,7 @@ export default function ReviewDineInOrder() {
           <OrderLinesList orderItems={order.orderItems} />
         </KeyboardAwareScrollView>
 
-        {/* Clear + Toggle Footer */}
+        {/* Clear + Submit */}
         {order.orderItems && order.orderItems.length > 0 && (
           <View className="flex-row justify-between items-center px-4 mb-2">
             <TouchableOpacity
@@ -106,7 +121,7 @@ export default function ReviewDineInOrder() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={handleSubmit}
+              onPress={handleSubmitPress}
               disabled={isSubmitDisabled}
               className={`flex-1 bg-gray-800 py-4 rounded-lg items-center ${
                 isSubmitDisabled ? "opacity-50" : ""
@@ -125,6 +140,16 @@ export default function ReviewDineInOrder() {
       <FullScreenLoadingOverlay
         visible={submitting}
         title="Submitting order…"
+      />
+
+      <StaffPickerModal
+        visible={showStaffModal}
+        submitting={submitting}
+        onConfirm={(staffName) => {
+          setShowStaffModal(false);
+          void handleSubmit(staffName);
+        }}
+        onCancel={() => setShowStaffModal(false)}
       />
     </SafeAreaViewWrapper>
   );

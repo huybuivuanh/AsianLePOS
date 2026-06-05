@@ -1,16 +1,29 @@
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useAuth } from "@/providers/AuthProvider";
+import { useStaffStore } from "@/stores/useStaffStore";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
 const Profile = () => {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const sharedDeskMode = useStaffStore((s) => s.sharedDeskMode);
+  const toggleSharedDeskMode = useStaffStore((s) => s.toggleSharedDeskMode);
+  const [toggling, setToggling] = useState(false);
 
   const handleLogout = async () => {
     await logout();
     router.push("/login");
+  };
+
+  const handleToggleMode = async () => {
+    setToggling(true);
+    try {
+      await toggleSharedDeskMode();
+    } finally {
+      setToggling(false);
+    }
   };
 
   const initials = (user?.displayName || user?.email || "?")
@@ -53,6 +66,42 @@ const Profile = () => {
               <Text className="text-xs text-gray-500">Status</Text>
               <Text className="text-base font-bold text-green-700">Online</Text>
             </View>
+          </View>
+        </View>
+
+        {/* Shared Desk Mode toggle */}
+        <View className="mt-5 bg-gray-50 border border-gray-200 rounded-2xl p-4">
+          <View className="flex-row items-center justify-between">
+            <View className="flex-1 mr-4">
+              <Text className="text-base font-bold text-gray-900">
+                Shared Desk Mode
+              </Text>
+              <Text className="text-sm text-gray-500 mt-0.5">
+                {sharedDeskMode
+                  ? "Staff must select their name before submitting an order."
+                  : "Orders are attributed to the logged-in account."}
+              </Text>
+            </View>
+            <Pressable
+              onPress={handleToggleMode}
+              disabled={toggling}
+              className={`w-14 h-8 rounded-full justify-center ${
+                sharedDeskMode ? "bg-blue-600" : "bg-gray-300"
+              } ${toggling ? "opacity-60" : ""}`}
+              style={{ paddingHorizontal: 3 }}
+            >
+              <View
+                className="w-6 h-6 rounded-full bg-white"
+                style={{
+                  alignSelf: sharedDeskMode ? "flex-end" : "flex-start",
+                  elevation: 2,
+                  shadowColor: "#000",
+                  shadowOpacity: 0.15,
+                  shadowRadius: 2,
+                  shadowOffset: { width: 0, height: 1 },
+                }}
+              />
+            </Pressable>
           </View>
         </View>
 

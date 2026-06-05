@@ -1,11 +1,13 @@
 import { OrderLinesList } from "@/features/order";
 import DiscountButtonModalAndSummary from "@/features/order/components/DiscountButtonModalAndSummary";
+import StaffPickerModal from "@/features/order/components/StaffPickerModal";
 import { OrderFooter } from "@/features/takeout";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useAuth } from "@/providers/AuthProvider";
 import { useCustomersStore } from "@/stores/useCustomersStore";
 import { useCartStore } from "@/stores/useCartStore";
 import { useOrderStore } from "@/stores/useOrderStore";
+import { useStaffStore } from "@/stores/useStaffStore";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import Header from "@/ui/Header";
 import { generateFirestoreId, showAlert } from "@/utils/helpers";
@@ -27,10 +29,12 @@ export default function ReviewOrder() {
   const { submitOrder } = useOrderStore();
 
   const { user } = useAuth();
+  const sharedDeskMode = useStaffStore((s) => s.sharedDeskMode);
   const [submitting, setSubmitting] = useState(false);
   const [footerVisible, setFooterVisible] = useState(true);
+  const [showStaffModal, setShowStaffModal] = useState(false);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (overrideStaffName?: string) => {
     if (!user) {
       showAlert("Error", "You must be logged in to submit an order.");
       return;
@@ -38,7 +42,10 @@ export default function ReviewOrder() {
 
     try {
       const staffName =
-        user.displayName?.trim() || user.email?.trim() || "Unknown";
+        overrideStaffName ||
+        user.displayName?.trim() ||
+        user.email?.trim() ||
+        "Unknown";
 
       const orderId = generateFirestoreId();
 
@@ -59,6 +66,14 @@ export default function ReviewOrder() {
       showAlert("Error", error.message || "Failed to submit order.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSubmitPress = () => {
+    if (sharedDeskMode) {
+      setShowStaffModal(true);
+    } else {
+      void handleSubmit();
     }
   };
 
@@ -124,7 +139,7 @@ export default function ReviewOrder() {
         {/* Footer (customer info, time selectors, submit) */}
         {footerVisible && order.orderItems && order.orderItems.length > 0 && (
           <OrderFooter
-            onSubmit={handleSubmit}
+            onSubmit={handleSubmitPress}
             submitting={submitting}
             disabled={isSubmitDisabled}
           />
@@ -134,6 +149,16 @@ export default function ReviewOrder() {
       <FullScreenLoadingOverlay
         visible={submitting}
         title="Submitting order…"
+      />
+
+      <StaffPickerModal
+        visible={showStaffModal}
+        submitting={submitting}
+        onConfirm={(staffName) => {
+          setShowStaffModal(false);
+          void handleSubmit(staffName);
+        }}
+        onCancel={() => setShowStaffModal(false)}
       />
     </SafeAreaViewWrapper>
   );
