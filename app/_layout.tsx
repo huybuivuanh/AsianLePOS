@@ -35,6 +35,23 @@ export default function RootLayout({
   const [resetKey, setResetKey] = useState(0);
   const backgroundTimeRef = useRef<number | null>(null);
 
+  // Firestore c050 (INTERNAL ASSERTION FAILED) means the WebChannel is unrecoverably
+  // broken. Reload once to get a fresh SDK instance — prevents stuck loading overlays.
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    let reloading = false;
+    const handleRejection = (event: PromiseRejectionEvent) => {
+      if (reloading) return;
+      const msg: string = event.reason?.message ?? "";
+      if (msg.includes("INTERNAL ASSERTION FAILED")) {
+        reloading = true;
+        window.location.replace("/");
+      }
+    };
+    window.addEventListener("unhandledrejection", handleRejection);
+    return () => window.removeEventListener("unhandledrejection", handleRejection);
+  }, []);
+
   // After 5 min of inactivity, reset to home with fresh Firestore listeners.
   // Web: navigate to root (avoids 404 on deep routes in the static export).
   // Native: remount the navigation tree (Stack resets to initial route).

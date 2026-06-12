@@ -4,7 +4,7 @@ import { kitchenTypeSortRank } from "@/features/order/orderItemSections";
 import { ungroupOrderItems } from "@/utils/groupOrderItems";
 import { calculateTaxBreakdown, orderItemsSubtotal } from "@/utils/helpers";
 import { normalizeOrderItemTextForDb } from "@/utils/normalizeOrderItemText";
-import { doc, enableNetwork, Timestamp, writeBatch } from "firebase/firestore";
+import { doc, Timestamp, writeBatch } from "firebase/firestore";
 
 function discountInputs(order: OrderDraft): { type: DiscountType; value: number } {
   const d = order.taxBreakDown?.discount;
@@ -126,7 +126,6 @@ export async function updateOrder(order: OrderDraft): Promise<void> {
 export async function cancelOrder(order: OrderDraft, tableDocId?: string | null): Promise<void> {
   if (!order.id) throw new Error("Order ID is required to cancel.");
 
-  await enableNetwork(firebase.db);
   const firestoreCollection = order.orderType === OrderType.DineIn ? "dineInOrders" : "takeOutOrders";
   const batch = writeBatch(firebase.db);
   batch.update(doc(firebase.db, firestoreCollection, order.id), { status: OrderStatus.Cancelled });
@@ -145,7 +144,6 @@ export async function cancelOrder(order: OrderDraft, tableDocId?: string | null)
 export async function completeOrder(order: OrderDraft, tableDocId?: string | null): Promise<void> {
   if (!order.id) throw new Error("Order ID is required to complete.");
 
-  await enableNetwork(firebase.db);
   const firestoreCollection = order.orderType === OrderType.DineIn ? "dineInOrders" : "takeOutOrders";
 
   const nextStatus =

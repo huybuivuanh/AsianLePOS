@@ -4,6 +4,20 @@ import { showAlert } from "@/utils/helpers";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 
+const OPERATION_TIMEOUT_MS = 15_000;
+
+function withTimeout<T>(promise: Promise<T>): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error("Operation timed out. Please check your connection and try again.")),
+        OPERATION_TIMEOUT_MS,
+      ),
+    ),
+  ]);
+}
+
 type ActionOverlay = { title: string } | null;
 
 type UseDineInTableActionsResult = {
@@ -34,12 +48,12 @@ export function useDineInTableActions(): UseDineInTableActionsResult {
     async (order: Partial<DineInOrder>, onSuccess: () => void) => {
       try {
         setActionOverlay({ title: "Cancelling order…" });
-        await cancelOrder(order);
+        await withTimeout(cancelOrder(order));
         onSuccess();
         router.back();
       } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : "Failed to cancel order. Please try again.";
-        showAlert(msg);
+        showAlert("Error", msg);
       } finally {
         setActionOverlay(null);
       }
@@ -51,12 +65,13 @@ export function useDineInTableActions(): UseDineInTableActionsResult {
     async (order: Partial<DineInOrder>, flush: () => Promise<void>, onSuccess: () => void) => {
       try {
         setActionOverlay({ title: "Completing order…" });
-        await flush();
-        await completeOrder(order);
+        await withTimeout(flush());
+        await withTimeout(completeOrder(order));
         onSuccess();
         router.back();
       } catch (err) {
-        console.error("Failed to complete order:", err);
+        const msg = err instanceof Error ? err.message : "Failed to complete order. Please try again.";
+        showAlert("Error", msg);
       } finally {
         setActionOverlay(null);
       }
