@@ -1,6 +1,5 @@
 import { firebase } from "@/lib/firebaseConfig";
 import { DiscountType } from "@/types/enums";
-import { groupOrderItemsBySignature } from "@/utils/groupOrderItems";
 import { calculateTaxBreakdown, generateFirestoreId } from "@/utils/helpers";
 import { doc, setDoc, Timestamp } from "firebase/firestore";
 
@@ -11,7 +10,7 @@ export async function submitToPrintQueue(order: OrderDraft): Promise<void> {
     doc(firebase.db, "printQueue", order.id),
     {
       ...order,
-      orderItems: groupOrderItemsBySignature(order.orderItems ?? []),
+      orderItems: order.orderItems ?? [],
       id: order.id,
       printed: false,
       createdAt: Timestamp.now(),
@@ -36,7 +35,7 @@ export async function submitSelectedItemsToPrintQueue(
   const queueDocId = generateFirestoreId();
   await setDoc(doc(firebase.db, "printQueue", queueDocId), {
     ...order,
-    orderItems: groupOrderItemsBySignature(selectedItems),
+    orderItems: selectedItems,
     taxBreakDown: selectedTaxBreakDown,
     id: queueDocId,
     printed: false,
