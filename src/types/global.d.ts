@@ -154,8 +154,10 @@ declare global {
     createdAt: Timestamp;
   }
 
-  interface MenuChange extends ItemChange {
+  interface MenuChange {
     id?: string;
+    name: string;
+    changes: ItemChange[];
     createdAt: Timestamp;
   }
 

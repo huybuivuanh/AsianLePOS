@@ -5,9 +5,7 @@ import { firebase } from "@/lib/firebaseConfig";
 const MENU_CHANGES_COLLECTION = "menuChanges";
 
 function sortMenuChanges(a: MenuChange, b: MenuChange): number {
-  const from = a.from.localeCompare(b.from, undefined, { sensitivity: "base" });
-  if (from !== 0) return from;
-  return a.to.localeCompare(b.to, undefined, { sensitivity: "base" });
+  return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
 }
 
 type MenuChangesState = {

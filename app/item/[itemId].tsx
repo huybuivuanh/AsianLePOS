@@ -8,11 +8,12 @@ import { useItemCustomizer } from "@/features/order/hooks/useItemCustomizer";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useCartStore } from "@/stores/useCartStore";
 import { useMenuStore } from "@/stores/useMenuStore";
+import { changeKey, usePendingItemChangesStore } from "@/stores/usePendingItemChangesStore";
 import { OrderType } from "@/types/enums";
 import Header from "@/ui/Header";
 import { getItemOptionGroupsInDisplayOrder } from "@/utils/menuOrdering";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React from "react";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback } from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -51,6 +52,24 @@ export default function Item() {
     updateOptionQuantity,
     handleSubmit,
   } = useItemCustomizer({ item: item!, existingOrderItem, isEditMode, orderItemId: orderItemIdStr, optionGroups, options });
+
+  // Apply the diff of changes toggled in the menu-changes picker on return —
+  // additions get merged in, removals drop matching entries, both deduped by
+  // from/to so re-navigating in and out doesn't create duplicates.
+  useFocusEffect(
+    useCallback(() => {
+      const { additions, removals } = usePendingItemChangesStore.getState().consume();
+      if (additions.length === 0 && removals.length === 0) return;
+      setChanges((prev) => {
+        const withoutRemoved = prev.filter(
+          (c) => !removals.some((r) => changeKey(r) === changeKey(c)),
+        );
+        const existingKeys = new Set(withoutRemoved.map(changeKey));
+        const toAdd = additions.filter((c) => !existingKeys.has(changeKey(c)));
+        return [...withoutRemoved, ...toAdd];
+      });
+    }, [setChanges]),
+  );
 
   if (!item) {
     return (
@@ -105,7 +124,13 @@ export default function Item() {
           <ItemChangeEditor
             changes={changes}
             onChange={setChanges}
-            onBrowseMenuChanges={() => router.push("/menu-changes")}
+            onBrowseMenuChanges={() => {
+              usePendingItemChangesStore.getState().clear();
+              router.push({
+                pathname: "/menu-changes",
+                params: { existingChanges: JSON.stringify(changes) },
+              });
+            }}
           />
           {orderTypeStr === OrderType.DineIn && (
             <View className="mt-3">
