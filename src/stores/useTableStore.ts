@@ -15,6 +15,9 @@ type TableStore = {
   /** Firestore path `tables/{tableDocId}`. */
   updateTable: (tableDocId: string, data: Partial<Table>) => Promise<void>;
 
+  /** Merge a freshly (live, server-read) fetched table into the cached list. */
+  upsertTable: (table: Table) => void;
+
   subscribeToTables: () => Promise<() => void>;
   clearData: () => void;
 };
@@ -38,6 +41,15 @@ export const useTableStore = create<TableStore>((set, get) => ({
       ),
     }));
   },
+
+  upsertTable: (table) =>
+    set((state) => {
+      const idx = state.tables.findIndex((t) => t.id === table.id);
+      if (idx === -1) return { tables: sortTables([...state.tables, table]) };
+      const next = [...state.tables];
+      next[idx] = table;
+      return { tables: next };
+    }),
 
   subscribeToTables: async () => {
     // Serve cache immediately while waiting for first snapshot

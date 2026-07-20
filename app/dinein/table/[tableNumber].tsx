@@ -17,7 +17,9 @@ import {
   orderPaidFromLineItems,
   showAlert,
 } from "@/utils/helpers";
-import { useLocalSearchParams, useRouter, type Href } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter, type Href } from "expo-router";
+import { doc, getDocFromServer } from "firebase/firestore";
+import { firebase } from "@/lib/firebaseConfig";
 import { Check } from "lucide-react-native";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -48,6 +50,57 @@ export default function TablePage() {
     useActiveDineInOrdersStore();
   const fullDineInOrders = useDineInOrdersStore((s) => s.fullDineInOrders);
   const { clearOrder, updateOrder } = useCartStore();
+  const upsertTable = useTableStore((s) => s.upsertTable);
+
+  // Server-fresh fallback for when the passive listeners haven't caught up yet
+  // (e.g. right after app launch) — see currentOrder/useEffect below for how
+  // this gets reconciled against the live-synced data once it arrives.
+  const [liveOrderOverride, setLiveOrderOverride] = useState<DineInOrder | null>(null);
+
+  // On every focus, do a targeted live read of just this table (bypasses the
+  // passive collection-wide listener, which can lag several seconds after a
+  // cold start) so a second staff member opening this table immediately sees
+  // any order another staff member just submitted, instead of a stale "open"
+  // table that would get silently overwritten on submit.
+  useFocusEffect(
+    useCallback(() => {
+      if (!tableNumber) return;
+      let active = true;
+
+      (async () => {
+        try {
+          const tableSnap = await getDocFromServer(doc(firebase.db, "tables", tableNumber));
+          if (!active || !tableSnap.exists()) return;
+          const liveTable = { ...(tableSnap.data() as Table), id: tableSnap.id };
+          upsertTable(liveTable);
+
+          if (!liveTable.currentOrderId) {
+            setLiveOrderOverride(null);
+            return;
+          }
+          const alreadyLocal = useDineInOrdersStore
+            .getState()
+            .fullDineInOrders.some((o) => o.id === liveTable.currentOrderId);
+          if (alreadyLocal) {
+            setLiveOrderOverride(null);
+            return;
+          }
+
+          const orderSnap = await getDocFromServer(
+            doc(firebase.db, "dineInOrders", liveTable.currentOrderId),
+          );
+          if (!active || !orderSnap.exists()) return;
+          setLiveOrderOverride({ ...(orderSnap.data() as DineInOrder), id: orderSnap.id });
+        } catch (e) {
+          console.error("❌ Error refreshing table on focus:", e);
+        }
+      })();
+
+      return () => {
+        active = false;
+      };
+    }, [tableNumber, upsertTable]),
+  );
 
   const {
     actionOverlay,
@@ -70,8 +123,11 @@ export default function TablePage() {
   }, [activeDineInOrders, table]);
 
   useEffect(() => {
-    setOrder(currentOrder ?? null);
-  }, [currentOrder]);
+    setOrder(currentOrder ?? liveOrderOverride ?? null);
+    // Drop the live-fetched fallback once the real-time listener catches up
+    // with the same data, so it doesn't keep shadowing subsequent live updates.
+    if (currentOrder && liveOrderOverride) setLiveOrderOverride(null);
+  }, [currentOrder, liveOrderOverride]);
 
   const closeCashModal = cashModal.close;
   useEffect(() => {

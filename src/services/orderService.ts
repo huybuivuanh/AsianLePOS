@@ -4,7 +4,7 @@ import { kitchenTypeSortRank } from "@/features/order/orderItemSections";
 import { ungroupOrderItems } from "@/utils/groupOrderItems";
 import { calculateTaxBreakdown, orderItemsSubtotal } from "@/utils/helpers";
 import { normalizeOrderItemTextForDb } from "@/utils/normalizeOrderItemText";
-import { doc, Timestamp, writeBatch } from "firebase/firestore";
+import { doc, runTransaction, setDoc, Timestamp, writeBatch } from "firebase/firestore";
 
 function discountInputs(order: OrderDraft): { type: DiscountType; value: number } {
   const d = order.taxBreakDown?.discount;
@@ -47,23 +47,34 @@ export async function submitOrder(order: OrderDraft, tableDocId?: string): Promi
     payload.customerName = order.customerName?.trim().toUpperCase() ?? null;
     payload.phoneNumber = order.phoneNumber ?? null;
     payload.fulfillment = order.fulfillment;
-  } else {
-    payload.tableNumber = order.tableNumber;
-    payload.guests = order.guests;
+
+    await setDoc(doc(firebase.db, "takeOutOrders", order.id), payload);
+    return;
   }
 
-  const firestoreCollection = order.orderType === OrderType.DineIn ? "dineInOrders" : "takeOutOrders";
-  const batch = writeBatch(firebase.db);
-  batch.set(doc(firebase.db, firestoreCollection, order.id!), payload);
+  payload.tableNumber = order.tableNumber;
+  payload.guests = order.guests;
 
-  if (order.orderType === OrderType.DineIn && tableDocId) {
-    batch.update(doc(firebase.db, "tables", tableDocId), {
-      status: TableStatus.Occupied,
-      currentOrderId: order.id,
-    });
+  if (!tableDocId) {
+    throw new Error("Cannot find table in app. Open the Tables tab to sync, then try again.");
   }
 
-  await batch.commit();
+  const orderRef = doc(firebase.db, "dineInOrders", order.id);
+  const tableRef = doc(firebase.db, "tables", tableDocId);
+
+  // Transaction, not a batch: the table's currentOrderId must be read fresh from
+  // the server at commit time, not from the client's possibly-stale local cache —
+  // otherwise two staff opening the same table in quick succession can each think
+  // it's free and overwrite each other's order.
+  await runTransaction(firebase.db, async (tx) => {
+    const tableSnap = await tx.get(tableRef);
+    if (!tableSnap.exists()) throw new Error("Table not found. Refresh and try again.");
+    if ((tableSnap.data() as Table).currentOrderId) {
+      throw new Error("This table already has an active order. Go back and refresh the table.");
+    }
+    tx.set(orderRef, payload);
+    tx.update(tableRef, { status: TableStatus.Occupied, currentOrderId: order.id });
+  });
 }
 
 export async function updateOrder(order: OrderDraft): Promise<void> {
