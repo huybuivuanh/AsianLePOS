@@ -101,18 +101,20 @@ export const DineInOrderCard = memo(function DineInOrderCard({
                 {item.printed ? "Printed" : "Not Printed"}
               </Text>
             </View>
-            {!(item.status === OrderStatus.Completed && !isPaid) &&
-              item.status !== OrderStatus.Cancelled && (
-                <View
-                  className={`px-3 py-1 rounded-full ${isPaid ? "bg-green-100" : "bg-gray-100"}`}
-                >
-                  <Text
-                    className={`text-xs font-semibold ${isPaid ? "text-green-700" : "text-gray-700"}`}
-                  >
-                    {isPaid ? "Paid" : "Unpaid"}
-                  </Text>
-                </View>
-              )}
+            <View
+              className={`px-3 py-1 rounded-full ${isPaid ? "bg-green-100" : "bg-gray-100"} ${
+                item.status === OrderStatus.Cancelled ||
+                (item.status === OrderStatus.Completed && !isPaid)
+                  ? "opacity-0"
+                  : ""
+              }`}
+            >
+              <Text
+                className={`text-xs font-semibold ${isPaid ? "text-green-700" : "text-gray-700"}`}
+              >
+                {isPaid ? "Paid" : "Unpaid"}
+              </Text>
+            </View>
           </View>
           <View
             className={`px-3 py-1 rounded-full ${

@@ -133,18 +133,20 @@ export const TakeOutOrderCard = memo(function TakeOutOrderCard({
                 {item.printed ? "Printed" : "Not Printed"}
               </Text>
             </View>
-            {!(item.status === OrderStatus.Completed && !isPaid) &&
-              item.status !== OrderStatus.Cancelled && (
-                <View
-                  className={`px-3 py-1 rounded-full ${isPaid ? "bg-fuchsia-100" : "bg-slate-200"}`}
-                >
-                  <Text
-                    className={`text-xs font-semibold ${isPaid ? "text-fuchsia-700" : "text-slate-600"}`}
-                  >
-                    {isPaid ? "Paid" : "Unpaid"}
-                  </Text>
-                </View>
-              )}
+            <View
+              className={`px-3 py-1 rounded-full ${isPaid ? "bg-fuchsia-100" : "bg-slate-200"} ${
+                item.status === OrderStatus.Cancelled ||
+                (item.status === OrderStatus.Completed && !isPaid)
+                  ? "opacity-0"
+                  : ""
+              }`}
+            >
+              <Text
+                className={`text-xs font-semibold ${isPaid ? "text-fuchsia-700" : "text-slate-600"}`}
+              >
+                {isPaid ? "Paid" : "Unpaid"}
+              </Text>
+            </View>
             <TouchableOpacity
               className="bg-green-500 px-4 py-2 rounded-lg mt-3"
               onPress={() => onComplete(item)}
