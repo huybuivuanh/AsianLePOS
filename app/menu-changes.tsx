@@ -144,7 +144,7 @@ export default function MenuChangesScreen() {
                     <Text className="shrink-0 text-[15px] font-semibold tabular-nums text-gray-900">
                       · ${Number(change.price).toFixed(2)}
                     </Text>
-                    {added && <Check size={14} color="#15803d" />}
+                    <Check size={14} color={added ? "#15803d" : "transparent"} />
                   </TouchableOpacity>
                 );
               })}
