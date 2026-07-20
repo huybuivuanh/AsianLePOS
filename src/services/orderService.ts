@@ -127,10 +127,14 @@ export async function cancelOrder(order: OrderDraft, tableDocId?: string | null)
   if (!order.id) throw new Error("Order ID is required to cancel.");
 
   const firestoreCollection = order.orderType === OrderType.DineIn ? "dineInOrders" : "takeOutOrders";
-  const batch = writeBatch(firebase.db);
-  batch.update(doc(firebase.db, firestoreCollection, order.id), { status: OrderStatus.Cancelled });
 
-  if (order.orderType === OrderType.DineIn && tableDocId) {
+  const nextStatus =
+    order.status === OrderStatus.Cancelled ? OrderStatus.InProgress : OrderStatus.Cancelled;
+
+  const batch = writeBatch(firebase.db);
+  batch.update(doc(firebase.db, firestoreCollection, order.id), { status: nextStatus });
+
+  if (order.orderType === OrderType.DineIn && tableDocId && nextStatus === OrderStatus.Cancelled) {
     batch.update(doc(firebase.db, "tables", tableDocId), {
       status: TableStatus.Open,
       currentOrderId: null,
