@@ -25,8 +25,9 @@ export const useTableStore = create<TableStore>((set, get) => ({
   getTable: (tableNumber) =>
     get().tables.find((t) => t.tableNumber === tableNumber),
 
-  getTableDocId: (tableNumber) =>
-    get().tables.find((t) => t.tableNumber === tableNumber)?.id,
+  // Table doc IDs are the tableNumber itself, so this never has to depend on
+  // the local `tables` array being loaded/synced — no lookup, no race.
+  getTableDocId: (tableNumber) => tableNumber || undefined,
 
   updateTable: async (tableDocId, data) => {
     const tableRef = doc(firebase.db, "tables", tableDocId);

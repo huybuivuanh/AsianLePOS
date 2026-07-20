@@ -40,9 +40,12 @@ export default function TablePage() {
 
   const [order, setOrder] = useState<Partial<DineInOrder> | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
-  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(() => new Set());
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(
+    () => new Set(),
+  );
 
-  const { activeDineInOrders, loading: ordersLoading } = useActiveDineInOrdersStore();
+  const { activeDineInOrders, loading: ordersLoading } =
+    useActiveDineInOrdersStore();
   const fullDineInOrders = useDineInOrdersStore((s) => s.fullDineInOrders);
   const { clearOrder, updateOrder } = useCartStore();
 
@@ -75,7 +78,9 @@ export default function TablePage() {
     if (!selectionMode) closeCashModal();
   }, [selectionMode, closeCashModal]);
 
-  const hasActiveOrderItems = Boolean(order?.orderItems && order.orderItems.length > 0);
+  const hasActiveOrderItems = Boolean(
+    order?.orderItems && order.orderItems.length > 0,
+  );
 
   const toggleSelectionMode = useCallback(() => {
     setSelectionMode((p) => !p);
@@ -92,14 +97,18 @@ export default function TablePage() {
   }, []);
 
   const selectedItemsTotal = useMemo(() => {
-    if (!selectionMode || !order?.orderItems || selectedItemIds.size === 0) return 0;
+    if (!selectionMode || !order?.orderItems || selectedItemIds.size === 0)
+      return 0;
     return order.orderItems
       .filter((it) => it.id && selectedItemIds.has(it.id))
       .reduce((sum, it) => sum + it.price * it.quantity, 0);
   }, [order?.orderItems, selectedItemIds, selectionMode]);
 
   const selectedItemsTaxBreakDown = useMemo(
-    () => selectedItemsTotal === 0 ? EMPTY_TAX_BREAKDOWN : calculateTaxBreakdown(selectedItemsTotal, DiscountType.None, 0),
+    () =>
+      selectedItemsTotal === 0
+        ? EMPTY_TAX_BREAKDOWN
+        : calculateTaxBreakdown(selectedItemsTotal, DiscountType.None, 0),
     [selectedItemsTotal],
   );
 
@@ -111,9 +120,17 @@ export default function TablePage() {
   const onToggleLinePaid = useCallback(
     (itemId: string, nextPaid: boolean) => {
       if (!order?.id || !order.orderItems?.length) return;
-      handleToggleLinePaid(itemId, nextPaid, order.id, order.orderItems, (nextItems) => {
-        setOrder((prev) => (prev ? { ...prev, orderItems: nextItems } : prev));
-      });
+      handleToggleLinePaid(
+        itemId,
+        nextPaid,
+        order.id,
+        order.orderItems,
+        (nextItems) => {
+          setOrder((prev) =>
+            prev ? { ...prev, orderItems: nextItems } : prev,
+          );
+        },
+      );
     },
     [order?.id, order?.orderItems, handleToggleLinePaid],
   );
@@ -121,7 +138,7 @@ export default function TablePage() {
   const orderPending = Boolean(
     table?.currentOrderId &&
     !ordersLoading &&
-    !fullDineInOrders.some((o) => o.id === table.currentOrderId)
+    !fullDineInOrders.some((o) => o.id === table.currentOrderId),
   );
 
   if (!table || ordersLoading || orderPending) {
@@ -136,7 +153,9 @@ export default function TablePage() {
     <SafeAreaViewWrapper className="flex-1 bg-gray-100">
       <Header
         title={`Table ${tableNumber}`}
-        onBack={() => { if (!actionBusy) router.back(); }}
+        onBack={() => {
+          if (!actionBusy) router.back();
+        }}
       />
 
       <View className="flex-1 justify-between">
@@ -154,7 +173,10 @@ export default function TablePage() {
               contentContainerStyle={scrollContentStyle}
               keyboardShouldPersistTaps="handled"
             >
-              <View className="rounded-2xl border border-gray-200 bg-white p-4" style={{ alignSelf: "stretch" }}>
+              <View
+                className="rounded-2xl border border-gray-200 bg-white p-4"
+                style={{ alignSelf: "stretch" }}
+              >
                 <OrderItemsList
                   orderItems={order!.orderItems}
                   orderId={order!.id!}
@@ -172,7 +194,9 @@ export default function TablePage() {
               <View className="flex-row items-stretch rounded-xl border border-gray-200 bg-white px-3 py-2.5 shadow-sm">
                 <View className="flex-1" />
                 <View className="shrink-0 justify-center pl-2">
-                  <Text className="text-xs font-medium uppercase tracking-wide text-gray-500">Total</Text>
+                  <Text className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Total
+                  </Text>
                   <Text className="mt-0.5 text-base font-bold text-gray-900">
                     ${selectedItemsTaxBreakDown.total.toFixed(2)}
                   </Text>
@@ -181,28 +205,41 @@ export default function TablePage() {
             ) : (
               <View className="flex-row items-stretch rounded-xl border border-gray-200 bg-white px-3 py-2.5 shadow-sm">
                 <View className="min-w-0 flex-1 justify-center pr-2">
-                  <Text className="text-xs font-medium uppercase tracking-wide text-gray-500">Staff</Text>
-                  <Text className="mt-0.5 text-base font-semibold text-gray-900" numberOfLines={1}>
+                  <Text className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Staff
+                  </Text>
+                  <Text
+                    className="mt-0.5 text-base font-semibold text-gray-900"
+                    numberOfLines={1}
+                  >
                     {order!.staff ?? "—"}
                   </Text>
                 </View>
                 <View className="my-0.5 w-px self-stretch bg-gray-200" />
                 <View className="shrink-0 justify-center px-3">
-                  <Text className="text-xs font-medium uppercase tracking-wide text-gray-500">Paid</Text>
-                  <Text className={`mt-0.5 text-base font-semibold ${isOrderPaid ? "text-emerald-700" : "text-rose-700"}`}>
+                  <Text className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Paid
+                  </Text>
+                  <Text
+                    className={`mt-0.5 text-base font-semibold ${isOrderPaid ? "text-emerald-700" : "text-rose-700"}`}
+                  >
                     {isOrderPaid ? "Paid" : "Unpaid"}
                   </Text>
                 </View>
                 <View className="my-0.5 w-px self-stretch bg-gray-200" />
                 <View className="shrink-0 justify-center px-3">
-                  <Text className="text-xs font-medium uppercase tracking-wide text-gray-500">Ordered At</Text>
+                  <Text className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Ordered At
+                  </Text>
                   <Text className="mt-0.5 text-base font-semibold text-gray-900">
-                    {formatTimeOnly(order!.createdAt)}
+                    {formatTimeOnly(order!.createdAt!)}
                   </Text>
                 </View>
                 <View className="my-0.5 w-px self-stretch bg-gray-200" />
                 <View className="shrink-0 justify-center pl-2">
-                  <Text className="text-xs font-medium uppercase tracking-wide text-gray-500">Total</Text>
+                  <Text className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Total
+                  </Text>
                   <Text className="mt-0.5 text-base font-bold text-gray-900">
                     ${(order!.taxBreakDown?.total ?? 0).toFixed(2)}
                   </Text>
@@ -219,10 +256,12 @@ export default function TablePage() {
               <View className="flex-row">
                 <TouchableOpacity
                   className={`bg-green-600 px-3 py-3 rounded-lg items-center justify-center flex-1 mr-1.5 ${selectedItemIds.size === 0 ? "opacity-50" : "opacity-100"}`}
-                  onPress={() => handlePrintSelected(order!, selectedItemIds, () => {
-                    setSelectionMode(false);
-                    setSelectedItemIds(new Set());
-                  })}
+                  onPress={() =>
+                    handlePrintSelected(order!, selectedItemIds, () => {
+                      setSelectionMode(false);
+                      setSelectedItemIds(new Set());
+                    })
+                  }
                   disabled={selectedItemIds.size === 0 || actionBusy}
                 >
                   <Text className="text-white font-semibold text-center text-sm">
@@ -231,14 +270,25 @@ export default function TablePage() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   className={`bg-emerald-700 px-3 py-3 rounded-lg items-center justify-center flex-1 ml-1.5 ${selectedItemIds.size === 0 ? "opacity-50" : "opacity-100"}`}
-                  onPress={() => handleMarkSelectedPaid(order!, selectedItemIds, cancelPendingToggle, (nextItems) => {
-                    setOrder((prev) => (prev ? { ...prev, orderItems: nextItems } : prev));
-                    setSelectionMode(false);
-                    setSelectedItemIds(new Set());
-                  })}
+                  onPress={() =>
+                    handleMarkSelectedPaid(
+                      order!,
+                      selectedItemIds,
+                      cancelPendingToggle,
+                      (nextItems) => {
+                        setOrder((prev) =>
+                          prev ? { ...prev, orderItems: nextItems } : prev,
+                        );
+                        setSelectionMode(false);
+                        setSelectedItemIds(new Set());
+                      },
+                    )
+                  }
                   disabled={selectedItemIds.size === 0 || actionBusy}
                 >
-                  <Text className="text-white font-semibold text-center text-sm">Mark Paid</Text>
+                  <Text className="text-white font-semibold text-center text-sm">
+                    Mark Paid
+                  </Text>
                 </TouchableOpacity>
               </View>
               <View className="flex-row mt-2">
@@ -247,14 +297,18 @@ export default function TablePage() {
                   onPress={toggleSelectionMode}
                   disabled={actionBusy}
                 >
-                  <Text className="text-white font-semibold text-center text-sm">Cancel</Text>
+                  <Text className="text-white font-semibold text-center text-sm">
+                    Cancel
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   className={`bg-yellow-600 px-3 py-3 rounded-lg items-center justify-center flex-1 ml-1.5 ${selectedItemIds.size === 0 ? "opacity-50" : "opacity-100"}`}
                   onPress={cashModal.open}
                   disabled={selectedItemIds.size === 0 || actionBusy}
                 >
-                  <Text className="text-white font-semibold text-center text-sm">Cash payment (selected)</Text>
+                  <Text className="text-white font-semibold text-center text-sm">
+                    Cash payment (selected)
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -264,13 +318,22 @@ export default function TablePage() {
                 <TouchableOpacity
                   onPress={() => {
                     if (!order) {
-                      if (table.guests === 0) { showAlert("Please Enter Number of Guests"); return; }
+                      if (table.guests === 0) {
+                        showAlert("Please Enter Number of Guests");
+                        return;
+                      }
                       clearOrder();
                       updateOrder({ orderType: OrderType.DineIn });
-                      router.push({ pathname: "/dinein/take-order/[tableNumber]", params: { tableNumber } });
+                      router.push({
+                        pathname: "/dinein/take-order/[tableNumber]",
+                        params: { tableNumber },
+                      });
                     } else {
                       updateOrder({ orderType: OrderType.DineIn });
-                      router.push({ pathname: "/dinein/edit-order/[tableNumber]", params: { tableNumber } });
+                      router.push({
+                        pathname: "/dinein/edit-order/[tableNumber]",
+                        params: { tableNumber },
+                      });
                     }
                   }}
                   activeOpacity={0.7}
@@ -287,7 +350,9 @@ export default function TablePage() {
                   disabled={!order?.id || actionBusy}
                   className={`px-2 py-3 rounded-lg items-center justify-center flex-1 min-w-0 ${order?.id && !actionBusy ? "bg-purple-600" : "bg-purple-300"}`}
                 >
-                  <Text className="text-white text-sm font-semibold text-center">Select Items</Text>
+                  <Text className="text-white text-sm font-semibold text-center">
+                    Select Items
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => handlePrint(order!)}
@@ -296,8 +361,16 @@ export default function TablePage() {
                   className={`px-2 py-3 rounded-lg items-center justify-center flex-1 min-w-0 ${order && !actionBusy ? "bg-blue-500" : "bg-blue-300"}`}
                 >
                   <View className="flex-row items-center justify-center">
-                    <Text className="text-white text-sm font-semibold">Print</Text>
-                    {order?.printed && <Check size={14} color="orange" style={{ marginLeft: 4 }} />}
+                    <Text className="text-white text-sm font-semibold">
+                      Print
+                    </Text>
+                    {order?.printed && (
+                      <Check
+                        size={14}
+                        color="orange"
+                        style={{ marginLeft: 4 }}
+                      />
+                    )}
                   </View>
                 </TouchableOpacity>
               </View>
@@ -306,13 +379,18 @@ export default function TablePage() {
                 <TouchableOpacity
                   onPress={() => {
                     if (!order?.id) return;
-                    router.push({ pathname: "/dinein/change-table/[tableNumber]", params: { tableNumber, orderId: order.id } } as Href);
+                    router.push({
+                      pathname: "/dinein/change-table/[tableNumber]",
+                      params: { tableNumber, orderId: order.id },
+                    } as Href);
                   }}
                   activeOpacity={0.7}
                   disabled={!order || actionBusy}
                   className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 ${order && !actionBusy ? "bg-teal-500" : "bg-teal-200"}`}
                 >
-                  <Text className="text-white text-sm font-semibold text-center">Change Table</Text>
+                  <Text className="text-white text-sm font-semibold text-center">
+                    Change Table
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={cashModal.open}
@@ -320,32 +398,46 @@ export default function TablePage() {
                   disabled={!order || actionBusy}
                   className={`px-2 py-3 rounded-lg items-center justify-center flex-1 min-w-0 ${order && !actionBusy ? "bg-yellow-600" : "bg-yellow-300"}`}
                 >
-                  <Text className="text-white text-sm font-semibold text-center">Cash Payment</Text>
+                  <Text className="text-white text-sm font-semibold text-center">
+                    Cash Payment
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
                     if (!order?.id) return;
-                    router.push({ pathname: "/dinein/change-to-takeout/[tableNumber]", params: { tableNumber } } as Href);
+                    router.push({
+                      pathname: "/dinein/change-to-takeout/[tableNumber]",
+                      params: { tableNumber },
+                    } as Href);
                   }}
                   activeOpacity={0.7}
                   disabled={!order || actionBusy}
                   className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 ${order && !actionBusy ? "bg-sky-500" : "bg-sky-300"}`}
                 >
-                  <Text className="text-white text-sm font-semibold text-center">Change Type</Text>
+                  <Text className="text-white text-sm font-semibold text-center">
+                    Change Type
+                  </Text>
                 </TouchableOpacity>
               </View>
 
               <View className="flex-row mb-4 gap-2">
                 <TouchableOpacity
-                  onPress={() => handleCancelOrder(order!, () => setOrder(null))}
+                  onPress={() =>
+                    handleCancelOrder(order!, () => setOrder(null))
+                  }
                   activeOpacity={0.7}
                   className={`${order && !actionBusy ? "bg-red-500" : "bg-red-300"} px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0`}
                   disabled={!order || actionBusy}
                 >
-                  <Text className="text-white text-sm font-semibold text-center">Cancel</Text>
+                  <Text className="text-white text-sm font-semibold text-center">
+                    Cancel
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={() => { cancelPendingToggle(); handleMarkAsPaid(order!, !isOrderPaid); }}
+                  onPress={() => {
+                    cancelPendingToggle();
+                    handleMarkAsPaid(order!, !isOrderPaid);
+                  }}
                   activeOpacity={0.7}
                   disabled={!order || actionBusy}
                   className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 ${isOrderPaid ? "bg-gray-500" : order && !actionBusy ? "bg-pink-500" : "bg-gray-300"}`}
@@ -355,12 +447,18 @@ export default function TablePage() {
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={() => handleCompleteOrder(order!, flushPendingToggle, () => setOrder(null))}
+                  onPress={() =>
+                    handleCompleteOrder(order!, flushPendingToggle, () =>
+                      setOrder(null),
+                    )
+                  }
                   activeOpacity={0.7}
                   disabled={!order || actionBusy}
                   className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 ${order && !actionBusy ? "bg-green-500" : "bg-green-200"}`}
                 >
-                  <Text className="text-white text-sm font-semibold text-center">Complete</Text>
+                  <Text className="text-white text-sm font-semibold text-center">
+                    Complete
+                  </Text>
                 </TouchableOpacity>
               </View>
             </>
@@ -371,7 +469,11 @@ export default function TablePage() {
       {cashModal.isOpen && (
         <CashPaymentModal
           onClose={cashModal.close}
-          orderTotal={selectionMode ? selectedItemsTaxBreakDown.total : (order?.taxBreakDown?.total ?? 0)}
+          orderTotal={
+            selectionMode
+              ? selectedItemsTaxBreakDown.total
+              : (order?.taxBreakDown?.total ?? 0)
+          }
         />
       )}
 
