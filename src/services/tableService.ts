@@ -1,6 +1,41 @@
 import { firebase } from "@/lib/firebaseConfig";
 import { TableStatus } from "@/types/enums";
-import { doc, getDoc, writeBatch } from "firebase/firestore";
+import { doc, getDoc, runTransaction, writeBatch } from "firebase/firestore";
+
+/**
+ * Updates a table's guests/status, and the guests field on its attached order (if any).
+ * Transactional so a stale client (e.g. one that hasn't caught up to another device
+ * having just started an order on this table) can't blindly stomp real state — the
+ * write only proceeds if `currentOrderId` still matches what the caller expected when
+ * the edit form was opened. On mismatch, the caller gets the live table back instead
+ * so it can reconcile its UI to reality rather than silently overwriting it.
+ */
+export async function updateTableGuestsAndStatus(
+  tableDocId: string,
+  expectedCurrentOrderId: string | null,
+  data: { guests: number; status: TableStatus },
+): Promise<{ conflict: boolean; liveTable?: Table }> {
+  const tableRef = doc(firebase.db, "tables", tableDocId);
+
+  return runTransaction(firebase.db, async (tx) => {
+    const snap = await tx.get(tableRef);
+    if (!snap.exists()) throw new Error("Table not found. Refresh and try again.");
+    const liveTable = { ...(snap.data() as Table), id: snap.id };
+
+    if (liveTable.currentOrderId !== expectedCurrentOrderId) {
+      return { conflict: true, liveTable };
+    }
+
+    tx.update(tableRef, data);
+    if (liveTable.currentOrderId) {
+      tx.update(doc(firebase.db, "dineInOrders", liveTable.currentOrderId), {
+        guests: data.guests,
+      });
+    }
+
+    return { conflict: false };
+  });
+}
 
 export async function changeDineInOrderTable(
   orderId: string,

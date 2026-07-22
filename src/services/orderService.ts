@@ -11,7 +11,19 @@ function discountInputs(order: OrderDraft): { type: DiscountType; value: number 
   return { type: d?.discountType ?? DiscountType.None, value: d?.discountValue ?? 0 };
 }
 
-export async function submitOrder(order: OrderDraft, tableDocId?: string): Promise<void> {
+function sortOrderItems(items: OrderItem[]): OrderItem[] {
+  return [...items].sort((a, b) => {
+    const ra = kitchenTypeSortRank(a.kitchenType);
+    const rb = kitchenTypeSortRank(b.kitchenType);
+    if (ra !== rb) return ra - rb;
+    return a.name.localeCompare(b.name);
+  });
+}
+
+export async function submitOrder(
+  order: OrderDraft,
+  tableDocId?: string,
+): Promise<{ merged: boolean }> {
   if (!order.id) throw new Error("Cannot submit order without ID.");
   if (!order.orderItems || order.orderItems.length === 0) throw new Error("Cannot submit empty order.");
 
@@ -23,13 +35,8 @@ export async function submitOrder(order: OrderDraft, tableDocId?: string): Promi
   const { type, value } = discountInputs(order);
   const taxBreakDown = calculateTaxBreakdown(orderItemsSubtotal(order.orderItems), type, value);
 
-  const rawItems = ungroupOrderItems(order.orderItems ?? []).sort((a, b) => {
-    const ra = kitchenTypeSortRank(a.kitchenType);
-    const rb = kitchenTypeSortRank(b.kitchenType);
-    if (ra !== rb) return ra - rb;
-    return a.name.localeCompare(b.name);
-  });
-  const normalizedItems = rawItems.map(normalizeOrderItemTextForDb);
+  const rawItems = ungroupOrderItems(order.orderItems ?? []);
+  const normalizedItems = sortOrderItems(rawItems).map(normalizeOrderItemTextForDb);
 
   const payload: Record<string, unknown> = {
     id: order.id,
@@ -49,7 +56,7 @@ export async function submitOrder(order: OrderDraft, tableDocId?: string): Promi
     payload.fulfillment = order.fulfillment;
 
     await setDoc(doc(firebase.db, "takeOutOrders", order.id), payload);
-    return;
+    return { merged: false };
   }
 
   payload.tableNumber = order.tableNumber;
@@ -63,17 +70,44 @@ export async function submitOrder(order: OrderDraft, tableDocId?: string): Promi
   const tableRef = doc(firebase.db, "tables", tableDocId);
 
   // Transaction, not a batch: the table's currentOrderId must be read fresh from
-  // the server at commit time, not from the client's possibly-stale local cache —
-  // otherwise two staff opening the same table in quick succession can each think
-  // it's free and overwrite each other's order.
-  await runTransaction(firebase.db, async (tx) => {
+  // the server at commit time, not from the client's possibly-stale local cache.
+  // If another device already attached an order to this table in the meantime,
+  // merge this draft's items into that existing order instead of overwriting it —
+  // the staff member submitting still has real items to add, they just weren't
+  // the first to claim the table.
+  return await runTransaction(firebase.db, async (tx) => {
     const tableSnap = await tx.get(tableRef);
     if (!tableSnap.exists()) throw new Error("Table not found. Refresh and try again.");
-    if ((tableSnap.data() as Table).currentOrderId) {
-      throw new Error("This table already has an active order. Go back and refresh the table.");
+    const existingOrderId = (tableSnap.data() as Table).currentOrderId;
+
+    if (existingOrderId) {
+      const existingOrderRef = doc(firebase.db, "dineInOrders", existingOrderId);
+      const existingSnap = await tx.get(existingOrderRef);
+
+      if (existingSnap.exists()) {
+        const existingOrder = existingSnap.data() as DineInOrder;
+        const mergedItems = sortOrderItems([
+          ...(existingOrder.orderItems ?? []),
+          ...normalizedItems,
+        ]);
+        const existingDiscount = existingOrder.taxBreakDown?.discount;
+        const mergedTaxBreakDown = calculateTaxBreakdown(
+          orderItemsSubtotal(mergedItems),
+          existingDiscount?.discountType ?? DiscountType.None,
+          existingDiscount?.discountValue ?? 0,
+        );
+        tx.update(existingOrderRef, {
+          orderItems: mergedItems,
+          taxBreakDown: mergedTaxBreakDown,
+        });
+        return { merged: true };
+      }
+      // Table pointed at an order that no longer exists (e.g. deleted) — treat as free.
     }
+
     tx.set(orderRef, payload);
     tx.update(tableRef, { status: TableStatus.Occupied, currentOrderId: order.id });
+    return { merged: false };
   });
 }
 

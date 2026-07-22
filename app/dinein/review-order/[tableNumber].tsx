@@ -58,7 +58,14 @@ export default function ReviewDineInOrder() {
         guests: getTable(tableNumber as string)?.guests ?? 0,
       };
 
-      await submitOrder(newOrder);
+      const { merged } = await submitOrder(newOrder);
+
+      if (merged) {
+        showAlert(
+          "Order Updated",
+          "This table already had an order in progress — your items were added to it.",
+        );
+      }
 
       router.dismiss(2);
     } catch (error: any) {

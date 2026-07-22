@@ -1,5 +1,4 @@
-import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
-import { useOrderStore } from "@/stores/useOrderStore";
+import { updateTableGuestsAndStatus } from "@/services/tableService";
 import { useTableStore } from "@/stores/useTableStore";
 import { TableStatus } from "@/types/enums";
 import React, { useEffect, useRef, useState } from "react";
@@ -20,9 +19,7 @@ export default function EditTableForm({
   const table = useTableStore((state) =>
     state.tables.find((t) => t.tableNumber === tableNumber),
   );
-  const updateTable = useTableStore((state) => state.updateTable);
-  const { updateOrderOnFirestore } = useOrderStore();
-  const { activeDineInOrders } = useActiveDineInOrdersStore();
+  const upsertTable = useTableStore((state) => state.upsertTable);
 
   const [guests, setGuests] = useState<number>(0);
   const [status, setStatus] = useState<TableStatus>(TableStatus.Open);
@@ -66,13 +63,19 @@ export default function EditTableForm({
   const handleSubmit = async () => {
     try {
       setSubmitting(true);
-      const order = activeDineInOrders.find(
-        (o) => o.id === table.currentOrderId,
-      );
-      await Promise.all([
-        updateTable(table.id, { guests, status }),
-        order ? updateOrderOnFirestore({ ...order, guests }) : Promise.resolve(),
-      ]);
+      const result = await updateTableGuestsAndStatus(table.id, table.currentOrderId, {
+        guests,
+        status,
+      });
+
+      if (result.conflict) {
+        if (result.liveTable) upsertTable(result.liveTable);
+        Alert.alert(
+          "Table Updated",
+          "This table already has an order in progress. Showing the latest info.",
+        );
+      }
+
       onDismiss();
     } catch (error) {
       console.error("Failed to update table:", error);

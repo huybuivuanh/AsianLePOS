@@ -8,7 +8,7 @@ import { TakeOutFulfillmentKind } from "@/types/enums";
 import { create } from "zustand";
 
 type OrderActions = {
-  submitOrder: (order: OrderDraft) => Promise<void>;
+  submitOrder: (order: OrderDraft) => Promise<{ merged: boolean }>;
   updateOrderOnFirestore: (order: OrderDraft) => Promise<void>;
   cancelOrder: (order: OrderDraft) => Promise<void>;
   completeOrder: (order: OrderDraft) => Promise<void>;
@@ -42,8 +42,9 @@ function resolveTableDocId(tableNumber: string | undefined): string | undefined 
 export const useOrderStore = create<OrderActions>(() => ({
   submitOrder: async (order) => {
     const tableDocId = resolveTableDocId(order.tableNumber);
-    await orderService.submitOrder(order, tableDocId);
+    const result = await orderService.submitOrder(order, tableDocId);
     useCartStore.getState().clearOrder();
+    return result;
   },
 
   updateOrderOnFirestore: async (order) => {
