@@ -1,4 +1,5 @@
 // app/(tabs)/_layout.tsx
+import { useForceUpdate } from "@/hooks/useForceUpdate";
 import { useAuth } from "@/providers/AuthProvider";
 import { useCartStore } from "@/stores/useCartStore";
 import { useCreditsStore } from "@/stores/useCreditsStore";
@@ -9,6 +10,7 @@ import { useMenuStore } from "@/stores/useMenuStore";
 import { useStaffStore } from "@/stores/useStaffStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
+import ForceUpdateScreen from "@/ui/ForceUpdateScreen";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef } from "react";
@@ -31,6 +33,7 @@ const TAB_SCREEN_OPTIONS = {
 
 export default function TabsLayout() {
   const { user, loading: authLoading } = useAuth();
+  const { updateRequired, updateUrl } = useForceUpdate(!!user);
   const router = useRouter();
   const {
     subscribeToMenuVersion,
@@ -154,6 +157,10 @@ export default function TabsLayout() {
         <Text className="text-lg font-medium">Loading...</Text>
       </View>
     );
+  }
+
+  if (updateRequired) {
+    return <ForceUpdateScreen updateUrl={updateUrl} />;
   }
 
   return (
