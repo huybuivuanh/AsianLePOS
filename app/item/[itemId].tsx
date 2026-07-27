@@ -9,6 +9,7 @@ import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useCartStore } from "@/stores/useCartStore";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { changeKey, usePendingItemChangesStore } from "@/stores/usePendingItemChangesStore";
+import { extraKey, usePendingExtrasStore } from "@/stores/usePendingExtrasStore";
 import { OrderType } from "@/types/enums";
 import Header from "@/ui/Header";
 import { getItemOptionGroupsInDisplayOrder } from "@/utils/menuOrdering";
@@ -71,6 +72,22 @@ export default function Item() {
     }, [setChanges]),
   );
 
+  // Same diff-apply pattern as above, but for extras toggled in the add-extras picker.
+  useFocusEffect(
+    useCallback(() => {
+      const { additions, removals } = usePendingExtrasStore.getState().consume();
+      if (additions.length === 0 && removals.length === 0) return;
+      setExtras((prev) => {
+        const withoutRemoved = prev.filter(
+          (e) => !removals.some((r) => extraKey(r) === extraKey(e)),
+        );
+        const existingKeys = new Set(withoutRemoved.map(extraKey));
+        const toAdd = additions.filter((e) => !existingKeys.has(extraKey(e)));
+        return [...withoutRemoved, ...toAdd];
+      });
+    }, [setExtras]),
+  );
+
   if (!item) {
     return (
       <SafeAreaViewWrapper>
@@ -120,7 +137,17 @@ export default function Item() {
             />
           ))}
 
-          <AddExtraEditor extras={extras} onChange={setExtras} />
+          <AddExtraEditor
+            extras={extras}
+            onChange={setExtras}
+            onBrowseAddExtras={() => {
+              usePendingExtrasStore.getState().clear();
+              router.push({
+                pathname: "/add-extras",
+                params: { existingExtras: JSON.stringify(extras) },
+              });
+            }}
+          />
           <ItemChangeEditor
             changes={changes}
             onChange={setChanges}

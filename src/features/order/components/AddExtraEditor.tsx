@@ -10,9 +10,12 @@ import {
 export default function AddExtraEditor({
   extras,
   onChange,
+  onBrowseAddExtras,
 }: {
   extras: AddExtra[];
   onChange: (updated: AddExtra[]) => void;
+  /** Opens read-only add-extras preview (e.g. `router.push("/add-extras")`). */
+  onBrowseAddExtras?: () => void;
 }) {
   // Track if we're updating from props to prevent infinite loops
   const isUpdatingFromProps = useRef(false);
@@ -127,10 +130,18 @@ export default function AddExtraEditor({
 
   return (
     <View className="mt-6 mb-4">
-      <View className="flex-row items-center justify-between mb-3">
-        <Text className="text-xl font-semibold">Add Extras</Text>
+      <View className="flex-row items-center justify-between mb-3 gap-2">
+        <Text className="flex-1 text-xl font-semibold">Add Extras</Text>
+        {onBrowseAddExtras ? (
+          <TouchableOpacity
+            className="bg-stone-600 px-3 py-2 rounded-xl shrink-0"
+            onPress={onBrowseAddExtras}
+          >
+            <Text className="text-white font-semibold text-sm">Preview</Text>
+          </TouchableOpacity>
+        ) : null}
         <TouchableOpacity
-          className="bg-blue-500 px-4 py-2 rounded-xl"
+          className="bg-blue-500 px-4 py-2 rounded-xl shrink-0"
           onPress={handleAddDraft}
         >
           <Text className="text-white font-semibold">Add</Text>

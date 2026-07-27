@@ -1,6 +1,7 @@
 // app/(tabs)/_layout.tsx
 import { useForceUpdate } from "@/hooks/useForceUpdate";
 import { useAuth } from "@/providers/AuthProvider";
+import { useAddExtrasStore } from "@/stores/useAddExtrasStore";
 import { useCartStore } from "@/stores/useCartStore";
 import { useCreditsStore } from "@/stores/useCreditsStore";
 import { useCustomersStore } from "@/stores/useCustomersStore";
@@ -47,6 +48,7 @@ export default function TabsLayout() {
   const { subscribeToCustomersVersion, clearData: clearCustomers } =
     useCustomersStore();
   const { subscribeToMenuChanges, clearData: clearMenuChanges } = useMenuChangesStore();
+  const { subscribeToAddExtras, clearData: clearAddExtras } = useAddExtrasStore();
   const { subscribeToCredits, clearData: clearCredits } = useCreditsStore();
   const { fetchStaff, clearData: clearStaff } = useStaffStore();
   const { clearOrder } = useCartStore();
@@ -61,6 +63,7 @@ export default function TabsLayout() {
       clearTables();
       clearCustomers();
       clearMenuChanges();
+      clearAddExtras();
       clearCredits();
       clearStaff();
       clearOrder();
@@ -76,6 +79,7 @@ export default function TabsLayout() {
     clearTables,
     clearCustomers,
     clearMenuChanges,
+    clearAddExtras,
     clearCredits,
     clearStaff,
     clearOrder,
@@ -98,6 +102,7 @@ export default function TabsLayout() {
     add(subscribeToCustomersVersion());
     add(subscribeToCredits());
     add(subscribeToMenuChanges());
+    add(subscribeToAddExtras());
     void fetchStaff();
     unsubsRef.current = unsubs;
 
@@ -116,6 +121,7 @@ export default function TabsLayout() {
     subscribeToCustomersVersion,
     subscribeToCredits,
     subscribeToMenuChanges,
+    subscribeToAddExtras,
     fetchStaff,
     subscribeToTables,
   ]);

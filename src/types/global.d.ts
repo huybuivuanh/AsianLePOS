@@ -79,6 +79,11 @@ declare global {
     price: number;
   }
 
+  interface ExtraCatalogItem extends AddExtra {
+    id?: string;
+    createdAt: Timestamp;
+  }
+
   interface Discount {
     discountType: DiscountType;
     discountValue: number;
