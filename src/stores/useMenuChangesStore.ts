@@ -8,6 +8,10 @@ function sortMenuChanges(a: MenuChange, b: MenuChange): number {
   return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
 }
 
+function sortItemChanges(a: ItemChange, b: ItemChange): number {
+  return a.from.localeCompare(b.from, undefined, { sensitivity: "base" });
+}
+
 type MenuChangesState = {
   menuChanges: MenuChange[];
   loading: boolean;
@@ -25,6 +29,7 @@ export const useMenuChangesStore = create<MenuChangesState>((set) => ({
       (snapshot) => {
         const menuChanges = snapshot.docs
           .map((d) => ({ id: d.id, ...(d.data() as Omit<MenuChange, "id">) } as MenuChange))
+          .map((mc) => ({ ...mc, changes: [...mc.changes].sort(sortItemChanges) }))
           .sort(sortMenuChanges);
         set({ menuChanges, loading: false });
       },
