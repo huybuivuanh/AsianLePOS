@@ -1,6 +1,6 @@
 import { firebase } from "@/lib/firebaseConfig";
 import { TableStatus } from "@/types/enums";
-import { doc, getDoc, runTransaction, writeBatch } from "firebase/firestore";
+import { doc, runTransaction } from "firebase/firestore";
 
 /**
  * Updates a table's guests/status, and the guests field on its attached order (if any).
@@ -46,45 +46,50 @@ export async function changeDineInOrderTable(
   if (fromTableNumber === toTableNumber) throw new Error("Select a different table.");
 
   const orderRef = doc(firebase.db, "dineInOrders", orderId);
-  const orderSnap = await getDoc(orderRef);
-  if (!orderSnap.exists()) throw new Error("Order not found.");
 
-  const orderData = orderSnap.data() as { tableNumber?: string; guests?: number };
-  const actualFrom = orderData.tableNumber;
-  if (!actualFrom) throw new Error("Order has no table.");
+  // Transaction, not a batch: the destination table must be re-checked as still free
+  // at commit time — otherwise a device that just claimed it with a brand-new order
+  // (via submitOrder's transaction) in the gap between our read and our write gets
+  // silently overwritten here.
+  await runTransaction(firebase.db, async (tx) => {
+    const orderSnap = await tx.get(orderRef);
+    if (!orderSnap.exists()) throw new Error("Order not found.");
 
-  const rawGuests = Math.floor(Number(orderData.guests ?? 0));
-  const g = rawGuests >= 1 ? rawGuests : 1;
+    const orderData = orderSnap.data() as { tableNumber?: string; guests?: number };
+    const actualFrom = orderData.tableNumber;
+    if (!actualFrom) throw new Error("Order has no table.");
 
-  const fromDocId = getTableDocId(actualFrom);
-  const toDocId = getTableDocId(toTableNumber);
-  if (!fromDocId || !toDocId) {
-    throw new Error("Cannot find table in app. Open the Tables tab to sync, then try again.");
-  }
+    const rawGuests = Math.floor(Number(orderData.guests ?? 0));
+    const g = rawGuests >= 1 ? rawGuests : 1;
 
-  const oldTableRef = doc(firebase.db, "tables", fromDocId);
-  const newTableRef = doc(firebase.db, "tables", toDocId);
+    const fromDocId = getTableDocId(actualFrom);
+    const toDocId = getTableDocId(toTableNumber);
+    if (!fromDocId || !toDocId) {
+      throw new Error("Cannot find table in app. Open the Tables tab to sync, then try again.");
+    }
 
-  const [oldTableSnap, newTableSnap] = await Promise.all([
-    getDoc(oldTableRef),
-    getDoc(newTableRef),
-  ]);
+    const oldTableRef = doc(firebase.db, "tables", fromDocId);
+    const newTableRef = doc(firebase.db, "tables", toDocId);
 
-  if (!oldTableSnap.exists() || !newTableSnap.exists()) throw new Error("Table not found.");
+    const [oldTableSnap, newTableSnap] = await Promise.all([
+      tx.get(oldTableRef),
+      tx.get(newTableRef),
+    ]);
 
-  const oldT = { ...(oldTableSnap.data() as Table), id: oldTableSnap.id };
-  const newT = { ...(newTableSnap.data() as Table), id: newTableSnap.id };
+    if (!oldTableSnap.exists() || !newTableSnap.exists()) throw new Error("Table not found.");
 
-  if (oldT.currentOrderId !== orderId) {
-    throw new Error("This order is no longer on the original table. Go back and refresh.");
-  }
-  if (newT.status !== TableStatus.Open) {
-    throw new Error("That table is not available. Choose another.");
-  }
+    const oldT = { ...(oldTableSnap.data() as Table), id: oldTableSnap.id };
+    const newT = { ...(newTableSnap.data() as Table), id: newTableSnap.id };
 
-  const batch = writeBatch(firebase.db);
-  batch.update(oldTableRef, { status: TableStatus.Open, currentOrderId: null, guests: 0 });
-  batch.update(newTableRef, { status: TableStatus.Occupied, currentOrderId: orderId, guests: g });
-  batch.update(orderRef, { tableNumber: toTableNumber, guests: g });
-  await batch.commit();
+    if (oldT.currentOrderId !== orderId) {
+      throw new Error("This order is no longer on the original table. Go back and refresh.");
+    }
+    if (newT.status !== TableStatus.Open || newT.currentOrderId) {
+      throw new Error("That table is not available. Choose another.");
+    }
+
+    tx.update(oldTableRef, { status: TableStatus.Open, currentOrderId: null, guests: 0 });
+    tx.update(newTableRef, { status: TableStatus.Occupied, currentOrderId: orderId, guests: g });
+    tx.update(orderRef, { tableNumber: toTableNumber, guests: g });
+  });
 }
