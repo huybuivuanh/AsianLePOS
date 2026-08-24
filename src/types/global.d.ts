@@ -156,6 +156,7 @@ declare global {
     id?: string;
     name: string;
     phone: string;
+    isBlocked: boolean;
     createdAt: Timestamp;
   }
 

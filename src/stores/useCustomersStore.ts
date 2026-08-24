@@ -140,10 +140,17 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     const ref = await addDoc(collection(firebase.db, CUSTOMERS_COLLECTION), {
       name: n,
       phone: p,
+      isBlocked: false,
       createdAt: now,
     });
 
-    const newCustomer: Customer = { id: ref.id, name: n, phone: p, createdAt: now };
+    const newCustomer: Customer = {
+      id: ref.id,
+      name: n,
+      phone: p,
+      isBlocked: false,
+      createdAt: now,
+    };
     const updated = [...get().customers, newCustomer];
     set({ customers: updated });
     void AsyncStorage.setItem(CACHE_KEY, JSON.stringify(updated));

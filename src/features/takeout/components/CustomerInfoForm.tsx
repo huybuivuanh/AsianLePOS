@@ -129,20 +129,47 @@ export default function CustomerInfoForm() {
               accessibilityLabel="Dismiss customer suggestion"
             />
             {matchedCustomer ? (
-              <View className="relative z-10 w-full max-w-md self-center rounded-2xl border border-stone-200 bg-white px-5 py-6 shadow-2xl">
-                <Text className="mb-1 text-center text-lg font-bold text-stone-900">
-                  Customer found
+              <View
+                className={`relative z-10 w-full max-w-md self-center rounded-2xl border px-5 py-6 shadow-2xl ${
+                  matchedCustomer.isBlocked
+                    ? "border-red-300 bg-red-50"
+                    : "border-stone-200 bg-white"
+                }`}
+              >
+                <Text
+                  className={`mb-1 text-center text-lg font-bold ${
+                    matchedCustomer.isBlocked ? "text-red-700" : "text-stone-900"
+                  }`}
+                >
+                  {matchedCustomer.isBlocked ? "Customer blocked" : "Customer found"}
                 </Text>
-                <Text className="mb-6 text-center text-[15px] leading-6 text-stone-600">
-                  Use saved name{" "}
-                  <Text className="font-bold text-stone-900">
-                    {matchedCustomer.name.trim()}
-                  </Text>
-                  ?
+                <Text
+                  className={`mb-6 text-center text-[15px] leading-6 ${
+                    matchedCustomer.isBlocked ? "text-red-600" : "text-stone-600"
+                  }`}
+                >
+                  {matchedCustomer.isBlocked ? (
+                    <>
+                      <Text className="font-bold text-red-700">
+                        {matchedCustomer.name.trim()}
+                      </Text>{" "}
+                      is blocked. Use saved name anyway?
+                    </>
+                  ) : (
+                    <>
+                      Use saved name{" "}
+                      <Text className="font-bold text-stone-900">
+                        {matchedCustomer.name.trim()}
+                      </Text>
+                      ?
+                    </>
+                  )}
                 </Text>
                 <View className="flex-row justify-center gap-3">
                   <TouchableOpacity
-                    className="min-w-[100px] flex-1 rounded-xl bg-emerald-600 py-3.5"
+                    className={`min-w-[100px] flex-1 rounded-xl py-3.5 ${
+                      matchedCustomer.isBlocked ? "bg-red-600" : "bg-emerald-600"
+                    }`}
                     onPress={onYesUseSavedName}
                     activeOpacity={0.85}
                   >
@@ -160,7 +187,11 @@ export default function CustomerInfoForm() {
                     </Text>
                   </TouchableOpacity>
                 </View>
-                <Text className="mt-4 text-center text-xs text-stone-500">
+                <Text
+                  className={`mt-4 text-center text-xs ${
+                    matchedCustomer.isBlocked ? "text-red-400" : "text-stone-500"
+                  }`}
+                >
                   Tap outside to dismiss. You can still submit the order without
                   choosing.
                 </Text>
