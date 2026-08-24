@@ -16,7 +16,7 @@ export function useTakeOutOrderActions(takeOutOrders: TakeOutOrder[]) {
   } = useOrderStore();
 
   const [actionOverlay, setActionOverlay] = useState<{ title: string } | null>(null);
-  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [expandedOrderIds, setExpandedOrderIds] = useState<Set<string>>(new Set());
   const [selectionMode, setSelectionMode] = useState<string | null>(null);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
   const [cashPaymentOrderId, setCashPaymentOrderId] = useState<string | null>(null);
@@ -47,12 +47,20 @@ export function useTakeOutOrderActions(takeOutOrders: TakeOutOrder[]) {
   }, [selectionMode, takeOutOrders]);
 
   const extraData = useMemo(
-    () => ({ expandedOrderId, selectionMode, selectedItemIdsSize: selectedItemIds.size }),
-    [expandedOrderId, selectionMode, selectedItemIds.size],
+    () => ({ expandedOrderIds, selectionMode, selectedItemIdsSize: selectedItemIds.size }),
+    [expandedOrderIds, selectionMode, selectedItemIds.size],
   );
 
   const toggleExpand = useCallback((id: string) => {
-    setExpandedOrderId((prev) => (prev === id ? null : id));
+    setExpandedOrderIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const expandOrder = useCallback((id: string) => {
+    setExpandedOrderIds((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
   }, []);
 
   const handleComplete = useCallback(
@@ -147,8 +155,8 @@ export function useTakeOutOrderActions(takeOutOrders: TakeOutOrder[]) {
 
   return {
     actionOverlay,
-    expandedOrderId,
-    setExpandedOrderId,
+    expandedOrderIds,
+    expandOrder,
     selectionMode,
     selectedItemIds,
     cashPaymentOrderId,

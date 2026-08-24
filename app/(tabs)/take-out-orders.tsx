@@ -41,8 +41,8 @@ export default function TakeOutOrdersTab() {
 
   const {
     actionOverlay,
-    expandedOrderId,
-    setExpandedOrderId,
+    expandedOrderIds,
+    expandOrder,
     selectionMode,
     selectedItemIds,
     cashPaymentOrderId,
@@ -68,9 +68,9 @@ export default function TakeOutOrdersTab() {
 
   useEffect(() => {
     if (!orderIdParam) return;
-    setExpandedOrderId(orderIdParam);
+    expandOrder(orderIdParam);
     void refreshTakeOutOrders();
-  }, [orderIdParam, refreshTakeOutOrders, setExpandedOrderId]);
+  }, [orderIdParam, refreshTakeOutOrders, expandOrder]);
 
   const renderOrder = useCallback(
     ({ item }: { item: TakeOutOrder }) => {
@@ -78,7 +78,7 @@ export default function TakeOutOrdersTab() {
       return (
         <TakeOutOrderCard
           item={item}
-          expanded={expandedOrderId === item.id}
+          expanded={Boolean(item.id && expandedOrderIds.has(item.id))}
           isSelectionMode={isSelectionMode}
           selectedItemIds={isSelectionMode ? selectedItemIds : EMPTY_SELECTED_IDS}
           onToggleExpand={toggleExpand}
@@ -96,7 +96,7 @@ export default function TakeOutOrdersTab() {
       );
     },
     [
-      expandedOrderId, selectionMode, selectedItemIds,
+      expandedOrderIds, selectionMode, selectedItemIds,
       toggleExpand, handleComplete, handleCancel, handlePrint,
       handleToggleSelectionMode, handleToggleItemSelection, handlePrintSelected,
       handleMarkAsPaid, handleEditOrder, handleOpenCashPayment, handleChangeToDineIn,

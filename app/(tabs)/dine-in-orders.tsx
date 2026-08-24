@@ -24,7 +24,9 @@ export default function DineInOrdersTab() {
   const params = useLocalSearchParams<{ orderId?: string | string[] }>();
   const orderIdParam = Array.isArray(params.orderId) ? params.orderId[0] : params.orderId;
 
-  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(orderIdParam || null);
+  const [expandedOrderIds, setExpandedOrderIds] = useState<Set<string>>(
+    () => new Set(orderIdParam ? [orderIdParam] : []),
+  );
   const [selectionMode, setSelectionMode] = useState<string | null>(null);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
   const [actionOverlay, setActionOverlay] = useState<{ title: string } | null>(null);
@@ -34,7 +36,11 @@ export default function DineInOrdersTab() {
   useEffect(() => { loadDineInOrders(); }, [loadDineInOrders]);
 
   const toggleExpand = useCallback((id: string) => {
-    setExpandedOrderId((prev) => (prev === id ? null : id));
+    setExpandedOrderIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
   }, []);
 
   const handlePrint = useCallback(
@@ -80,8 +86,8 @@ export default function DineInOrdersTab() {
   );
 
   const extraData = useMemo(
-    () => ({ expandedOrderId, selectionMode, selectedItemIdsSize: selectedItemIds.size }),
-    [expandedOrderId, selectionMode, selectedItemIds.size],
+    () => ({ expandedOrderIds, selectionMode, selectedItemIdsSize: selectedItemIds.size }),
+    [expandedOrderIds, selectionMode, selectedItemIds.size],
   );
 
   const renderOrder = useCallback(
@@ -90,7 +96,7 @@ export default function DineInOrdersTab() {
       return (
         <DineInOrderCard
           item={item}
-          expanded={expandedOrderId === item.id}
+          expanded={Boolean(item.id && expandedOrderIds.has(item.id))}
           isSelectionMode={isSelectionMode}
           selectedItemIds={isSelectionMode ? selectedItemIds : EMPTY_SELECTED_IDS}
           onToggleExpand={toggleExpand}
@@ -103,7 +109,7 @@ export default function DineInOrdersTab() {
       );
     },
     [
-      expandedOrderId, selectionMode, selectedItemIds,
+      expandedOrderIds, selectionMode, selectedItemIds,
       toggleExpand, handlePrint, handleToggleSelectionMode, handleToggleItemSelection,
       handlePrintSelected, handleMarkAsPaid,
     ],
