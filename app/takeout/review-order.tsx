@@ -8,6 +8,7 @@ import { useCustomersStore } from "@/stores/useCustomersStore";
 import { useCartStore } from "@/stores/useCartStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useStaffStore } from "@/stores/useStaffStore";
+import { OrderType } from "@/types/enums";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import Header from "@/ui/Header";
 import { generateFirestoreId, showAlert } from "@/utils/helpers";
@@ -51,6 +52,7 @@ export default function ReviewOrder() {
 
       const newOrder = {
         ...order,
+        orderType: OrderType.TakeOut,
         id: orderId,
         staff: staffName,
       };

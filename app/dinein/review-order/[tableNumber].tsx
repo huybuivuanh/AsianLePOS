@@ -7,6 +7,7 @@ import { useCartStore } from "@/stores/useCartStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useStaffStore } from "@/stores/useStaffStore";
 import { useTableStore } from "@/stores/useTableStore";
+import { OrderType } from "@/types/enums";
 import Header from "@/ui/Header";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import { generateFirestoreId, showAlert } from "@/utils/helpers";
@@ -52,6 +53,7 @@ export default function ReviewDineInOrder() {
 
       const newOrder = {
         ...order,
+        orderType: OrderType.DineIn,
         id: generateFirestoreId(),
         staff: staffName,
         tableNumber: tableNumber as string,

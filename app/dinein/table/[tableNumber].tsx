@@ -385,6 +385,7 @@ export default function TablePage() {
                         params: { tableNumber },
                       });
                     } else {
+                      clearOrder();
                       updateOrder({ orderType: OrderType.DineIn });
                       router.push({
                         pathname: "/dinein/edit-order/[tableNumber]",
