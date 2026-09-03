@@ -43,8 +43,6 @@ export function useForceUpdate(enabled: boolean) {
   }, [enabled]);
 
   const currentVersion = Constants.expoConfig?.version ?? "0.0.0";
-  console.log(currentVersion);
-  console.log(config?.minVersion);
   const updateRequired =
     Platform.OS !== "web" &&
     !!config?.minVersion &&

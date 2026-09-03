@@ -165,6 +165,16 @@ export default function CustomerInfoForm() {
                     </>
                   )}
                 </Text>
+                {matchedCustomer.note?.trim() ? (
+                  <View className="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5">
+                    <Text className="mb-0.5 text-xs font-bold uppercase tracking-wide text-amber-700">
+                      Note
+                    </Text>
+                    <Text className="text-[15px] leading-6 text-amber-900">
+                      {matchedCustomer.note.trim()}
+                    </Text>
+                  </View>
+                ) : null}
                 <View className="flex-row justify-center gap-3">
                   <TouchableOpacity
                     className={`min-w-[100px] flex-1 rounded-xl py-3.5 ${
