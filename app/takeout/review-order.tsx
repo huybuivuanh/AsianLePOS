@@ -58,7 +58,7 @@ export default function ReviewOrder() {
       };
 
       setSubmitting(true);
-      await useCustomersStore.getState().syncTakeOutCustomerFromCart(order);
+      await useCustomersStore.getState().syncTakeOutCustomerFromCart(order, true);
       await submitOrder(newOrder);
       router.push({
         pathname: "/(tabs)/take-out-orders",

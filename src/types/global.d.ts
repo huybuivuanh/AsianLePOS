@@ -159,6 +159,8 @@ declare global {
     isBlocked: boolean;
     note?: string;
     createdAt: Timestamp;
+    numberOfOrders: number;
+    totalSpent: number;
   }
 
   interface MenuChange {

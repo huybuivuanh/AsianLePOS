@@ -4,6 +4,7 @@ import {
   collection,
   doc,
   getDocs,
+  increment,
   onSnapshot,
   query,
   setDoc,
@@ -13,6 +14,8 @@ import {
 } from "firebase/firestore";
 import { create } from "zustand";
 import { syncFromCart } from "@/services/customerService";
+import { DiscountType } from "@/types/enums";
+import { calculateTaxBreakdown, orderItemsSubtotal } from "@/utils/helpers";
 import { extractPhoneDigits } from "../utils/customerPhone";
 import { firebase } from "../lib/firebaseConfig";
 
@@ -31,19 +34,52 @@ type CustomersState = {
   loading: boolean;
   subscribeToCustomersVersion: () => () => void;
   /** Returns new doc id, or `undefined` if name/phone missing (no write). */
-  addCustomer: (input: { name: string; phone: string }) => Promise<string | undefined>;
+  addCustomer: (input: {
+    name: string;
+    phone: string;
+    numberOfOrders?: number;
+    totalSpent?: number;
+  }) => Promise<string | undefined>;
   /** No-op if trimmed name is empty (never override with blank name). */
   updateCustomer: (id: string, input: { name: string; phone: string }) => Promise<void>;
+  /**
+   * Atomically bumps an existing customer's order stats (+1 order, += total).
+   * Uses Firestore `increment()`, so a stale local count does not matter — only
+   * the doc id does. Deliberately does NOT touch `createdAt` or bump the
+   * customers version: these fields are not shown in the POS, so there is no
+   * need to force every other device to refetch.
+   */
+  bumpCustomerOrderStats: (id: string, orderTotal: number) => Promise<void>;
   /**
    * Writes to `customers` when name is non-empty and phone has ≥7 digits.
    * Accepts order data as a parameter — no store cross-dependency.
    * Does not throw (logs only) so order submit can proceed.
+   *
+   * Pass `recordOrder: true` only for a genuine new take-out submission — a new
+   * customer is seeded with `numberOfOrders: 1` / `totalSpent: order total`, an
+   * existing one gets an atomic stat bump. Edits and conversions omit it.
    */
   syncTakeOutCustomerFromCart: (
-    order: Pick<OrderDraft, "customerName" | "phoneNumber">,
+    order: Pick<
+      OrderDraft,
+      "customerName" | "phoneNumber" | "orderItems" | "taxBreakDown"
+    >,
+    recordOrder?: boolean,
   ) => Promise<void>;
   clearData: () => void;
 };
+
+/** Grand total (incl. tax, after discount) for a cart draft — mirrors orderService. */
+function draftOrderTotal(
+  order: Pick<OrderDraft, "orderItems" | "taxBreakDown">,
+): number {
+  const d = order.taxBreakDown?.discount;
+  return calculateTaxBreakdown(
+    orderItemsSubtotal(order.orderItems),
+    d?.discountType ?? DiscountType.None,
+    d?.discountValue ?? 0,
+  ).total;
+}
 
 function mergeCustomers(existing: Customer[], incoming: Customer[]): Customer[] {
   const map = new Map(existing.map((c) => [c.id!, c]));
@@ -131,7 +167,7 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     return unsubscribe;
   },
 
-  addCustomer: async ({ name, phone }) => {
+  addCustomer: async ({ name, phone, numberOfOrders = 0, totalSpent = 0 }) => {
     const n = name.trim().toUpperCase();
     const p = extractPhoneDigits(phone) || phone.trim();
     if (!n || !p) return undefined;
@@ -142,6 +178,8 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
       phone: p,
       isBlocked: false,
       createdAt: now,
+      numberOfOrders,
+      totalSpent,
     });
 
     const newCustomer: Customer = {
@@ -150,6 +188,8 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
       phone: p,
       isBlocked: false,
       createdAt: now,
+      numberOfOrders,
+      totalSpent,
     };
     const updated = [...get().customers, newCustomer];
     set({ customers: updated });
@@ -179,10 +219,43 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     void bumpVersion();
   },
 
-  syncTakeOutCustomerFromCart: async (order) => {
-    const { customers, addCustomer, updateCustomer } = get();
+  bumpCustomerOrderStats: async (id, orderTotal) => {
+    // increment() is server-atomic: correct even if the cached counts are stale.
+    await updateDoc(doc(firebase.db, CUSTOMERS_COLLECTION, id), {
+      numberOfOrders: increment(1),
+      totalSpent: increment(orderTotal),
+    });
+
+    // Keep this device's cache roughly in step; no version bump / createdAt touch.
+    const updated = get().customers.map((c) =>
+      c.id === id
+        ? {
+            ...c,
+            numberOfOrders: (c.numberOfOrders ?? 0) + 1,
+            totalSpent: (c.totalSpent ?? 0) + orderTotal,
+          }
+        : c,
+    );
+    set({ customers: updated });
+    void AsyncStorage.setItem(CACHE_KEY, JSON.stringify(updated));
+  },
+
+  syncTakeOutCustomerFromCart: async (order, recordOrder = false) => {
+    const { customers, addCustomer, updateCustomer, bumpCustomerOrderStats } = get();
     try {
-      await syncFromCart(order, customers, addCustomer, updateCustomer);
+      const orderTotal = recordOrder ? draftOrderTotal(order) : null;
+      const { id, created } = await syncFromCart(
+        order,
+        customers,
+        addCustomer,
+        updateCustomer,
+        orderTotal,
+      );
+      // New customers are already seeded with 1 / total by syncFromCart; only an
+      // existing customer still needs the separate atomic bump.
+      if (recordOrder && !created && id) {
+        await bumpCustomerOrderStats(id, orderTotal!);
+      }
     } catch (e) {
       console.error("Customer sync failed:", e);
     }
