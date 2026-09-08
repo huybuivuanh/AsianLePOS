@@ -61,6 +61,7 @@ export default function EditTableForm({
   };
 
   const handleSubmit = async () => {
+    if (!table.id) return;
     try {
       setSubmitting(true);
       const result = await updateTableGuestsAndStatus(table.id, table.currentOrderId, {
