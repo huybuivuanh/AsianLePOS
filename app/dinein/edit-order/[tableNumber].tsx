@@ -15,11 +15,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 export default function EditDinInOrder() {
   const { tableNumber } = useLocalSearchParams<{ tableNumber: string }>();
@@ -109,13 +109,13 @@ export default function EditDinInOrder() {
           </TouchableOpacity>
         </View>
 
-        <KeyboardAwareScrollView
+        <ScrollView
           className="flex-1 px-4"
           keyboardShouldPersistTaps="handled"
         >
           <DiscountButtonModalAndSummary />
           <OrderLinesList orderItems={order.orderItems} />
-        </KeyboardAwareScrollView>
+        </ScrollView>
 
         <View className="flex-row justify-between items-center px-4 mb-2">
           <TouchableOpacity

@@ -27,11 +27,11 @@ import React, {
 import {
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 export default function ChangeDineInToTakeOutScreen() {
   const router = useRouter();
   const { tableNumber: tableNumberParam } = useLocalSearchParams<{
@@ -166,7 +166,7 @@ export default function ChangeDineInToTakeOutScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={90}
       >
-        <KeyboardAwareScrollView
+        <ScrollView
           className="flex-1 px-4 pt-2"
           keyboardShouldPersistTaps="handled"
         >
@@ -174,7 +174,7 @@ export default function ChangeDineInToTakeOutScreen() {
             <DiscountButtonModalAndSummary />
           )}
           <OrderLinesList orderItems={order.orderItems} />
-        </KeyboardAwareScrollView>
+        </ScrollView>
 
         {order.orderItems && order.orderItems.length > 0 && (
           <TouchableOpacity

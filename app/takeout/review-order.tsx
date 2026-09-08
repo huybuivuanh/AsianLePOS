@@ -17,11 +17,11 @@ import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 export default function ReviewOrder() {
   const router = useRouter();
@@ -101,7 +101,7 @@ export default function ReviewOrder() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={90}
       >
-        <KeyboardAwareScrollView
+        <ScrollView
           className="flex-1 px-4"
           keyboardShouldPersistTaps="handled"
         >
@@ -109,7 +109,7 @@ export default function ReviewOrder() {
             <DiscountButtonModalAndSummary />
           )}
           <OrderLinesList orderItems={order.orderItems} />
-        </KeyboardAwareScrollView>
+        </ScrollView>
 
         {/* Clear + Toggle Footer */}
         {order.orderItems && order.orderItems.length > 0 && (

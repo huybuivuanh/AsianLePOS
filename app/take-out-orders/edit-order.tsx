@@ -14,11 +14,11 @@ import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 export default function EditOrder() {
   const router = useRouter();
@@ -92,13 +92,13 @@ export default function EditOrder() {
         </View>
 
         {/* Scrollable Items */}
-        <KeyboardAwareScrollView
+        <ScrollView
           className="flex-1 px-4"
           keyboardShouldPersistTaps="handled"
         >
           <DiscountButtonModalAndSummary />
           <OrderLinesList orderItems={order.orderItems} />
-        </KeyboardAwareScrollView>
+        </ScrollView>
 
         {/* Toggle Footer */}
         {order.orderItems && order.orderItems.length > 0 && (
