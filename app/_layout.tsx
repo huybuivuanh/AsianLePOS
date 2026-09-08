@@ -1,4 +1,5 @@
 // app/layout.tsx (Expo)
+import * as Sentry from "@sentry/react-native";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { loadCachedCustomers } from "@/stores/useCustomersStore";
 import { loadCachedMenu } from "@/stores/useMenuStore";
@@ -20,6 +21,22 @@ import {
 import { firebase } from "@/lib/firebaseConfig";
 import "../global.css";
 
+Sentry.init({
+  // DSN is not a secret — it only permits sending events to this project.
+  // TODO: replace with the DSN of the "asian-le-pos" project in the
+  // "asian-le-restaurant" Sentry org.
+  dsn: "https://08ff3e290afbebdcaa6904afecf197d7@o4512046229094400.ingest.us.sentry.io/4512048833167360",
+  // No PII (no emails/IPs) attached to events.
+  sendDefaultPii: false,
+  // Crash/error reporting only — no performance tracing, to stay well within
+  // the free quota.
+  tracesSampleRate: 0,
+  // Keep the last 100 console.* calls, network requests, and navigations as
+  // breadcrumbs so a rare crash shows what led up to it.
+  maxBreadcrumbs: 100,
+  environment: __DEV__ ? "development" : "production",
+});
+
 const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000;
 
 const rootGestureStyle =
@@ -27,11 +44,7 @@ const rootGestureStyle =
     ? { flex: 1, width: "100%" as const, minHeight: "100%" as const }
     : { flex: 1 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function RootLayout({ children }: { children: React.ReactNode }) {
   const [resetKey, setResetKey] = useState(0);
   const backgroundTimeRef = useRef<number | null>(null);
 
@@ -49,7 +62,8 @@ export default function RootLayout({
       }
     };
     window.addEventListener("unhandledrejection", handleRejection);
-    return () => window.removeEventListener("unhandledrejection", handleRejection);
+    return () =>
+      window.removeEventListener("unhandledrejection", handleRejection);
   }, []);
 
   // After 5 min of inactivity, reset to home with fresh Firestore listeners.
@@ -75,15 +89,28 @@ export default function RootLayout({
       let inactivityTimer: ReturnType<typeof setTimeout>;
       const resetInactivityTimer = () => {
         clearTimeout(inactivityTimer);
-        inactivityTimer = setTimeout(() => window.location.replace("/"), INACTIVITY_TIMEOUT_MS);
+        inactivityTimer = setTimeout(
+          () => window.location.replace("/"),
+          INACTIVITY_TIMEOUT_MS,
+        );
       };
-      const events = ["mousemove", "mousedown", "keydown", "touchstart", "scroll"] as const;
-      events.forEach((e) => document.addEventListener(e, resetInactivityTimer, { passive: true }));
+      const events = [
+        "mousemove",
+        "mousedown",
+        "keydown",
+        "touchstart",
+        "scroll",
+      ] as const;
+      events.forEach((e) =>
+        document.addEventListener(e, resetInactivityTimer, { passive: true }),
+      );
       resetInactivityTimer();
 
       return () => {
         document.removeEventListener("visibilitychange", handleVisibility);
-        events.forEach((e) => document.removeEventListener(e, resetInactivityTimer));
+        events.forEach((e) =>
+          document.removeEventListener(e, resetInactivityTimer),
+        );
         clearTimeout(inactivityTimer);
       };
     }
@@ -150,3 +177,6 @@ export default function RootLayout({
     </GestureHandlerRootView>
   );
 }
+
+// Sentry.wrap adds the error boundary + native crash hooks around the app.
+export default Sentry.wrap(RootLayout);

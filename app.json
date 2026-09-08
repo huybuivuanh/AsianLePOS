@@ -44,7 +44,14 @@
       "expo-font",
       "expo-image",
       "expo-status-bar",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "asian-le-restaurant",
+          "project": "asian-le-pos"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
