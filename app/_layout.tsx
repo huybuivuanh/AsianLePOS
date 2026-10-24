@@ -1,6 +1,12 @@
 // app/layout.tsx (Expo)
 import * as Sentry from "@sentry/react-native";
+import {
+  createCustomerDisplayChannel,
+  isCustomerDisplayRoute,
+  type CustomerDisplayMessage,
+} from "@/lib/customerDisplay";
 import { AuthProvider } from "@/providers/AuthProvider";
+import { useCartStore } from "@/stores/useCartStore";
 import { loadCachedCustomers } from "@/stores/useCustomersStore";
 import { loadCachedMenu } from "@/stores/useMenuStore";
 import { loadCachedStaff } from "@/stores/useStaffStore";
@@ -71,6 +77,12 @@ function RootLayout({ children }: { children: React.ReactNode }) {
   // Native: remount the navigation tree (Stack resets to initial route).
   useEffect(() => {
     if (Platform.OS === "web") {
+      // The customer-display window has no cashier interacting with it — no
+      // mouse/keyboard/touch ever fires there — so skip the inactivity
+      // reload entirely for that route, or it'd bounce back to "/" every
+      // 5 minutes while a customer is just watching their bill.
+      if (isCustomerDisplayRoute()) return;
+
       // Tab hidden then visible after 5 min → reload.
       let hiddenAt: number | null = null;
       const handleVisibility = () => {
@@ -142,6 +154,37 @@ function RootLayout({ children }: { children: React.ReactNode }) {
 
   const startListening = useNetworkStore((s) => s.startListening);
   useEffect(() => startListening(), [startListening]);
+
+  // Mirror the live cart to a customer-facing display window (second window
+  // on the same browser, dragged to the extended monitor) over
+  // BroadcastChannel — same-origin, same-browser only, no network/Firestore
+  // involved. The display window mounts this same root layout, so skip when
+  // this tab IS the display — otherwise it would broadcast its own
+  // (always-empty) cart and stomp on the real cashier's state.
+  useEffect(() => {
+    if (Platform.OS !== "web" || isCustomerDisplayRoute()) return;
+
+    const channel = createCustomerDisplayChannel();
+    if (!channel) return;
+
+    const broadcastCart = () => {
+      const message: CustomerDisplayMessage = {
+        type: "cart",
+        order: useCartStore.getState().order,
+      };
+      channel.postMessage(message);
+    };
+
+    channel.onmessage = (event: MessageEvent<CustomerDisplayMessage>) => {
+      if (event.data?.type === "hello") broadcastCart();
+    };
+
+    const unsubscribe = useCartStore.subscribe(broadcastCart);
+    return () => {
+      unsubscribe();
+      channel.close();
+    };
+  }, []);
 
   // Start loading caches immediately — runs in parallel with auth
   // initialization so data is ready the moment the user is authenticated.
