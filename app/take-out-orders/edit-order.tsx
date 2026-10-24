@@ -45,8 +45,15 @@ export default function EditOrder() {
       // Create a clean order object with only defined values
       // Use conditional spreading for ALL optional fields to avoid undefined values
       await updateOrderOnFirestore({ ...order });
+      const orderId = order.id;
       clearOrder();
-      router.back();
+      // Same pattern as submitting a new order — navigating with ?orderId
+      // makes the take-out-orders tab expand that card so the edit is
+      // immediately visible, instead of landing back on a collapsed list.
+      router.push({
+        pathname: "/(tabs)/take-out-orders",
+        params: { orderId },
+      } as unknown as Href);
     } catch (error: any) {
       showAlert("Error", error.message || "Failed to submit order.");
     } finally {

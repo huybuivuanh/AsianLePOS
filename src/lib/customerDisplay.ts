@@ -19,7 +19,15 @@ export type CustomerDisplayMessage =
   // Reviewing an already-submitted order for payment (a dine-in table, or a
   // take-out order being settled) — takes priority over "cart" on the
   // display, since it reflects an active payment moment at the counter.
-  | { type: "bill"; items: OrderItem[]; taxBreakDown?: TaxBreakDown }
+  | {
+      type: "bill";
+      items: OrderItem[];
+      taxBreakDown?: TaxBreakDown;
+      tableNumber?: string;
+      customerName?: string;
+      phoneNumber?: string;
+      staff?: string;
+    }
   // Sent when the cashier leaves the payment screen, so the display falls
   // back to the live cart (or idle) instead of showing a stale bill to
   // whoever's at the counter next.

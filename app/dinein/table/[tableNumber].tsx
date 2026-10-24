@@ -212,19 +212,25 @@ export default function TablePage() {
             (it) => it.id && selectedItemIds.has(it.id),
           ),
           taxBreakDown: selectedItemsTaxBreakDown,
+          tableNumber,
+          staff: order.staff,
         }
       : {
           type: "bill",
           items: order.orderItems,
           taxBreakDown: order.taxBreakDown,
+          tableNumber,
+          staff: order.staff,
         };
     lastBillMessageRef.current = message;
     channel.postMessage(message);
   }, [
     order?.orderItems,
     order?.taxBreakDown,
+    order?.staff,
     selectionMode,
     selectedItemIds,
+    tableNumber,
     selectedItemsTaxBreakDown,
   ]);
 
