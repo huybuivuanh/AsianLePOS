@@ -4,6 +4,10 @@ import { useDineInTableActions } from "@/features/dinein/hooks/useDineInTableAct
 import { useLinePaidDebounce } from "@/features/dinein/hooks/useLinePaidDebounce";
 import OrderItemsList from "@/features/order/components/OrderItemsList";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
+import {
+  createCustomerDisplayChannel,
+  type CustomerDisplayMessage,
+} from "@/lib/customerDisplay";
 import { useActiveDineInOrdersStore } from "@/stores/useActiveDineInOrdersStore";
 import { useDineInOrdersStore } from "@/stores/useDineInOrdersStore";
 import { useCartStore } from "@/stores/useCartStore";
@@ -21,9 +25,10 @@ import { useFocusEffect, useLocalSearchParams, useRouter, type Href } from "expo
 import { doc, getDocFromServer } from "firebase/firestore";
 import { firebase } from "@/lib/firebaseConfig";
 import { Check } from "lucide-react-native";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -167,6 +172,61 @@ export default function TablePage() {
         : calculateTaxBreakdown(selectedItemsTotal, DiscountType.None, 0),
     [selectedItemsTotal],
   );
+
+  // Mirror this table's bill onto the customer-facing counter display while
+  // it's open — takes over from whatever take-out cart happens to be
+  // mid-build, since this is the active payment moment. Cleared on unmount
+  // (back/dismiss/any way of leaving) so the next customer at the counter
+  // doesn't see a stale total.
+  const lastBillMessageRef = useRef<CustomerDisplayMessage | null>(null);
+  const displayChannelRef = useRef<BroadcastChannel | null>(null);
+
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    const channel = createCustomerDisplayChannel();
+    if (!channel) return;
+    displayChannelRef.current = channel;
+
+    channel.onmessage = (event: MessageEvent<CustomerDisplayMessage>) => {
+      if (event.data?.type === "hello" && lastBillMessageRef.current) {
+        channel.postMessage(lastBillMessageRef.current);
+      }
+    };
+
+    return () => {
+      const clearMessage: CustomerDisplayMessage = { type: "clear" };
+      channel.postMessage(clearMessage);
+      channel.close();
+      displayChannelRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const channel = displayChannelRef.current;
+    if (!channel || !order?.orderItems?.length) return;
+
+    const message: CustomerDisplayMessage = selectionMode
+      ? {
+          type: "bill",
+          items: order.orderItems.filter(
+            (it) => it.id && selectedItemIds.has(it.id),
+          ),
+          taxBreakDown: selectedItemsTaxBreakDown,
+        }
+      : {
+          type: "bill",
+          items: order.orderItems,
+          taxBreakDown: order.taxBreakDown,
+        };
+    lastBillMessageRef.current = message;
+    channel.postMessage(message);
+  }, [
+    order?.orderItems,
+    order?.taxBreakDown,
+    selectionMode,
+    selectedItemIds,
+    selectedItemsTaxBreakDown,
+  ]);
 
   const isOrderPaid = useMemo(
     () => orderPaidFromLineItems(order?.orderItems ?? []),

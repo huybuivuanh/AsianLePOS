@@ -12,15 +12,22 @@ import { DiscountType, OrderType } from "@/types/enums";
 import { useEffect, useState } from "react";
 import { Platform, Text, View } from "react-native";
 
+type BillView = { items: OrderItem[]; taxBreakDown?: TaxBreakDown };
+
 export default function CustomerDisplayScreen() {
   const [order, setOrder] = useState<OrderDraft | undefined>(undefined);
+  const [billView, setBillView] = useState<BillView | null>(null);
 
   useEffect(() => {
     const channel = createCustomerDisplayChannel();
     if (!channel) return;
 
     channel.onmessage = (event: MessageEvent<CustomerDisplayMessage>) => {
-      if (event.data?.type === "cart") setOrder(event.data.order);
+      const message = event.data;
+      if (message?.type === "cart") setOrder(message.order);
+      else if (message?.type === "bill")
+        setBillView({ items: message.items, taxBreakDown: message.taxBreakDown });
+      else if (message?.type === "clear") setBillView(null);
     };
     // Ask the cashier window for the current cart — BroadcastChannel only
     // delivers messages sent after a listener attaches, so a fresh/reloaded
@@ -36,8 +43,14 @@ export default function CustomerDisplayScreen() {
   // should ever show here. Anything else just falls through to the idle
   // "Welcome" state below.
   const isTakeOut = order?.orderType === OrderType.TakeOut;
-  const items = isTakeOut ? (order?.orderItems ?? []) : [];
-  const taxBreakDown = isTakeOut ? order?.taxBreakDown : undefined;
+  const cartItems = isTakeOut ? (order?.orderItems ?? []) : [];
+  const cartTaxBreakDown = isTakeOut ? order?.taxBreakDown : undefined;
+
+  // An active payment review (dine-in table, or a take-out order being
+  // settled) takes priority over whatever take-out cart happens to be
+  // mid-build — it's the thing actually happening at the counter right now.
+  const items = billView ? billView.items : cartItems;
+  const taxBreakDown = billView ? billView.taxBreakDown : cartTaxBreakDown;
 
   if (Platform.OS !== "web") {
     return (
