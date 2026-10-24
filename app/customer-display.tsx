@@ -8,7 +8,7 @@ import {
   createCustomerDisplayChannel,
   type CustomerDisplayMessage,
 } from "@/lib/customerDisplay";
-import { DiscountType } from "@/types/enums";
+import { DiscountType, OrderType } from "@/types/enums";
 import { useEffect, useState } from "react";
 import { Platform, Text, View } from "react-native";
 
@@ -31,8 +31,13 @@ export default function CustomerDisplayScreen() {
     return () => channel.close();
   }, []);
 
-  const items = order?.orderItems ?? [];
-  const taxBreakDown = order?.taxBreakDown;
+  // Dine-in carts are built table-side, out of view of this counter display —
+  // only take-out orders (built at the register, in front of the customer)
+  // should ever show here. Anything else just falls through to the idle
+  // "Welcome" state below.
+  const isTakeOut = order?.orderType === OrderType.TakeOut;
+  const items = isTakeOut ? (order?.orderItems ?? []) : [];
+  const taxBreakDown = isTakeOut ? order?.taxBreakDown : undefined;
 
   if (Platform.OS !== "web") {
     return (
@@ -49,7 +54,7 @@ export default function CustomerDisplayScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-stone-900 px-8">
         <Text className="text-center text-6xl font-bold text-white">
-          Welcome!
+          Welcome To Asian Le Restaurant!
         </Text>
         <Text className="mt-4 text-center text-2xl text-stone-400">
           Your order will appear here
@@ -125,18 +130,19 @@ export default function CustomerDisplayScreen() {
             </Text>
           </View>
 
-          {taxBreakDown.discount && taxBreakDown.discount.discountAmount > 0 && (
-            <View className="flex-row justify-between">
-              <Text className="text-2xl text-stone-300">
-                {taxBreakDown.discount.discountType === DiscountType.Percent
-                  ? `Discount (${taxBreakDown.discount.discountValue}%)`
-                  : `Discount ($${taxBreakDown.discount.discountValue.toFixed(2)})`}
-              </Text>
-              <Text className="text-2xl text-stone-300">
-                -${taxBreakDown.discount.discountAmount.toFixed(2)}
-              </Text>
-            </View>
-          )}
+          {taxBreakDown.discount &&
+            taxBreakDown.discount.discountAmount > 0 && (
+              <View className="flex-row justify-between">
+                <Text className="text-2xl text-stone-300">
+                  {taxBreakDown.discount.discountType === DiscountType.Percent
+                    ? `Discount (${taxBreakDown.discount.discountValue}%)`
+                    : `Discount ($${taxBreakDown.discount.discountValue.toFixed(2)})`}
+                </Text>
+                <Text className="text-2xl text-stone-300">
+                  -${taxBreakDown.discount.discountAmount.toFixed(2)}
+                </Text>
+              </View>
+            )}
 
           <View className="flex-row justify-between">
             <Text className="text-2xl text-stone-300">PST (6%)</Text>
