@@ -1,8 +1,10 @@
+import CashPaymentModal from "@/features/dinein/CashPaymentModal";
 import { DineInOrderCard } from "@/features/dinein/components/DineInOrderCard";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useDineInOrdersStore } from "@/stores/useDineInOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
+import { resolveTaxBreakdown, showAlert } from "@/utils/helpers";
 import { FlashList } from "@shopify/flash-list";
 import { useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -31,7 +33,15 @@ export default function DineInOrdersTab() {
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
   const [actionOverlay, setActionOverlay] = useState<{ title: string } | null>(null);
 
-  const { markOrderAsPaid, submitToPrintQueue, submitSelectedItemsToPrintQueue } = useOrderStore();
+  const [cashPaymentOrderId, setCashPaymentOrderId] = useState<string | null>(null);
+
+  const {
+    cancelOrder,
+    completeOrder,
+    markOrderAsPaid,
+    submitToPrintQueue,
+    submitSelectedItemsToPrintQueue,
+  } = useOrderStore();
 
   useEffect(() => { loadDineInOrders(); }, [loadDineInOrders]);
 
@@ -85,6 +95,47 @@ export default function DineInOrdersTab() {
     [markOrderAsPaid],
   );
 
+  // From history: only free the table if it still holds this order. Undoing
+  // (pressing again) just sets the status back to In Progress.
+  const handleCancel = useCallback(
+    async (order: DineInOrder) => {
+      try {
+        const rewardsWarning = await cancelOrder(order, { onlyIfTableHoldsOrder: true });
+        if (rewardsWarning) showAlert("Rewards", rewardsWarning);
+      } catch (e) {
+        console.error("❌ Error cancelling order:", e);
+        showAlert("Error", "Failed to cancel order. Please try again.");
+      }
+    },
+    [cancelOrder],
+  );
+
+  const handleComplete = useCallback(
+    async (order: DineInOrder) => {
+      try {
+        await completeOrder(order, { onlyIfTableHoldsOrder: true });
+      } catch (e) {
+        console.error("❌ Error completing order:", e);
+        showAlert("Error", "Failed to complete order. Please try again.");
+      }
+    },
+    [completeOrder],
+  );
+
+  const handleOpenCashPayment = useCallback((orderId: string) => {
+    setCashPaymentOrderId(orderId);
+  }, []);
+
+  const handleCloseCashPayment = useCallback(() => {
+    setCashPaymentOrderId(null);
+  }, []);
+
+  const cashPaymentModalTotal = useMemo(() => {
+    if (!cashPaymentOrderId) return 0;
+    const o = dineInOrders.find((x) => x.id === cashPaymentOrderId);
+    return o ? (resolveTaxBreakdown(o)?.total ?? 0) : 0;
+  }, [cashPaymentOrderId, dineInOrders]);
+
   const extraData = useMemo(
     () => ({ expandedOrderIds, selectionMode, selectedItemIdsSize: selectedItemIds.size }),
     [expandedOrderIds, selectionMode, selectedItemIds.size],
@@ -105,13 +156,16 @@ export default function DineInOrdersTab() {
           onToggleItemSelection={handleToggleItemSelection}
           onPrintSelected={handlePrintSelected}
           onMarkAsPaid={handleMarkAsPaid}
+          onCancel={handleCancel}
+          onComplete={handleComplete}
+          onOpenCashPayment={handleOpenCashPayment}
         />
       );
     },
     [
       expandedOrderIds, selectionMode, selectedItemIds,
       toggleExpand, handlePrint, handleToggleSelectionMode, handleToggleItemSelection,
-      handlePrintSelected, handleMarkAsPaid,
+      handlePrintSelected, handleMarkAsPaid, handleCancel, handleComplete, handleOpenCashPayment,
     ],
   );
 
@@ -148,6 +202,12 @@ export default function DineInOrdersTab() {
               <View className="py-4"><ActivityIndicator size="small" color="#007AFF" /></View>
             ) : null
           }
+        />
+      )}
+      {cashPaymentOrderId !== null && (
+        <CashPaymentModal
+          onClose={handleCloseCashPayment}
+          orderTotal={cashPaymentModalTotal}
         />
       )}
       <FullScreenLoadingOverlay

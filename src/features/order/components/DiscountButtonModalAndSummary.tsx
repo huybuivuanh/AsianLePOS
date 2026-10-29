@@ -1,3 +1,4 @@
+import { hasActiveRedemption } from "@/domain/rewards/rewardsRules";
 import { useCartStore } from "@/stores/useCartStore";
 import { DiscountType, OrderType } from "@/types/enums";
 import {
@@ -47,7 +48,7 @@ export default function DiscountButtonModalAndSummary() {
 
   // A rewards redemption is the order's discount; it can't be changed here
   // (the points are already spent). Cancelling the order gives them back.
-  const rewardsLocked = Boolean(order.loyalty?.redeemedAmount);
+  const rewardsLocked = hasActiveRedemption(order.loyalty);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [draftType, setDraftType] = useState<DiscountType>(committedType);

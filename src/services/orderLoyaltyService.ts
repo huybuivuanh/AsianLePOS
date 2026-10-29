@@ -100,11 +100,40 @@ export async function reverseCancelledOrderRewards(
         setTimeout(() => reject(new Error("No response from Rewards.")), REVERSE_TIMEOUT_MS),
       ),
     ]);
-    await updateDoc(ref, {
+    const reversedFields = {
       "loyalty.reversedAt": serverTimestamp(),
       "loyalty.pointsReversed": result.pointsChanged,
       "loyalty.reversePending": false,
-    }).catch(() => {});
+    };
+    try {
+      await runTransaction(firebase.db, async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists()) return;
+        const order = snap.data() as AnyOrder;
+        // The redeemed points went back to the member, so the rewards discount
+        // goes too — otherwise un-cancelling would keep a free discount.
+        const d = order.taxBreakDown?.discount;
+        const isRedemptionDiscount =
+          Boolean(loyalty?.redeemedAmount) &&
+          d?.discountType === DiscountType.Amount &&
+          d.discountValue === loyalty?.redeemedAmount;
+        tx.update(ref, {
+          ...reversedFields,
+          ...(isRedemptionDiscount
+            ? {
+                taxBreakDown: calculateTaxBreakdown(
+                  orderItemsSubtotal(order.orderItems),
+                  DiscountType.None,
+                  0,
+                ),
+              }
+            : {}),
+        });
+      });
+    } catch {
+      // Offline etc.: at least record the reverse so rewards stay blocked on this order.
+      await updateDoc(ref, reversedFields).catch(() => {});
+    }
     return null;
   } catch (err) {
     await updateDoc(ref, { "loyalty.reversePending": true }).catch(() => {});

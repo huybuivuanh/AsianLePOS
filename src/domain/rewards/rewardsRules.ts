@@ -20,6 +20,15 @@ export const pointsForAmount = (amount: number): number =>
 export const orderEarnableAmount = (order: Pick<Order, "taxBreakDown">): number =>
   order.taxBreakDown?.discount?.taxableSubtotal ?? order.taxBreakDown?.subTotal ?? 0;
 
+// The Rewards server allows one earn, redeem and reverse per order, so once an
+// order's points are reversed, rewards can't be used on it again (even if the
+// cancel is undone).
+const REVERSED_MESSAGE = "Rewards were reversed when this order was cancelled.";
+
+/** True when the order's redemption is still in effect (not reversed). */
+export const hasActiveRedemption = (loyalty: OrderLoyalty | undefined | null): boolean =>
+  Boolean(loyalty?.redeemedAmount && !loyalty.reversedAt);
+
 /**
  * Why Redeem is unavailable for this order, or null if it's allowed.
  * `memberPoints` is the member's balance.
@@ -29,6 +38,7 @@ export const redeemBlockedReason = (
   memberPoints: number,
 ): string | null => {
   if (order.status !== OrderStatus.InProgress) return "Only open orders can redeem.";
+  if (order.loyalty?.reversedAt) return REVERSED_MESSAGE;
   if (order.loyalty?.pointsRedeemed) return "Points were already redeemed on this order.";
   if (order.loyalty?.pointsEarned != null) return "Points were already collected — redeem before collecting.";
   const d = order.taxBreakDown?.discount;
@@ -43,6 +53,7 @@ export const collectBlockedReason = (
   order: Pick<Order, "status" | "taxBreakDown" | "loyalty">,
 ): string | null => {
   if (order.status === OrderStatus.Cancelled) return "This order was cancelled.";
+  if (order.loyalty?.reversedAt) return REVERSED_MESSAGE;
   if (order.loyalty?.pointsEarned != null) {
     return `${order.loyalty.pointsEarned} points were already collected for this order.`;
   }
@@ -71,4 +82,6 @@ export const maxRedeemSteps = (balance: number, subtotal: number): number =>
 export const redemptionDiscountInputs = (
   loyalty: OrderLoyalty | undefined | null,
 ): { type: DiscountType; value: number } | null =>
-  loyalty?.redeemedAmount ? { type: DiscountType.Amount, value: loyalty.redeemedAmount } : null;
+  hasActiveRedemption(loyalty)
+    ? { type: DiscountType.Amount, value: loyalty!.redeemedAmount! }
+    : null;

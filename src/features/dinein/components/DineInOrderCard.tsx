@@ -23,6 +23,9 @@ type Props = {
   onToggleItemSelection: (itemId: string) => void;
   onPrintSelected: (order: DineInOrder) => void;
   onMarkAsPaid: (order: DineInOrder, paid: boolean) => void;
+  onCancel: (order: DineInOrder) => void;
+  onComplete: (order: DineInOrder) => void;
+  onOpenCashPayment: (orderId: string) => void;
 };
 
 export const DineInOrderCard = memo(function DineInOrderCard({
@@ -36,6 +39,9 @@ export const DineInOrderCard = memo(function DineInOrderCard({
   onToggleItemSelection,
   onPrintSelected,
   onMarkAsPaid,
+  onCancel,
+  onComplete,
+  onOpenCashPayment,
 }: Props) {
   const taxBreakDown = useMemo(() => resolveTaxBreakdown(item), [item]);
   const isPaid = useMemo(
@@ -188,32 +194,61 @@ export const DineInOrderCard = memo(function DineInOrderCard({
               </View>
             </View>
           ) : (
-            <View className="flex-row justify-between mt-3">
-              <TouchableOpacity
-                className={`px-3 py-3 rounded-md flex-1 mx-1 ${isPaid ? "bg-gray-500" : "bg-pink-500"}`}
-                onPress={() => onMarkAsPaid(item, !isPaid)}
-              >
-                <Text className="text-white font-semibold text-center text-sm">
-                  {isPaid ? "Unpaid" : "Paid"}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="bg-purple-500 px-3 py-3 rounded-md flex-1 mx-1"
-                onPress={() => onToggleSelectionMode(item.id!)}
-              >
-                <Text className="text-white font-semibold text-center text-sm">
-                  Select Items
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="bg-blue-500 px-3 py-3 rounded-md flex-1 ml-2"
-                onPress={() => onPrint(item)}
-              >
-                <Text className="text-white font-semibold text-center text-sm">
-                  Print
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <>
+              <View className="flex-row justify-between mt-3">
+                <TouchableOpacity
+                  className="bg-yellow-600 px-3 py-3 rounded-md flex-1 mr-2"
+                  onPress={() => onOpenCashPayment(item.id!)}
+                >
+                  <Text className="text-white font-semibold text-center text-sm">
+                    Cash payment
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="bg-purple-500 px-3 py-3 rounded-md flex-1 mx-1"
+                  onPress={() => onToggleSelectionMode(item.id!)}
+                >
+                  <Text className="text-white font-semibold text-center text-sm">
+                    Select Items
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="bg-blue-500 px-3 py-3 rounded-md flex-1 ml-2"
+                  onPress={() => onPrint(item)}
+                >
+                  <Text className="text-white font-semibold text-center text-sm">
+                    Print
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <View className="flex-row justify-between mt-3">
+                <TouchableOpacity
+                  className="bg-red-500 px-3 py-3 rounded-md flex-1 mr-2"
+                  onPress={() => onCancel(item)}
+                >
+                  <Text className="text-white font-semibold text-center text-sm">
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className={`px-3 py-3 rounded-md flex-1 mx-1 ${isPaid ? "bg-gray-500" : "bg-pink-500"}`}
+                  onPress={() => onMarkAsPaid(item, !isPaid)}
+                >
+                  <Text className="text-white font-semibold text-center text-sm">
+                    {isPaid ? "Unpaid" : "Paid"}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="bg-green-500 px-3 py-3 rounded-md flex-1 ml-2"
+                  onPress={() => onComplete(item)}
+                >
+                  <Text className="text-white font-semibold text-center text-sm">
+                    Complete
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </>
           )}
         </View>
       )}

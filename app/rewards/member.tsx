@@ -6,6 +6,7 @@ import {
   pointsForAmount,
   POINTS_PER_REDEEM_STEP,
   redeemBlockedReason,
+  hasActiveRedemption,
 } from "@/domain/rewards/rewardsRules";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { firebase } from "@/lib/firebaseConfig";
@@ -209,7 +210,7 @@ Balance: ${result.newBalance} pts.`,
               <Row label="Subtotal" value={`$${(order.taxBreakDown?.subTotal ?? 0).toFixed(2)}`} />
               {order.taxBreakDown?.discount ? (
                 <Row
-                  label={order.loyalty?.pointsRedeemed ? "Rewards discount" : "Discount"}
+                  label={hasActiveRedemption(order.loyalty) ? "Rewards discount" : "Discount"}
                   value={`−$${order.taxBreakDown.discount.discountAmount.toFixed(2)}`}
                 />
               ) : null}
