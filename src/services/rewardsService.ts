@@ -47,7 +47,7 @@ export function rewardsErrorMessage(err: unknown): string {
       case "functions/not-found":
         return err.message || "No rewards member found.";
       case "functions/unauthenticated":
-        return "This device isn't signed in to Rewards. Sign in from the Profile tab.";
+        return "Admin access required. Ask an admin to sign in to Rewards from the Profile tab.";
       case "functions/permission-denied":
         return "This Rewards account doesn't have POS access.";
       case "functions/already-exists":

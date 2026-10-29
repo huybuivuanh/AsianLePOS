@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
@@ -40,8 +41,11 @@ export default function RewardsModal({ orderId, orderType, onClose }: Props) {
   const [step, setStep] = useState<Step>("choose");
   const [phoneText, setPhoneText] = useState("");
   const rewardsConfigured = useRewardsAuthStore((s) => s.configured);
+  const rewardsReady = useRewardsAuthStore((s) => s.ready);
   const rewardsUser = useRewardsAuthStore((s) => s.user);
   const deviceSignedIn = rewardsConfigured && rewardsUser !== null;
+  // Saved login is still being restored right after app start.
+  const restoring = rewardsConfigured && !rewardsReady;
 
   const phone = useMemo(() => rewardsPhoneDigits(phoneText), [phoneText]);
   const phoneValid = phone.length === 10;
@@ -87,13 +91,27 @@ export default function RewardsModal({ orderId, orderType, onClose }: Props) {
             accessibilityLabel="Close rewards"
           />
           <View className="relative z-10 w-full max-w-md self-center rounded-2xl bg-white p-5 shadow-xl">
-            <Text className="mb-4 text-center text-lg font-bold text-gray-900">Rewards</Text>
+            {(deviceSignedIn || restoring) && (
+              <Text className="mb-4 text-center text-lg font-bold text-gray-900">Rewards</Text>
+            )}
 
-            {!deviceSignedIn && (
-              <View className="rounded-xl bg-amber-50 px-4 py-3">
-                <Text className="text-sm text-amber-900">
+            {restoring && (
+              <View className="items-center py-6">
+                <ActivityIndicator color="#DA251D" />
+              </View>
+            )}
+
+            {!deviceSignedIn && !restoring && (
+              <View className="items-center pt-2">
+                <View className="mb-3 h-14 w-14 items-center justify-center rounded-full bg-amber-100">
+                  <Ionicons name="lock-closed-outline" size={28} color="#b45309" />
+                </View>
+                <Text className="mb-2 text-center text-lg font-bold text-gray-900">
+                  {rewardsConfigured ? "Admin access required" : "Rewards unavailable"}
+                </Text>
+                <Text className="text-center text-sm text-gray-600">
                   {rewardsConfigured
-                    ? "This device isn't signed in to Rewards. Sign in from the Profile tab."
+                    ? "Rewards isn't set up on this device yet. Ask an admin to sign in to Rewards from the Profile tab."
                     : "Rewards isn't set up in this build."}
                 </Text>
               </View>
