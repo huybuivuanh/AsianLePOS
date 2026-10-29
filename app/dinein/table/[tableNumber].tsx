@@ -3,6 +3,7 @@ import TableInfoCard from "@/features/dinein/TableInfoCard";
 import { useDineInTableActions } from "@/features/dinein/hooks/useDineInTableActions";
 import { useLinePaidDebounce } from "@/features/dinein/hooks/useLinePaidDebounce";
 import OrderItemsList from "@/features/order/components/OrderItemsList";
+import RewardsModal from "@/features/order/components/RewardsModal";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import {
   createCustomerDisplayChannel,
@@ -135,6 +136,8 @@ export default function TablePage() {
   }, [currentOrder, liveOrderOverride]);
 
   const closeCashModal = cashModal.close;
+  const [rewardsOpen, setRewardsOpen] = useState(false);
+  const closeRewards = useCallback(() => setRewardsOpen(false), []);
   useEffect(() => {
     if (!selectionMode) closeCashModal();
   }, [selectionMode, closeCashModal]);
@@ -570,6 +573,16 @@ export default function TablePage() {
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
+                  onPress={() => setRewardsOpen(true)}
+                  activeOpacity={0.7}
+                  disabled={!order?.id || actionBusy}
+                  className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 ${order?.id && !actionBusy ? "bg-red-600" : "bg-red-300"}`}
+                >
+                  <Text className="text-white text-sm font-semibold text-center">
+                    Rewards
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
                   onPress={() =>
                     handleCompleteOrder(order!, flushPendingToggle, () =>
                       setOrder(null),
@@ -588,6 +601,8 @@ export default function TablePage() {
           )}
         </View>
       </View>
+
+      {rewardsOpen && <RewardsModal onClose={closeRewards} />}
 
       {cashModal.isOpen && (
         <CashPaymentModal

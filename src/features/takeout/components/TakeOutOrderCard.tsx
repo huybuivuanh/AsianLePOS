@@ -35,6 +35,7 @@ export type TakeOutOrderCardProps = {
   onEditOrder: (order: TakeOutOrder) => void;
   onOpenCashPayment: (orderId: string) => void;
   onChangeToDineIn: (orderId: string) => void;
+  onOpenRewards: (orderId: string) => void;
 };
 
 export const TakeOutOrderCard = memo(function TakeOutOrderCard({
@@ -53,6 +54,7 @@ export const TakeOutOrderCard = memo(function TakeOutOrderCard({
   onEditOrder,
   onOpenCashPayment,
   onChangeToDineIn,
+  onOpenRewards,
 }: TakeOutOrderCardProps) {
   const taxBreakDown = useMemo(() => resolveTaxBreakdown(item), [item]);
   const isPaid = useMemo(
@@ -231,6 +233,13 @@ export const TakeOutOrderCard = memo(function TakeOutOrderCard({
                   onPress={() => onChangeToDineIn(item.id!)}
                 >
                   <Text className="text-white font-semibold text-center text-sm">Change Type</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="bg-red-600 px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 mx-1"
+                  disabled={!item.id}
+                  onPress={() => onOpenRewards(item.id!)}
+                >
+                  <Text className="text-white font-semibold text-center text-sm">Rewards</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   className="bg-yellow-600 px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 ml-2"

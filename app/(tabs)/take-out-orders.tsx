@@ -1,4 +1,5 @@
 import CashPaymentModal from "@/features/dinein/CashPaymentModal";
+import RewardsModal from "@/features/order/components/RewardsModal";
 import { TakeOutOrderCard } from "@/features/takeout/components/TakeOutOrderCard";
 import { useTakeOutOrderActions } from "@/features/takeout/hooks/useTakeOutOrderActions";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
@@ -6,7 +7,7 @@ import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import { FlashList } from "@shopify/flash-list";
 import { useLocalSearchParams } from "expo-router";
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 
 const EMPTY_SELECTED_IDS = new Set<string>();
@@ -62,6 +63,9 @@ export default function TakeOutOrdersTab() {
     handleChangeToDineIn,
   } = useTakeOutOrderActions(takeOutOrders);
 
+  const [rewardsOrderId, setRewardsOrderId] = useState<string | null>(null);
+  const handleCloseRewards = useCallback(() => setRewardsOrderId(null), []);
+
   useEffect(() => {
     loadTakeOutOrders();
   }, [loadTakeOutOrders]);
@@ -92,6 +96,7 @@ export default function TakeOutOrdersTab() {
           onEditOrder={handleEditOrder}
           onOpenCashPayment={handleOpenCashPayment}
           onChangeToDineIn={handleChangeToDineIn}
+          onOpenRewards={setRewardsOrderId}
         />
       );
     },
@@ -140,6 +145,8 @@ export default function TakeOutOrdersTab() {
           }
         />
       )}
+
+      {rewardsOrderId !== null && <RewardsModal onClose={handleCloseRewards} />}
 
       {cashPaymentOrderId !== null && (
         <CashPaymentModal
