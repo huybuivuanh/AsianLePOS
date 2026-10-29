@@ -21,10 +21,9 @@ import {
   type RewardsMember,
 } from "@/services/rewardsService";
 import { OrderType } from "@/types/enums";
-import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import Header from "@/ui/Header";
 import { formatRewardsPhone } from "@/features/rewards/rewardsPhone";
-import { showAlert } from "@/utils/helpers";
+import MessageModal from "@/ui/MessageModal";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { doc, onSnapshot } from "firebase/firestore";
 import { Minus, Plus } from "lucide-react-native";
@@ -52,7 +51,13 @@ export default function RewardsMemberScreen() {
   const [member, setMember] = useState<RewardsMember | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [steps, setSteps] = useState(1);
-  const [busyTitle, setBusyTitle] = useState<string | null>(null);
+  // Redeem / Collect progress, then its result (same modal). Success goes back when closed.
+  const [notice, setNotice] = useState<{
+    tone: "loading" | "success" | "error";
+    title: string;
+    message?: string;
+  } | null>(null);
+  const busy = notice?.tone === "loading";
 
   // Live order, so the buttons reflect edits made on other devices.
   useEffect(() => {
@@ -116,39 +121,45 @@ export default function RewardsMemberScreen() {
 
   const handleRedeem = useCallback(async () => {
     if (!order?.id || !member) return;
-    setBusyTitle("Redeeming points…");
+    setNotice({ tone: "loading", title: "Redeeming points…" });
     try {
       const result = await redeemPoints(member.memberId, order.id, clampedSteps);
       await applyRedemptionToOrder(orderType, order.id, member, result);
-      router.back();
-      showAlert(
-        "Points redeemed",
-        `$${result.discountAmount.toFixed(2)} off for ${member.name}. Balance: ${result.newBalance} pts.`,
-      );
+      setNotice({
+        tone: "success",
+        title: "Points redeemed",
+        message: `$${result.discountAmount.toFixed(2)} off for ${member.name}.
+Balance: ${result.newBalance} pts.`,
+      });
     } catch (err) {
-      showAlert("Redeem failed", err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusyTitle(null);
+      setNotice({
+        tone: "error",
+        title: "Redeem failed",
+        message: err instanceof Error ? err.message : String(err),
+      });
     }
-  }, [order, member, clampedSteps, orderType, router]);
+  }, [order, member, clampedSteps, orderType]);
 
   const handleCollect = useCallback(async () => {
     if (!order?.id || !member) return;
-    setBusyTitle("Collecting points…");
+    setNotice({ tone: "loading", title: "Collecting points…" });
     try {
       const result = await earnPoints(member.memberId, order.id, earnable);
       await markPointsCollected(orderType, order.id, member, result);
-      router.back();
-      showAlert(
-        "Points collected",
-        `+${result.pointsEarned} pts for ${member.name}. Balance: ${result.newBalance} pts.`,
-      );
+      setNotice({
+        tone: "success",
+        title: "Points collected",
+        message: `+${result.pointsEarned} pts for ${member.name}.
+Balance: ${result.newBalance} pts.`,
+      });
     } catch (err) {
-      showAlert("Collect failed", err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusyTitle(null);
+      setNotice({
+        tone: "error",
+        title: "Collect failed",
+        message: err instanceof Error ? err.message : String(err),
+      });
     }
-  }, [order, member, earnable, orderType, router]);
+  }, [order, member, earnable, orderType]);
 
   const loading = !lookupProblem && !orderMissing && (!member || !order);
 
@@ -240,8 +251,8 @@ export default function RewardsMemberScreen() {
                 </View>
               )}
               <TouchableOpacity
-                className={`mt-3 rounded-xl bg-red-600 py-3.5 ${redeemReason || busyTitle ? "opacity-40" : ""}`}
-                disabled={Boolean(redeemReason || busyTitle)}
+                className={`mt-3 rounded-xl bg-red-600 py-3.5 ${redeemReason || busy ? "opacity-40" : ""}`}
+                disabled={Boolean(redeemReason || busy)}
                 onPress={handleRedeem}
               >
                 <Text className="text-center text-base font-semibold text-white">
@@ -260,8 +271,8 @@ export default function RewardsMemberScreen() {
                 <Text className="mt-3 text-sm text-amber-700">{collectReason}</Text>
               ) : null}
               <TouchableOpacity
-                className={`mt-3 rounded-xl bg-green-600 py-3.5 ${collectReason || busyTitle ? "opacity-40" : ""}`}
-                disabled={Boolean(collectReason || busyTitle)}
+                className={`mt-3 rounded-xl bg-green-600 py-3.5 ${collectReason || busy ? "opacity-40" : ""}`}
+                disabled={Boolean(collectReason || busy)}
                 onPress={handleCollect}
               >
                 <Text className="text-center text-base font-semibold text-white">
@@ -273,7 +284,18 @@ export default function RewardsMemberScreen() {
         )
       )}
 
-      <FullScreenLoadingOverlay visible={Boolean(busyTitle)} title={busyTitle ?? ""} />
+      <MessageModal
+        visible={notice !== null}
+        tone={notice?.tone ?? "success"}
+        title={notice?.title ?? ""}
+        message={notice?.message}
+        buttonLabel={notice?.tone === "success" ? "Done" : "OK"}
+        onClose={() => {
+          const wasSuccess = notice?.tone === "success";
+          setNotice(null);
+          if (wasSuccess) router.back();
+        }}
+      />
     </SafeAreaViewWrapper>
   );
 }
