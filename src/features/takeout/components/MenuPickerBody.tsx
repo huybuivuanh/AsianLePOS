@@ -5,6 +5,7 @@ import React, { useCallback, useRef } from "react";
 import {
   Keyboard,
   TextInput,
+  type TextInputInstance,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -33,7 +34,7 @@ export default function MenuPickerBody({
   onSelectItem,
   listWrapperClassName = "-mx-4",
 }: MenuPickerBodyProps) {
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
   const cartCountOnLeave = useRef<number | null>(null);
 
   useFocusEffect(

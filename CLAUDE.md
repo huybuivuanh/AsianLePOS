@@ -202,4 +202,4 @@ Two scheduled functions:
 - **Firebase project:** `asianlepos`
 - **Environment:** Firebase config loaded from `.env` via `EXPO_PUBLIC_*` variables, validated in `src/lib/firebaseConfig.ts`
 - **App version:** 1.0.11, bundle ID `com.buivuanhhuy.AsianLePOS`
-- **Key deps:** Expo 54+, React 19, React Native 0.81.5, Firebase 12.3.0, Zustand 5.0.8, expo-router 6.x
+- **Key deps:** Expo SDK 58, React 19.3, React Native 0.88, Firebase 12.3.0, Zustand 5.0.8, expo-router 58.x, react-native-gesture-handler 3.x, Sentry 8.x

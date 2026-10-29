@@ -176,7 +176,7 @@ export default function TabsLayout() {
         options={{
           title: "Take Out",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="fast-food-outline" color={color} size={size} />
+            <Ionicons name="fast-food-outline" color={color as string} size={size} />
           ),
         }}
       />
@@ -185,7 +185,7 @@ export default function TabsLayout() {
         options={{
           title: "Out Orders",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="bag-handle-outline" color={color} size={size} />
+            <Ionicons name="bag-handle-outline" color={color as string} size={size} />
           ),
         }}
       />
@@ -194,7 +194,7 @@ export default function TabsLayout() {
         options={{
           title: "Tables",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="grid-outline" color={color} size={size} />
+            <Ionicons name="grid-outline" color={color as string} size={size} />
           ),
         }}
       />
@@ -203,7 +203,7 @@ export default function TabsLayout() {
         options={{
           title: "In Orders",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="receipt-outline" color={color} size={size} />
+            <Ionicons name="receipt-outline" color={color as string} size={size} />
           ),
         }}
       />
@@ -212,7 +212,7 @@ export default function TabsLayout() {
         options={{
           title: "Profile",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-circle-outline" color={color} size={size} />
+            <Ionicons name="person-circle-outline" color={color as string} size={size} />
           ),
         }}
       />

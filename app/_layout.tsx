@@ -40,6 +40,8 @@ Sentry.init({
   // Keep the last 100 console.* calls, network requests, and navigations as
   // breadcrumbs so a rare crash shows what led up to it.
   maxBreadcrumbs: 100,
+  // Don't report from dev / Expo Go sessions.
+  enabled: !__DEV__,
   environment: __DEV__ ? "development" : "production",
 });
 

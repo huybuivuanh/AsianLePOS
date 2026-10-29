@@ -63,7 +63,7 @@ export default function StaffPickerModal({
           {/* Header */}
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-lg font-bold text-stone-900">
-              Who's taking this order?
+              Who&apos;s taking this order?
             </Text>
             <TouchableOpacity onPress={onCancel} hitSlop={12}>
               <Ionicons name="close" size={22} color="#78716c" />

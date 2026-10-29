@@ -11,7 +11,7 @@ import {
 import { DiscountType, OrderType } from "@/types/enums";
 import { formatPhone } from "@/utils/helpers";
 import { Fragment, useEffect, useRef, useState } from "react";
-import { Platform, ScrollView, Text, View } from "react-native";
+import { Platform, ScrollView, Text, View, type ScrollViewInstance } from "react-native";
 
 type BillView = {
   items: OrderItem[];
@@ -26,7 +26,7 @@ export default function CustomerDisplayScreen() {
   const [order, setOrder] = useState<OrderDraft | undefined>(undefined);
   const [billView, setBillView] = useState<BillView | null>(null);
 
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<ScrollViewInstance>(null);
 
   useEffect(() => {
     const channel = createCustomerDisplayChannel();
