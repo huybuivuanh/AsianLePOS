@@ -4,6 +4,7 @@ import { useDineInTableActions } from "@/features/dinein/hooks/useDineInTableAct
 import { useLinePaidDebounce } from "@/features/dinein/hooks/useLinePaidDebounce";
 import OrderItemsList from "@/features/order/components/OrderItemsList";
 import RewardsModal from "@/features/order/components/RewardsModal";
+import { openRewardsMember } from "@/features/rewards/rewardsNavigation";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import {
   createCustomerDisplayChannel,
@@ -573,7 +574,17 @@ export default function TablePage() {
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={() => setRewardsOpen(true)}
+                  onPress={() => {
+                    if (!order?.id) return;
+                    // Member already linked (redeemed earlier): skip scanning.
+                    if (order.loyalty?.memberId) {
+                      openRewardsMember(router, order.id, OrderType.DineIn, {
+                        memberId: order.loyalty.memberId,
+                      });
+                    } else {
+                      setRewardsOpen(true);
+                    }
+                  }}
                   activeOpacity={0.7}
                   disabled={!order?.id || actionBusy}
                   className={`px-2 py-3 rounded-md items-center justify-center flex-1 min-w-0 ${order?.id && !actionBusy ? "bg-red-600" : "bg-red-300"}`}
@@ -602,7 +613,9 @@ export default function TablePage() {
         </View>
       </View>
 
-      {rewardsOpen && <RewardsModal onClose={closeRewards} />}
+      {rewardsOpen && order?.id && (
+        <RewardsModal orderId={order.id} orderType={OrderType.DineIn} onClose={closeRewards} />
+      )}
 
       {cashModal.isOpen && (
         <CashPaymentModal

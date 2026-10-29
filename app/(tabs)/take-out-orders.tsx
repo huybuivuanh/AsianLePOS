@@ -1,12 +1,14 @@
 import CashPaymentModal from "@/features/dinein/CashPaymentModal";
 import RewardsModal from "@/features/order/components/RewardsModal";
+import { openRewardsMember } from "@/features/rewards/rewardsNavigation";
 import { TakeOutOrderCard } from "@/features/takeout/components/TakeOutOrderCard";
 import { useTakeOutOrderActions } from "@/features/takeout/hooks/useTakeOutOrderActions";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import { FlashList } from "@shopify/flash-list";
-import { useLocalSearchParams } from "expo-router";
+import { OrderType } from "@/types/enums";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 
@@ -65,6 +67,21 @@ export default function TakeOutOrdersTab() {
 
   const [rewardsOrderId, setRewardsOrderId] = useState<string | null>(null);
   const handleCloseRewards = useCallback(() => setRewardsOrderId(null), []);
+  const router = useRouter();
+  const handleOpenRewards = useCallback(
+    (order: TakeOutOrder) => {
+      if (!order.id) return;
+      // Member already linked (redeemed earlier): skip scanning.
+      if (order.loyalty?.memberId) {
+        openRewardsMember(router, order.id, OrderType.TakeOut, {
+          memberId: order.loyalty.memberId,
+        });
+      } else {
+        setRewardsOrderId(order.id);
+      }
+    },
+    [router],
+  );
 
   useEffect(() => {
     loadTakeOutOrders();
@@ -96,7 +113,7 @@ export default function TakeOutOrdersTab() {
           onEditOrder={handleEditOrder}
           onOpenCashPayment={handleOpenCashPayment}
           onChangeToDineIn={handleChangeToDineIn}
-          onOpenRewards={setRewardsOrderId}
+          onOpenRewards={handleOpenRewards}
         />
       );
     },
@@ -105,6 +122,7 @@ export default function TakeOutOrdersTab() {
       toggleExpand, handleComplete, handleCancel, handlePrint,
       handleToggleSelectionMode, handleToggleItemSelection, handlePrintSelected,
       handleMarkAsPaid, handleEditOrder, handleOpenCashPayment, handleChangeToDineIn,
+      handleOpenRewards,
     ],
   );
 
@@ -146,7 +164,13 @@ export default function TakeOutOrdersTab() {
         />
       )}
 
-      {rewardsOrderId !== null && <RewardsModal onClose={handleCloseRewards} />}
+      {rewardsOrderId !== null && (
+        <RewardsModal
+          orderId={rewardsOrderId}
+          orderType={OrderType.TakeOut}
+          onClose={handleCloseRewards}
+        />
+      )}
 
       {cashPaymentOrderId !== null && (
         <CashPaymentModal

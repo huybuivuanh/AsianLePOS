@@ -23,10 +23,8 @@ export type RedeemPointsResult = {
 };
 
 export type ReverseOrderResult = {
-  /** Earned points removed from the member. */
-  pointsRemoved: number;
-  /** Redeemed points given back to the member. */
-  pointsRefunded: number;
+  /** Net change to the member's balance (refunded redeem minus removed earn). */
+  pointsChanged: number;
   newBalance: number;
 };
 
@@ -47,7 +45,7 @@ export function rewardsErrorMessage(err: unknown): string {
   if (err instanceof FirebaseError) {
     switch (err.code) {
       case "functions/not-found":
-        return "No rewards member found.";
+        return err.message || "No rewards member found.";
       case "functions/unauthenticated":
         return "This device isn't signed in to Rewards. Sign in from the Profile tab.";
       case "functions/permission-denied":
@@ -67,23 +65,53 @@ export function rewardsErrorMessage(err: unknown): string {
   return "Rewards request failed. Try again.";
 }
 
-export const lookupMember = (input: LookupMemberInput) =>
-  call<LookupMemberInput, RewardsMember>("lookupMember", input);
+// The functions name the member id `uid` and return `balance`; the POS keeps its
+// own names (`memberId`, `newBalance`) and maps them here.
 
-/** Once per order: safe to retry, the server ignores a second call. */
-export const earnPoints = (memberId: string, orderId: string, subtotal: number) =>
-  call<{ memberId: string; orderId: string; subtotal: number }, EarnPointsResult>(
-    "earnPoints",
-    { memberId, orderId, subtotal },
-  );
+type ServerMember = { uid: string; name: string; phone: string; points: number };
 
-/** `steps` × 100 points → `steps` × $5 off. */
-export const redeemPoints = (memberId: string, orderId: string, steps: number) =>
-  call<{ memberId: string; orderId: string; steps: number }, RedeemPointsResult>(
-    "redeemPoints",
-    { memberId, orderId, steps },
-  );
+export async function lookupMember(input: LookupMemberInput): Promise<RewardsMember> {
+  const data = "memberId" in input ? { uid: input.memberId } : { phone: input.phone };
+  const { member } = await call<typeof data, { member: ServerMember }>("lookupMember", data);
+  return {
+    memberId: member.uid,
+    name: member.name,
+    phone: member.phone,
+    points: member.points ?? 0,
+  };
+}
 
-/** On cancel: refunds redeemed points and removes earned points for the order. */
-export const reverseOrder = (orderId: string) =>
-  call<{ orderId: string }, ReverseOrderResult>("reverseOrder", { orderId });
+/** Once per order: calling again returns the first result. */
+export async function earnPoints(
+  memberId: string,
+  orderId: string,
+  subtotal: number,
+): Promise<EarnPointsResult> {
+  const r = await call<
+    { uid: string; orderId: string; subtotal: number },
+    { pointsEarned: number; balance: number }
+  >("earnPoints", { uid: memberId, orderId, subtotal });
+  return { pointsEarned: r.pointsEarned, newBalance: r.balance };
+}
+
+/** `steps` × 100 points → `steps` × $5 off. Calling again returns the first result. */
+export async function redeemPoints(
+  memberId: string,
+  orderId: string,
+  steps: number,
+): Promise<RedeemPointsResult> {
+  const r = await call<
+    { uid: string; orderId: string; steps: number },
+    { pointsRedeemed: number; discount: number; balance: number }
+  >("redeemPoints", { uid: memberId, orderId, steps });
+  return { pointsRedeemed: r.pointsRedeemed, discountAmount: r.discount, newBalance: r.balance };
+}
+
+/** On cancel: undoes the order's earned and redeemed points, once. */
+export async function reverseOrder(memberId: string, orderId: string): Promise<ReverseOrderResult> {
+  const r = await call<
+    { uid: string; orderId: string },
+    { pointsChanged: number; balance: number }
+  >("reverseOrder", { uid: memberId, orderId });
+  return { pointsChanged: r.pointsChanged, newBalance: r.balance };
+}

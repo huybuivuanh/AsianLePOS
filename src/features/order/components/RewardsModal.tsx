@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -15,35 +15,35 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  formatRewardsPhone,
+  REWARDS_PHONE_PLACEHOLDER,
+  rewardsPhoneDigits,
+} from "@/features/rewards/rewardsPhone";
+import { openRewardsMember } from "@/features/rewards/rewardsNavigation";
 import { useRewardsAuthStore } from "@/stores/useRewardsAuthStore";
-import { formatPhone } from "@/utils/helpers";
+import { OrderType } from "@/types/enums";
+import { useRouter } from "expo-router";
 
-export type RewardsLookup =
-  | { kind: "qr"; memberId: string }
-  | { kind: "phone"; phone: string };
-
-type Step = "choose" | "phone" | "scan" | "result";
+type Step = "choose" | "phone" | "scan";
 
 type Props = {
+  orderId: string;
+  orderType: OrderType;
   onClose: () => void;
 };
 
-/** Digits only, 10 digits (a leading North American "1" is dropped). */
-const normalizePhone = (text: string) => {
-  const digits = text.replace(/\D/g, "");
-  return digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
-};
 
-export default function RewardsModal({ onClose }: Props) {
+export default function RewardsModal({ orderId, orderType, onClose }: Props) {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [step, setStep] = useState<Step>("choose");
   const [phoneText, setPhoneText] = useState("");
-  const [lookup, setLookup] = useState<RewardsLookup | null>(null);
   const rewardsConfigured = useRewardsAuthStore((s) => s.configured);
   const rewardsUser = useRewardsAuthStore((s) => s.user);
   const deviceSignedIn = rewardsConfigured && rewardsUser !== null;
 
-  const phone = useMemo(() => normalizePhone(phoneText), [phoneText]);
+  const phone = useMemo(() => rewardsPhoneDigits(phoneText), [phoneText]);
   const phoneValid = phone.length === 10;
 
   const handleClose = useCallback(() => {
@@ -54,14 +54,17 @@ export default function RewardsModal({ onClose }: Props) {
   const handleSubmitPhone = useCallback(() => {
     if (!phoneValid) return;
     Keyboard.dismiss();
-    setLookup({ kind: "phone", phone });
-    setStep("result");
-  }, [phone, phoneValid]);
+    onClose();
+    openRewardsMember(router, orderId, orderType, { phone });
+  }, [phone, phoneValid, onClose, router, orderId, orderType]);
 
-  const handleScanned = useCallback((memberId: string) => {
-    setLookup({ kind: "qr", memberId });
-    setStep("result");
-  }, []);
+  const handleScanned = useCallback(
+    (memberId: string) => {
+      onClose();
+      openRewardsMember(router, orderId, orderType, { memberId });
+    },
+    [onClose, router, orderId, orderType],
+  );
 
   if (step === "scan") {
     return (
@@ -122,13 +125,13 @@ export default function RewardsModal({ onClose }: Props) {
                 <Text className="mb-1 text-sm font-medium text-gray-700">Phone number</Text>
                 <TextInput
                   className="mb-4 rounded-xl border border-gray-300 px-4 py-3 text-lg text-gray-900"
-                  placeholder="604 555-1234"
+                  placeholder={REWARDS_PHONE_PLACEHOLDER}
                   placeholderTextColor="#9ca3af"
                   keyboardType="phone-pad"
                   autoFocus
-                  maxLength={16}
+                  maxLength={14}
                   value={phoneText}
-                  onChangeText={setPhoneText}
+                  onChangeText={(text) => setPhoneText(formatRewardsPhone(text))}
                   onSubmitEditing={handleSubmitPhone}
                 />
                 <TouchableOpacity
@@ -140,20 +143,6 @@ export default function RewardsModal({ onClose }: Props) {
                   <Text className="text-center text-base font-semibold text-white">Find member</Text>
                 </TouchableOpacity>
               </>
-            )}
-
-            {deviceSignedIn && step === "result" && lookup && (
-              <View className="rounded-xl bg-gray-50 px-4 py-3">
-                <Text className="text-sm text-gray-600">
-                  {lookup.kind === "qr" ? "Scanned member ID" : "Phone number"}
-                </Text>
-                <Text className="text-base font-bold text-gray-900" selectable>
-                  {lookup.kind === "qr" ? lookup.memberId : formatPhone(lookup.phone)}
-                </Text>
-                <Text className="mt-2 text-xs text-gray-500">
-                  Member lookup is not connected yet.
-                </Text>
-              </View>
             )}
 
             <View className="mt-4 flex-row">

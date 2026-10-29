@@ -109,6 +109,8 @@ export async function convertDineInToTakeOut(
       customerName: name || null,
       phoneNumber: phone || null,
       fulfillment,
+      // Keep the rewards member (and collect/redeem state) with the order.
+      ...(data.loyalty ? { loyalty: data.loyalty } : {}),
     };
 
     tx.delete(orderRef);
@@ -217,6 +219,8 @@ export async function convertTakeOutToDineIn(
       createdAt: data.createdAt,
       tableNumber,
       guests: g,
+      // Keep the rewards member (and collect/redeem state) with the order.
+      ...(data.loyalty ? { loyalty: data.loyalty } : {}),
     };
 
     tx.delete(takeOutRef);
