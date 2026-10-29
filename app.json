@@ -22,7 +22,7 @@
       "package": "com.buivuanhhuy.AsianLePOS"
     },
     "web": {
-      "output": "static",
+      "output": "single",
       "bundler": "metro",
       "favicon": "./assets/favicon.png"
     },

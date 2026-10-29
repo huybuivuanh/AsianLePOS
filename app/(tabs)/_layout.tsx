@@ -8,6 +8,7 @@ import { useCustomersStore } from "@/stores/useCustomersStore";
 import { useDineInOrdersStore } from "@/stores/useDineInOrdersStore";
 import { useMenuChangesStore } from "@/stores/useMenuChangesStore";
 import { useMenuStore } from "@/stores/useMenuStore";
+import { useOnlineOrdersStore } from "@/stores/useOnlineOrdersStore";
 import { useStaffStore } from "@/stores/useStaffStore";
 import { useTableStore } from "@/stores/useTableStore";
 import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
@@ -51,6 +52,8 @@ export default function TabsLayout() {
   const { subscribeToAddExtras, clearData: clearAddExtras } = useAddExtrasStore();
   const { subscribeToCredits, clearData: clearCredits } = useCreditsStore();
   const { fetchStaff, clearData: clearStaff } = useStaffStore();
+  const { subscribeToOnlineOrders, clearData: clearOnlineOrders } =
+    useOnlineOrdersStore();
   const { clearOrder } = useCartStore();
 
   // Redirect to login if not authenticated and clear data
@@ -66,6 +69,7 @@ export default function TabsLayout() {
       clearAddExtras();
       clearCredits();
       clearStaff();
+      clearOnlineOrders();
       clearOrder();
       router.push("/login");
     }
@@ -82,6 +86,7 @@ export default function TabsLayout() {
     clearAddExtras,
     clearCredits,
     clearStaff,
+    clearOnlineOrders,
     clearOrder,
   ]);
 
@@ -98,6 +103,7 @@ export default function TabsLayout() {
     const add = (fn: (() => void) | undefined) => { if (fn) unsubs.push(fn); };
     add(subscribeToMenuVersion());
     add(subscribeToTakeOutOrders());
+    add(subscribeToOnlineOrders());
     add(subscribeToDineInOrders());
     add(subscribeToCustomersVersion());
     add(subscribeToCredits());
@@ -117,6 +123,7 @@ export default function TabsLayout() {
     stopListeners,
     subscribeToMenuVersion,
     subscribeToTakeOutOrders,
+    subscribeToOnlineOrders,
     subscribeToDineInOrders,
     subscribeToCustomersVersion,
     subscribeToCredits,

@@ -91,6 +91,7 @@ Never push or replace to `table/[T]` after a dine-in submit — the table page i
 | `useCreditsStore` | Store credits/refunds — cache-first, lazy loaded |
 | `useMenuChangesStore` | Item name substitution reference (from→to) — cache-first |
 | `useNetworkStore` | Network connectivity status via NetInfo |
+| `useOnlineOrdersStore` | Read-only online (website) orders from `onlineOrders` — cache-first + live; merged into the Out Orders list by `useTakeOutHistoryList` |
 
 All stores are cleared on logout to prevent data leaks.
 
@@ -184,11 +185,14 @@ dineInOrders       takeOutOrders      categories
 menuItems          optionGroups       options
 menuVersion        tables             customers
 credits            menuChanges        printQueue
+onlineOrders
 ```
+
+`onlineOrders` holds read-only copies of website orders (accepted onward). They're written only by the `mirrorOnlineOrder` Cloud Function in the `asianlewebsite` project (`asian-le-website-admin/functions`). The POS never writes to it. Online orders are managed in the Orders app.
 
 ### Cloud Functions (`functions/src/index.ts`)
 Two scheduled functions:
-- `purgeStaleOrders` — Daily at 4 AM UTC: deletes `dineInOrders` and `takeOutOrders` older than ~30 days in batches of 500
+- `purgeStaleOrders` — Daily at 4 AM UTC: deletes `dineInOrders`, `takeOutOrders` and `onlineOrders` older than ~30 days in batches of 500
 - `purgeStalePrintQueue` — Daily at midnight America/Regina: clears entire `printQueue` collection
 
 ### Auth

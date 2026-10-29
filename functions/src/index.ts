@@ -10,7 +10,8 @@ initializeApp();
 const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const BATCH_SIZE = 500;
 
-const ORDER_COLLECTIONS = ["dineInOrders", "takeOutOrders"] as const;
+// onlineOrders: read-only copies of website orders (see asian-le-website-admin mirrorOnlineOrder).
+const ORDER_COLLECTIONS = ["dineInOrders", "takeOutOrders", "onlineOrders"] as const;
 
 const PRINT_QUEUE_COLLECTION = "printQueue";
 

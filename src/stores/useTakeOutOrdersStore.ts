@@ -24,6 +24,8 @@ type TakeOutOrdersTabState = {
   lastFetchTime: number | null;
   loadTakeOutOrders: () => Promise<void>;
   loadMoreOrders: () => Promise<void>;
+  /** Show more rows even when POS orders run out (the list also holds online orders). */
+  increaseVisibleLimit: () => void;
   refreshTakeOutOrders: () => Promise<void>;
   subscribeToTakeOutOrders: () => () => void;
   clearData: () => Promise<void>;
@@ -128,6 +130,17 @@ export const useTakeOutOrdersStore = create<TakeOutOrdersTabState>(
           console.error("❌ Error loading more take out orders:", error);
           set({ loadingMore: false });
         }
+      },
+
+      increaseVisibleLimit: () => {
+        const { fullTakeOutOrders, visibleLimit } = get();
+        const nextLimit = visibleLimit + LOAD_MORE_BATCH_SIZE;
+        const displayed = fullTakeOutOrders.slice(0, nextLimit);
+        set({
+          visibleLimit: nextLimit,
+          takeOutOrders: displayed,
+          hasMore: displayed.length < fullTakeOutOrders.length,
+        });
       },
 
       refreshTakeOutOrders: async () => {
