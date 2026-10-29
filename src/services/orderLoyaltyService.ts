@@ -1,10 +1,15 @@
 // Saves rewards results onto the POS order (POS Firestore). The rewards
 // function runs first; these writes record what it confirmed.
 import { firebase } from "@/lib/firebaseConfig";
-import type { EarnPointsResult, RedeemPointsResult, RewardsMember } from "@/services/rewardsService";
+import {
+  reverseOrder,
+  type EarnPointsResult,
+  type RedeemPointsResult,
+  type RewardsMember,
+} from "@/services/rewardsService";
 import { DiscountType, OrderType } from "@/types/enums";
 import { calculateTaxBreakdown, orderItemsSubtotal } from "@/utils/helpers";
-import { doc, runTransaction, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, runTransaction, serverTimestamp, updateDoc } from "firebase/firestore";
 
 export const orderCollection = (orderType: OrderType) =>
   orderType === OrderType.DineIn ? "dineInOrders" : "takeOutOrders";
@@ -64,4 +69,46 @@ export async function markPointsCollected(
       "loyalty.collectedAt": serverTimestamp(),
     });
   });
+}
+
+const REVERSE_TIMEOUT_MS = 10_000;
+
+/**
+ * After an order is cancelled: gives back redeemed points and removes earned points.
+ * Never throws — the order is already cancelled. Returns a staff-facing warning if
+ * points could not be reversed (the order is marked `loyalty.reversePending`).
+ */
+export async function reverseCancelledOrderRewards(
+  orderType: OrderType,
+  orderId: string,
+): Promise<string | null> {
+  const ref = doc(firebase.db, orderCollection(orderType), orderId);
+  let loyalty: OrderLoyalty | undefined;
+  try {
+    // Read fresh: points may have been collected on another device moments ago.
+    loyalty = ((await getDoc(ref)).data() as AnyOrder | undefined)?.loyalty;
+  } catch {
+    return null;
+  }
+  if (!loyalty?.memberId || loyalty.reversedAt) return null;
+  if (loyalty.pointsEarned == null && !loyalty.pointsRedeemed) return null;
+
+  try {
+    const result = await Promise.race([
+      reverseOrder(loyalty.memberId, orderId),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("No response from Rewards.")), REVERSE_TIMEOUT_MS),
+      ),
+    ]);
+    await updateDoc(ref, {
+      "loyalty.reversedAt": serverTimestamp(),
+      "loyalty.pointsReversed": result.pointsChanged,
+      "loyalty.reversePending": false,
+    }).catch(() => {});
+    return null;
+  } catch (err) {
+    await updateDoc(ref, { "loyalty.reversePending": true }).catch(() => {});
+    const reason = err instanceof Error ? err.message : "Rewards request failed.";
+    return `The order was cancelled, but ${loyalty.memberName}'s rewards points were not reversed. ${reason}`;
+  }
 }

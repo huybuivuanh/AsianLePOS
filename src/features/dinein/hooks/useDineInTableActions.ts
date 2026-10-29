@@ -48,9 +48,10 @@ export function useDineInTableActions(): UseDineInTableActionsResult {
     async (order: Partial<DineInOrder>, onSuccess: () => void) => {
       try {
         setActionOverlay({ title: "Cancelling order…" });
-        await withTimeout(cancelOrder(order));
+        const rewardsWarning = await withTimeout(cancelOrder(order));
         onSuccess();
         router.back();
+        if (rewardsWarning) showAlert("Rewards", rewardsWarning);
       } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : "Failed to cancel order. Please try again.";
         showAlert("Error", msg);

@@ -45,6 +45,10 @@ export default function DiscountButtonModalAndSummary() {
 
   const finalTotal = order.taxBreakDown?.total ?? 0;
 
+  // A rewards redemption is the order's discount; it can't be changed here
+  // (the points are already spent). Cancelling the order gives them back.
+  const rewardsLocked = Boolean(order.loyalty?.redeemedAmount);
+
   const [modalVisible, setModalVisible] = useState(false);
   const [draftType, setDraftType] = useState<DiscountType>(committedType);
   const [draftValueText, setDraftValueText] = useState(
@@ -101,17 +105,21 @@ export default function DiscountButtonModalAndSummary() {
           )}
           <TouchableOpacity
             onPress={openModal}
-            className="px-4 py-2 rounded-md bg-gray-900"
+            disabled={rewardsLocked}
+            className={`px-4 py-2 rounded-md ${rewardsLocked ? "bg-gray-300" : "bg-gray-900"}`}
             activeOpacity={0.8}
           >
-            <Text className="text-white font-semibold">Discount</Text>
+            <Text className="text-white font-semibold">
+              {rewardsLocked ? "Discount locked" : "Discount"}
+            </Text>
           </TouchableOpacity>
         </View>
         {committedType !== DiscountType.None && committedDiscountAmount > 0 ? (
           <View className="flex-row justify-between mb-2">
             <Text className="text-gray-600 font-medium">
-              Discount:{" "}
-              {`${committedType === DiscountType.Percent ? "%" : "$"} ${committedValue.toFixed(2)}`}
+              {rewardsLocked
+                ? `Rewards (${order.loyalty?.pointsRedeemed ?? 0} pts)`
+                : `Discount: ${committedType === DiscountType.Percent ? "%" : "$"} ${committedValue.toFixed(2)}`}
             </Text>
             <Text className="text-gray-900 font-bold">
               -${committedDiscountAmount.toFixed(2)}

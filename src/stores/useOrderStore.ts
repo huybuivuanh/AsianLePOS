@@ -1,16 +1,18 @@
 import * as orderService from "@/services/orderService";
 import * as conversionService from "@/services/conversionService";
+import { reverseCancelledOrderRewards } from "@/services/orderLoyaltyService";
 import * as printService from "@/services/printService";
 import * as tableService from "@/services/tableService";
 import { useCartStore } from "@/stores/useCartStore";
 import { useTableStore } from "@/stores/useTableStore";
-import { TakeOutFulfillmentKind } from "@/types/enums";
+import { OrderType, TakeOutFulfillmentKind } from "@/types/enums";
 import { create } from "zustand";
 
 type OrderActions = {
   submitOrder: (order: OrderDraft) => Promise<{ merged: boolean }>;
   updateOrderOnFirestore: (order: OrderDraft) => Promise<void>;
-  cancelOrder: (order: OrderDraft) => Promise<void>;
+  /** Resolves with a rewards warning if the order's points could not be reversed. */
+  cancelOrder: (order: OrderDraft) => Promise<string | null>;
   completeOrder: (order: OrderDraft) => Promise<void>;
   markOrderAsPaid: (order: OrderDraft, paid: boolean) => Promise<void>;
   submitToPrintQueue: (order: OrderDraft) => Promise<void>;
@@ -54,6 +56,8 @@ export const useOrderStore = create<OrderActions>(() => ({
   cancelOrder: async (order) => {
     const tableDocId = resolveTableDocId(order.tableNumber);
     await orderService.cancelOrder(order, tableDocId);
+    if (!order.id) return null;
+    return reverseCancelledOrderRewards(order.orderType ?? OrderType.TakeOut, order.id);
   },
 
   completeOrder: async (order) => {

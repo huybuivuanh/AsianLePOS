@@ -10,6 +10,7 @@ import {
   convertOrderTimestamps,
   EMPTY_TAX_BREAKDOWN,
   resolveTaxBreakdown,
+  showAlert,
 } from "@/utils/helpers";
 import { useFocusEffect, useRouter, type Href } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -221,7 +222,10 @@ export function useTakeOutOrderActions(takeOutOrders: TakeOutOrder[]) {
 
   const handleCancel = useCallback(
     async (order: TakeOutOrder) => {
-      try { await cancelOrder(order); } catch (e) { console.error("❌ Error canceling order:", e); }
+      try {
+        const rewardsWarning = await cancelOrder(order);
+        if (rewardsWarning) showAlert("Rewards", rewardsWarning);
+      } catch (e) { console.error("❌ Error canceling order:", e); }
     },
     [cancelOrder],
   );

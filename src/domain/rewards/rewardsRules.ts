@@ -63,3 +63,12 @@ export const maxRedeemSteps = (balance: number, subtotal: number): number =>
       Math.floor(subtotal / DOLLARS_PER_REDEEM_STEP),
     ),
   );
+
+/**
+ * A rewards redemption fixes the order's discount: Amount = redeemed dollars.
+ * Returns the discount inputs to force when saving, or null if the order has no redemption.
+ */
+export const redemptionDiscountInputs = (
+  loyalty: OrderLoyalty | undefined | null,
+): { type: DiscountType; value: number } | null =>
+  loyalty?.redeemedAmount ? { type: DiscountType.Amount, value: loyalty.redeemedAmount } : null;

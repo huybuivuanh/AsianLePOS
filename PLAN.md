@@ -60,8 +60,16 @@ own Firebase project. Customers see their points and a personal QR code. The POS
 - [x] First redeem / collect saves `order.loyalty` → the Rewards button skips scanning next time.
       Dine-in ↔ take-out conversions keep `loyalty`
 - [x] QR lookup fixed (POS sent `memberId`, functions expect `uid`)
-- [ ] Cancel → `reverseOrder` (dine-in and take-out cancel)
-- [ ] Lock the discount in Edit Order when it comes from a redemption
+- [x] Cancel → `reverseOrder` (dine-in and take-out, in `useOrderStore.cancelOrder` →
+      `reverseCancelledOrderRewards`). Reads the order fresh, skips orders with no points,
+      saves `loyalty.reversedAt` / `pointsReversed`. If the call fails the order stays cancelled,
+      gets `loyalty.reversePending: true`, and staff see a warning naming the member
+- [ ] Retry for `reversePending` orders (take-out: pressing Cancel again retries; dine-in has no way yet)
+- [x] Redemption discount locked: the Discount button shows "Discount locked" on redeemed orders
+      (summary reads "Rewards (N pts)"), and saving an edit / dine-in → take-out conversion always
+      re-applies `loyalty.redeemedAmount` as the Amount discount (`redemptionDiscountInputs`).
+      Uses the order the editor loaded (no extra read, so offline edits still queue); a redeem
+      made on another device *while* an edit screen is open could still be overwritten (rare)
 - [ ] Customer display prompts ("Scan your loyalty QR", "+N points earned")
 - [ ] Add `EXPO_PUBLIC_REWARDS_FIREBASE_*` to EAS environment variables (cloud builds don't read `.env`)
 - [ ] Native development build (camera is native code; Expo Go is now SDK 58, POS is SDK 57)
@@ -80,6 +88,7 @@ own Firebase project. Customers see their points and a personal QR code. The POS
 | Redeem + staff discount | **Blocked** — an order with a staff discount can't redeem |
 | Points expiry | **Never** |
 | Cancelled order | Points automatically reversed (earned removed, redeemed refunded) |
+| Edited order | **Not** reversed. A reverse is final (later earn/redeem return `already…`), so the redemption discount simply stays on the order. Points collected before an edit stay as they were (rare: collect happens at payment); an adjust function can come later if needed |
 | Customer sign-in | Google **or** email + password, same on iOS, Android and web. No Apple sign-in (it needs extra setup on web/Android); add it on iOS later only if App Store review asks |
 | Member doc id | Firebase Auth uid (`members/{uid}`) — no lookup needed, simple rules |
 | Creating the member | The app writes it directly; security rules check the fields. Not a function |
@@ -192,7 +201,9 @@ phoneNumbers/{phone}               uid   (one phone per member + POS phone looku
 loyalty: {
   memberId, memberName,              ← set on the first redeem or collect
   pointsRedeemed?, redeemedAmount?,  ← redeem (the amount is also the order's Amount discount)
-  pointsEarned?, collectedAt?        ← collect
+  pointsEarned?, collectedAt?,       ← collect
+  reversedAt?, pointsReversed?,      ← cancel (reverseOrder succeeded)
+  reversePending?                    ← cancel, but reverseOrder failed
 }
 ```
 
@@ -245,7 +256,7 @@ All written and tested in the emulators (`functions/src/`). POS functions requir
    - ✅ `src/services/rewardsService.ts` wrapping the functions
    - ✅ Rewards button → modal (scan / phone) → member page → Redeem ($5 steps) / Collect
      (once, saves `order.loyalty`)
-   - Cancel → `reverseOrder`
+   - ✅ Cancel → `reverseOrder`
    - Customer display prompts
 5. **Test end to end, then deploy**
 

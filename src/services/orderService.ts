@@ -2,6 +2,7 @@ import { firebase } from "@/lib/firebaseConfig";
 import { DiscountType, OrderStatus, OrderType, TableStatus } from "@/types/enums";
 import { kitchenTypeSortRank } from "@/features/order/orderItemSections";
 import { ungroupOrderItems } from "@/utils/groupOrderItems";
+import { redemptionDiscountInputs } from "@/domain/rewards/rewardsRules";
 import { calculateTaxBreakdown, orderItemsSubtotal } from "@/utils/helpers";
 import { normalizeOrderItemTextForDb } from "@/utils/normalizeOrderItemText";
 import { doc, runTransaction, setDoc, Timestamp, writeBatch } from "firebase/firestore";
@@ -115,7 +116,8 @@ export async function updateOrder(order: OrderDraft): Promise<void> {
   if (!order.id) throw new Error("Cannot update order without ID.");
 
   const firestoreCollection = order.orderType === OrderType.DineIn ? "dineInOrders" : "takeOutOrders";
-  const { type, value } = discountInputs(order);
+  // A rewards redemption is the order's discount, whatever the cart's discount says.
+  const { type, value } = redemptionDiscountInputs(order.loyalty) ?? discountInputs(order);
   const taxBreakDown = calculateTaxBreakdown(orderItemsSubtotal(order.orderItems), type, value);
 
   const rawItems = ungroupOrderItems(order.orderItems ?? []).sort((a, b) => {
