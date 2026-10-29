@@ -1,7 +1,13 @@
 import CashPaymentModal from "@/features/dinein/CashPaymentModal";
 import RewardsModal from "@/features/order/components/RewardsModal";
 import { openRewardsMember } from "@/features/rewards/rewardsNavigation";
+import { OnlineOrderCard } from "@/features/takeout/components/OnlineOrderCard";
 import { TakeOutOrderCard } from "@/features/takeout/components/TakeOutOrderCard";
+import {
+  isOnlineOrder,
+  type TakeOutListItem,
+  useTakeOutHistoryList,
+} from "@/features/takeout/hooks/useTakeOutHistoryList";
 import { useTakeOutOrderActions } from "@/features/takeout/hooks/useTakeOutOrderActions";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
@@ -30,14 +36,13 @@ const FLASH_LIST_CONTENT_STYLE = {
 
 export default function TakeOutOrdersTab() {
   const {
-    takeOutOrders,
+    fullTakeOutOrders,
     loading,
-    loadingMore,
-    hasMore,
     loadTakeOutOrders,
-    loadMoreOrders,
     refreshTakeOutOrders,
   } = useTakeOutOrdersStore();
+  // POS take-out orders + read-only online orders, newest first.
+  const { items, hasMore, loadMore } = useTakeOutHistoryList();
 
   const params = useLocalSearchParams<{ orderId?: string | string[] }>();
   const orderIdParam = Array.isArray(params.orderId) ? params.orderId[0] : params.orderId;
@@ -63,7 +68,7 @@ export default function TakeOutOrdersTab() {
     handleOpenCashPayment,
     handleCloseCashPayment,
     handleChangeToDineIn,
-  } = useTakeOutOrderActions(takeOutOrders);
+  } = useTakeOutOrderActions(fullTakeOutOrders);
 
   const [rewardsOrderId, setRewardsOrderId] = useState<string | null>(null);
   const handleCloseRewards = useCallback(() => setRewardsOrderId(null), []);
@@ -94,7 +99,16 @@ export default function TakeOutOrdersTab() {
   }, [orderIdParam, refreshTakeOutOrders, expandOrder]);
 
   const renderOrder = useCallback(
-    ({ item }: { item: TakeOutOrder }) => {
+    ({ item }: { item: TakeOutListItem }) => {
+      if (isOnlineOrder(item)) {
+        return (
+          <OnlineOrderCard
+            item={item}
+            expanded={expandedOrderIds.has(item.id)}
+            onToggleExpand={toggleExpand}
+          />
+        );
+      }
       const isSelectionMode = selectionMode === item.id;
       return (
         <TakeOutOrderCard
@@ -137,7 +151,7 @@ export default function TakeOutOrdersTab() {
 
   return (
     <SafeAreaViewWrapper className="flex-1 p-4" includeBottomInset={false}>
-      {takeOutOrders.length === 0 ? (
+      {items.length === 0 ? (
         <View className="flex-1 justify-center items-center">
           <Text className="text-gray-500">No takeout orders yet.</Text>
         </View>
@@ -146,21 +160,17 @@ export default function TakeOutOrdersTab() {
           style={FLASH_LIST_STYLE}
           contentContainerStyle={FLASH_LIST_CONTENT_STYLE}
           keyboardShouldPersistTaps="always"
-          data={takeOutOrders}
-          keyExtractor={(item, index) => item.id ?? `order-${index}`}
+          data={items}
+          keyExtractor={(item, index) =>
+            isOnlineOrder(item) ? `online-${item.id}` : (item.id ?? `order-${index}`)
+          }
+          getItemType={(item) => (isOnlineOrder(item) ? "online" : "pos")}
           renderItem={renderOrder}
           extraData={extraData}
           refreshing={loading}
           onRefresh={refreshTakeOutOrders}
-          onEndReached={() => { if (hasMore && !loadingMore) loadMoreOrders(); }}
+          onEndReached={() => { if (hasMore) loadMore(); }}
           onEndReachedThreshold={0.5}
-          ListFooterComponent={
-            loadingMore ? (
-              <View className="py-4">
-                <ActivityIndicator size="small" color="#007AFF" />
-              </View>
-            ) : null
-          }
         />
       )}
 

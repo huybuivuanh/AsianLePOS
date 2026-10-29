@@ -171,6 +171,33 @@ declare global {
     currentOrderId: string | null;
   }
 
+  /** Read-only copy of a website order, written by asian-le-website-admin's
+   * mirrorOnlineOrder function into `onlineOrders`. The POS never writes it. */
+  interface OnlineOrderItem {
+    name: string;
+    /** Per-unit price including options. */
+    price: number;
+    quantity: number;
+    instructions?: string;
+    options?: { name: string; price: number; quantity: number }[];
+  }
+
+  interface OnlineOrder {
+    id: string;
+    source: "online";
+    orderNumber?: string;
+    /** Orders only appear here once accepted, so never "New". */
+    status: "InProgress" | "ReadyForPickup" | "Completed" | "Cancelled";
+    fulfillment?: TakeOutFulfillment;
+    customerName: string;
+    phoneNumber: string;
+    orderItems: OnlineOrderItem[];
+    taxBreakDown?: TaxBreakDown;
+    paid: boolean;
+    printed: boolean;
+    createdAt: Timestamp;
+  }
+
   interface Customer {
     id?: string;
     name: string;

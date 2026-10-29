@@ -54,7 +54,11 @@ const firebaseConfig = {
     : {}),
 };
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// Check for the default app by name: the Rewards app ("rewards") may be
+// created first, so "any app exists" doesn't mean this one does.
+const app = getApps().some((a) => a.name === "[DEFAULT]")
+  ? getApp()
+  : initializeApp(firebaseConfig);
 
 let auth: Auth;
 if (Platform.OS === "web") {
