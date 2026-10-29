@@ -1,6 +1,6 @@
 import { useRewardsAuthStore } from "@/stores/useRewardsAuthStore";
 import { FirebaseError } from "firebase/app";
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
