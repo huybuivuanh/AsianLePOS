@@ -15,6 +15,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRewardsAuthStore } from "@/stores/useRewardsAuthStore";
 import { formatPhone } from "@/utils/helpers";
 
 export type RewardsLookup =
@@ -38,6 +39,9 @@ export default function RewardsModal({ onClose }: Props) {
   const [step, setStep] = useState<Step>("choose");
   const [phoneText, setPhoneText] = useState("");
   const [lookup, setLookup] = useState<RewardsLookup | null>(null);
+  const rewardsConfigured = useRewardsAuthStore((s) => s.configured);
+  const rewardsUser = useRewardsAuthStore((s) => s.user);
+  const deviceSignedIn = rewardsConfigured && rewardsUser !== null;
 
   const phone = useMemo(() => normalizePhone(phoneText), [phoneText]);
   const phoneValid = phone.length === 10;
@@ -82,7 +86,17 @@ export default function RewardsModal({ onClose }: Props) {
           <View className="relative z-10 w-full max-w-md self-center rounded-2xl bg-white p-5 shadow-xl">
             <Text className="mb-4 text-center text-lg font-bold text-gray-900">Rewards</Text>
 
-            {step === "choose" && (
+            {!deviceSignedIn && (
+              <View className="rounded-xl bg-amber-50 px-4 py-3">
+                <Text className="text-sm text-amber-900">
+                  {rewardsConfigured
+                    ? "This device isn't signed in to Rewards. Sign in from the Profile tab."
+                    : "Rewards isn't set up in this build."}
+                </Text>
+              </View>
+            )}
+
+            {deviceSignedIn && step === "choose" && (
               <View className="flex-row">
                 <TouchableOpacity
                   className="mr-2 flex-1 items-center rounded-xl bg-red-600 py-5"
@@ -103,7 +117,7 @@ export default function RewardsModal({ onClose }: Props) {
               </View>
             )}
 
-            {step === "phone" && (
+            {deviceSignedIn && step === "phone" && (
               <>
                 <Text className="mb-1 text-sm font-medium text-gray-700">Phone number</Text>
                 <TextInput
@@ -128,7 +142,7 @@ export default function RewardsModal({ onClose }: Props) {
               </>
             )}
 
-            {step === "result" && lookup && (
+            {deviceSignedIn && step === "result" && lookup && (
               <View className="rounded-xl bg-gray-50 px-4 py-3">
                 <Text className="text-sm text-gray-600">
                   {lookup.kind === "qr" ? "Scanned member ID" : "Phone number"}

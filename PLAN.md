@@ -184,6 +184,13 @@ phoneNumbers/{phone}               uid   (one phone per member + POS phone looku
       `src/features/order/components/RewardsModal.tsx` with QR scan (device camera, `expo-camera`) or phone number entry.
       Lookup is not wired yet — the modal only shows what was scanned/entered.
 - [x] Dine-in table page: Rewards button in the last row (Cancel · Paid · Rewards · Complete), opens the same modal.
+- [x] Second Firebase connection (`src/lib/rewardsFirebase.ts`, app name `rewards`, config from
+      `EXPO_PUBLIC_REWARDS_FIREBASE_*`; optional — POS runs without it).
+      Device login in `useRewardsAuthStore` (remembered, not cleared on staff logout, checks `role: "pos"`).
+      Profile tab → Rewards card to sign in/out. The Rewards modal asks to sign in first if needed.
+- [ ] Rewards project: create `pos@asianle.com` + `role: pos` claim script
+- [ ] Rewards functions: `lookupMember`, `earnPoints`, `redeemPoints`, `reverseOrder`
+- [ ] POS `src/services/rewardsService.ts` calling them, wired into the modal
 
 ## Notes on this repo
 
