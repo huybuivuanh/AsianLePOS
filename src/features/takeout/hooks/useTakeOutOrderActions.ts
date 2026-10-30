@@ -3,6 +3,7 @@ import {
   type CustomerDisplayMessage,
 } from "@/lib/customerDisplay";
 import { useCartStore } from "@/stores/useCartStore";
+import { useOnlineOrdersStore } from "@/stores/useOnlineOrdersStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { DiscountType } from "@/types/enums";
 import {
@@ -108,9 +109,21 @@ export function useTakeOutOrderActions(takeOutOrders: TakeOutOrder[]) {
   // cleanup wouldn't fire here; this also exits selection mode and clears
   // the active order, which sends the customer display back to idle
   // instead of leaving it mid-review for an order nobody's looking at.
+  //
+  // Exception: the Rewards page. The customer is at the counter for it, so
+  // the card stays open and the display keeps showing their order (with the
+  // discount once redeemed). keepExpandedOnNextBlur() is called right before
+  // navigating there.
+  const keepExpandedOnBlurRef = useRef(false);
+  const keepExpandedOnNextBlur = useCallback(() => {
+    keepExpandedOnBlurRef.current = true;
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
+      keepExpandedOnBlurRef.current = false;
       return () => {
+        if (keepExpandedOnBlurRef.current) return;
         setExpandedOrderIds(new Set());
         setSelectionMode(null);
         setSelectedItemIds(new Set());
@@ -134,6 +147,16 @@ export function useTakeOutOrderActions(takeOutOrders: TakeOutOrder[]) {
     () =>
       activeOrderId ? takeOutOrders.find((o) => o.id === activeOrderId) : undefined,
     [activeOrderId, takeOutOrders],
+  );
+
+  // Online orders share the list (and expand state) with take-out orders.
+  const onlineOrders = useOnlineOrdersStore((s) => s.onlineOrders);
+  const activeOnlineOrder = useMemo(
+    () =>
+      activeOrderId && !activeOrder
+        ? onlineOrders.find((o) => o.id === activeOrderId)
+        : undefined,
+    [activeOrderId, activeOrder, onlineOrders],
   );
 
   const activeSelectedItemsTotal = useMemo(() => {
@@ -183,6 +206,20 @@ export function useTakeOutOrderActions(takeOutOrders: TakeOutOrder[]) {
     const channel = displayChannelRef.current;
     if (!channel) return;
 
+    if (activeOnlineOrder?.orderItems?.length) {
+      const message: CustomerDisplayMessage = {
+        type: "bill",
+        items: onlineItemsForDisplay(activeOnlineOrder),
+        taxBreakDown: activeOnlineOrder.taxBreakDown,
+        customerName: activeOnlineOrder.customerName,
+        phoneNumber: activeOnlineOrder.phoneNumber,
+        orderNumber: activeOnlineOrder.orderNumber,
+      };
+      lastBillMessageRef.current = message;
+      channel.postMessage(message);
+      return;
+    }
+
     if (!activeOrder?.orderItems?.length) {
       lastBillMessageRef.current = null;
       const clearMessage: CustomerDisplayMessage = { type: "clear" };
@@ -211,7 +248,13 @@ export function useTakeOutOrderActions(takeOutOrders: TakeOutOrder[]) {
         };
     lastBillMessageRef.current = message;
     channel.postMessage(message);
-  }, [activeOrder, selectionMode, selectedItemIds, activeSelectedItemsTaxBreakDown]);
+  }, [
+    activeOrder,
+    activeOnlineOrder,
+    selectionMode,
+    selectedItemIds,
+    activeSelectedItemsTaxBreakDown,
+  ]);
 
   const handleComplete = useCallback(
     async (order: TakeOutOrder) => {
@@ -327,5 +370,21 @@ export function useTakeOutOrderActions(takeOutOrders: TakeOutOrder[]) {
     handleOpenCashPayment,
     handleCloseCashPayment,
     handleChangeToDineIn,
+    keepExpandedOnNextBlur,
   };
+}
+
+/** Online order lines in the shape the customer display shows. */
+function onlineItemsForDisplay(order: OnlineOrder): OrderItem[] {
+  return order.orderItems.map(
+    (oi, index) =>
+      ({
+        id: `${order.id}-${index}`,
+        name: oi.name,
+        price: oi.price,
+        quantity: oi.quantity,
+        options: oi.options,
+        instructions: oi.instructions,
+      }) as unknown as OrderItem,
+  );
 }

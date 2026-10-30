@@ -4,6 +4,7 @@ import { useDineInTableActions } from "@/features/dinein/hooks/useDineInTableAct
 import { useLinePaidDebounce } from "@/features/dinein/hooks/useLinePaidDebounce";
 import OrderItemsList from "@/features/order/components/OrderItemsList";
 import RewardsModal from "@/features/order/components/RewardsModal";
+import { rewardsClosedReason } from "@/domain/rewards/rewardsRules";
 import { openRewardsMember } from "@/features/rewards/rewardsNavigation";
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import {
@@ -16,6 +17,7 @@ import { useCartStore } from "@/stores/useCartStore";
 import { DiscountType, OrderType } from "@/types/enums";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
 import Header from "@/ui/Header";
+import MessageModal from "@/ui/MessageModal";
 import {
   calculateTaxBreakdown,
   EMPTY_TAX_BREAKDOWN,
@@ -138,6 +140,8 @@ export default function TablePage() {
 
   const closeCashModal = cashModal.close;
   const [rewardsOpen, setRewardsOpen] = useState(false);
+  // Why Rewards can't open (completed / cancelled order).
+  const [rewardsClosedMessage, setRewardsClosedMessage] = useState<string | null>(null);
   const closeRewards = useCallback(() => setRewardsOpen(false), []);
   useEffect(() => {
     if (!selectionMode) closeCashModal();
@@ -576,6 +580,11 @@ export default function TablePage() {
                 <TouchableOpacity
                   onPress={() => {
                     if (!order?.id) return;
+                    const closed = rewardsClosedReason(order.status);
+                    if (closed) {
+                      setRewardsClosedMessage(closed);
+                      return;
+                    }
                     // Member already linked (redeemed earlier): skip scanning.
                     if (order.loyalty?.memberId) {
                       openRewardsMember(router, order.id, OrderType.DineIn, {
@@ -616,6 +625,14 @@ export default function TablePage() {
       {rewardsOpen && order?.id && (
         <RewardsModal orderId={order.id} orderType={OrderType.DineIn} onClose={closeRewards} />
       )}
+
+      <MessageModal
+        visible={rewardsClosedMessage !== null}
+        tone="error"
+        title="Rewards unavailable"
+        message={rewardsClosedMessage ?? undefined}
+        onClose={() => setRewardsClosedMessage(null)}
+      />
 
       {cashModal.isOpen && (
         <CashPaymentModal

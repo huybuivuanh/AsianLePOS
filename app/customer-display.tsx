@@ -7,10 +7,12 @@
 import {
   createCustomerDisplayChannel,
   type CustomerDisplayMessage,
+  type RewardsDisplayView,
 } from "@/lib/customerDisplay";
 import { DiscountType, OrderType } from "@/types/enums";
 import { formatPhone } from "@/utils/helpers";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { Platform, ScrollView, Text, View, type ScrollViewInstance } from "react-native";
 
 type BillView = {
@@ -20,17 +22,30 @@ type BillView = {
   customerName?: string;
   phoneNumber?: string;
   staff?: string;
+  orderNumber?: string;
 };
 
 export default function CustomerDisplayScreen() {
   const [order, setOrder] = useState<OrderDraft | undefined>(undefined);
   const [billView, setBillView] = useState<BillView | null>(null);
+  // Rewards: the cashier asked the customer to scan their QR here, and/or
+  // the member page is open (name + points).
+  const [scanning, setScanning] = useState(false);
+  const [rewardsView, setRewardsView] = useState<RewardsDisplayView | null>(null);
 
   const scrollViewRef = useRef<ScrollViewInstance>(null);
+  const channelRef = useRef<BroadcastChannel | null>(null);
+
+  const handleRewardsScanned = useCallback((memberId: string) => {
+    const message: CustomerDisplayMessage = { type: "rewardsScanned", memberId };
+    channelRef.current?.postMessage(message);
+    setScanning(false);
+  }, []);
 
   useEffect(() => {
     const channel = createCustomerDisplayChannel();
     if (!channel) return;
+    channelRef.current = channel;
 
     channel.onmessage = (event: MessageEvent<CustomerDisplayMessage>) => {
       const message = event.data;
@@ -43,8 +58,16 @@ export default function CustomerDisplayScreen() {
           customerName: message.customerName,
           phoneNumber: message.phoneNumber,
           staff: message.staff,
+          orderNumber: message.orderNumber,
         });
       else if (message?.type === "clear") setBillView(null);
+      else if (message?.type === "rewardsScan") {
+        setScanning(true);
+        const started: CustomerDisplayMessage = { type: "rewardsScanStarted" };
+        channel.postMessage(started);
+      } else if (message?.type === "rewardsScanEnd") setScanning(false);
+      else if (message?.type === "rewards") setRewardsView(message.view);
+      else if (message?.type === "rewardsEnd") setRewardsView(null);
     };
     // Ask the cashier window for the current cart — BroadcastChannel only
     // delivers messages sent after a listener attaches, so a fresh/reloaded
@@ -52,7 +75,10 @@ export default function CustomerDisplayScreen() {
     const message: CustomerDisplayMessage = { type: "hello" };
     channel.postMessage(message);
 
-    return () => channel.close();
+    return () => {
+      channel.close();
+      channelRef.current = null;
+    };
   }, []);
 
   // Dine-in carts are built table-side, out of view of this counter display —
@@ -74,6 +100,7 @@ export default function CustomerDisplayScreen() {
   const customerName = billView?.customerName;
   const phoneNumber = billView?.phoneNumber;
   const staff = billView?.staff;
+  const orderNumber = billView?.orderNumber;
 
   // Default to showing the bottom of the list, so the item the cashier just
   // added is always in view without anyone touching the screen. Scrolling
@@ -95,7 +122,18 @@ export default function CustomerDisplayScreen() {
     );
   }
 
+  if (scanning) {
+    return <RewardsScanScreen onScanned={handleRewardsScanned} />;
+  }
+
   if (items.length === 0) {
+    if (rewardsView) {
+      return (
+        <View className="flex-1 items-center justify-center bg-stone-900 px-8">
+          <RewardsPanel view={rewardsView} />
+        </View>
+      );
+    }
     return (
       <View className="flex-1 items-center justify-center bg-stone-900 px-8">
         <Text className="text-center text-6xl font-bold text-white">
@@ -110,7 +148,13 @@ export default function CustomerDisplayScreen() {
 
   return (
     <View className="flex-1 bg-stone-900 px-10 py-10">
-      {Boolean(tableNumber || customerName || phoneNumber || staff) && (
+      {rewardsView && (
+        <View className="mb-6">
+          <RewardsPanel view={rewardsView} />
+        </View>
+      )}
+
+      {Boolean(tableNumber || customerName || phoneNumber || staff || orderNumber) && (
         <View className="mb-6 border-b border-stone-700 pb-4">
           {Boolean(tableNumber) && (
             <Text className="text-3xl font-bold text-white">
@@ -122,6 +166,7 @@ export default function CustomerDisplayScreen() {
               customerName && { label: "Name", value: customerName },
               phoneNumber && { label: "Phone", value: formatPhone(phoneNumber) },
               staff && { label: "Staff", value: staff },
+              orderNumber && { label: "Order", value: `#${orderNumber}` },
             ].filter(Boolean) as { label: string; value: string }[];
 
             if (metaFields.length === 0) return null;
@@ -247,6 +292,88 @@ export default function CustomerDisplayScreen() {
           </View>
         </View>
       )}
+    </View>
+  );
+}
+
+function RewardsPanel({ view }: { view: RewardsDisplayView }) {
+  return (
+    <View className="w-full flex-row items-center justify-between rounded-2xl bg-red-700 px-8 py-6">
+      <View className="flex-1 mr-6">
+        <Text className="text-3xl font-bold text-white" numberOfLines={1}>
+          {view.name ? `Hi ${view.name}!` : "Hi!"}
+        </Text>
+        {view.message ? (
+          <Text className="mt-1 text-2xl font-semibold text-red-100">{view.message}</Text>
+        ) : (
+          <Text className="mt-1 text-xl text-red-100">Asian Le Rewards</Text>
+        )}
+      </View>
+      <View className="items-end">
+        <Text className="text-5xl font-extrabold text-white">{view.points}</Text>
+        <Text className="text-xl text-red-100">points</Text>
+      </View>
+    </View>
+  );
+}
+
+/** Webcam faces the customer: they hold their rewards QR up to it. */
+function RewardsScanScreen({ onScanned }: { onScanned: (memberId: string) => void }) {
+  const [permission, requestPermission] = useCameraPermissions();
+  // Ref, not state: the camera can fire several events before a re-render.
+  const scannedRef = useRef(false);
+
+  // Ask for the camera right away — nobody taps this screen. The browser
+  // remembers the answer for this site (shared with the cashier window).
+  useEffect(() => {
+    if (permission && !permission.granted && permission.canAskAgain) {
+      void requestPermission();
+    }
+  }, [permission, requestPermission]);
+
+  const handleBarcode = useCallback(
+    ({ data }: { data: string }) => {
+      if (scannedRef.current) return;
+      const id = data.trim().split("/").pop();
+      if (!id) return;
+      scannedRef.current = true;
+      onScanned(id);
+    },
+    [onScanned],
+  );
+
+  return (
+    <View className="flex-1 items-center justify-center bg-stone-900 px-8 py-8">
+      <Text className="text-center text-5xl font-bold text-white">
+        Scan your rewards QR code
+      </Text>
+      <Text className="mt-3 text-center text-2xl text-stone-400">
+        Open the Asian Le Rewards app and hold your code up to the camera
+      </Text>
+
+      <View
+        className="mt-8 overflow-hidden rounded-3xl border-4 border-white bg-black"
+        style={{ width: "60%", maxWidth: 640, aspectRatio: 4 / 3 }}
+      >
+        {permission?.granted ? (
+          // Mirrored like a mirror, so moving the phone left moves it left.
+          <View style={{ flex: 1, transform: [{ scaleX: -1 }] }}>
+            <CameraView
+              style={{ flex: 1 }}
+              onBarcodeScanned={handleBarcode}
+              barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
+            />
+          </View>
+        ) : (
+          <View className="flex-1 items-center justify-center px-6">
+            <Text className="text-center text-xl text-stone-300">
+              {permission && !permission.canAskAgain
+                ? "Camera is blocked for this site. Staff: allow the camera in the browser settings."
+                : "Starting camera…"}
+            </Text>
+          </View>
+        )}
+      </View>
     </View>
   );
 }

@@ -27,11 +27,31 @@ export type CustomerDisplayMessage =
       customerName?: string;
       phoneNumber?: string;
       staff?: string;
+      /** Online (website) orders: shown where staff would be. */
+      orderNumber?: string;
     }
   // Sent when the cashier leaves the payment screen, so the display falls
   // back to the live cart (or idle) instead of showing a stale bill to
   // whoever's at the counter next.
-  | { type: "clear" };
+  | { type: "clear" }
+  // Rewards QR scan on the customer screen (the webcam faces the customer).
+  // Cashier asks the display to scan; the display answers "rewardsScanStarted"
+  // (so the cashier knows a display is open) and later "rewardsScanned".
+  | { type: "rewardsScan" }
+  | { type: "rewardsScanStarted" }
+  | { type: "rewardsScanned"; memberId: string }
+  | { type: "rewardsScanEnd" }
+  // The member page is open: show the customer their name and points.
+  | { type: "rewards"; view: RewardsDisplayView }
+  | { type: "rewardsEnd" };
+
+export type RewardsDisplayView = {
+  /** Member's full name. */
+  name: string;
+  points: number;
+  /** Result of the last redeem/collect, e.g. "+12 points earned". */
+  message?: string;
+};
 
 export function createCustomerDisplayChannel(): BroadcastChannel | null {
   if (Platform.OS !== "web" || typeof BroadcastChannel === "undefined") {

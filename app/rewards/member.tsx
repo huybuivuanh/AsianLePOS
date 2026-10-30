@@ -24,6 +24,7 @@ import {
 import { OrderType } from "@/types/enums";
 import Header from "@/ui/Header";
 import { formatRewardsPhone } from "@/features/rewards/rewardsPhone";
+import { useRewardsCustomerDisplay } from "@/features/rewards/rewardsCustomerDisplay";
 import MessageModal from "@/ui/MessageModal";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { doc, onSnapshot } from "firebase/firestore";
@@ -59,6 +60,22 @@ export default function RewardsMemberScreen() {
     message?: string;
   } | null>(null);
   const busy = notice?.tone === "loading";
+  // Balance and message after a redeem/collect, for the customer screen.
+  const [outcome, setOutcome] = useState<{ points: number; message: string } | null>(null);
+
+  // Customer screen: the member's name and points while this page is open.
+  const displayView = useMemo(
+    () =>
+      member
+        ? {
+            name: member.name.trim(),
+            points: outcome?.points ?? member.points,
+            message: outcome?.message,
+          }
+        : null,
+    [member, outcome],
+  );
+  useRewardsCustomerDisplay(displayView);
 
   // Live order, so the buttons reflect edits made on other devices.
   useEffect(() => {
@@ -126,6 +143,10 @@ export default function RewardsMemberScreen() {
     try {
       const result = await redeemPoints(member.memberId, order.id, clampedSteps);
       await applyRedemptionToOrder(orderType, order.id, member, result);
+      setOutcome({
+        points: result.newBalance,
+        message: `$${result.discountAmount.toFixed(2)} off redeemed`,
+      });
       setNotice({
         tone: "success",
         title: "Points redeemed",
@@ -147,6 +168,7 @@ Balance: ${result.newBalance} pts.`,
     try {
       const result = await earnPoints(member.memberId, order.id, earnable);
       await markPointsCollected(orderType, order.id, member, result);
+      setOutcome({ points: result.newBalance, message: `+${result.pointsEarned} points earned` });
       setNotice({
         tone: "success",
         title: "Points collected",

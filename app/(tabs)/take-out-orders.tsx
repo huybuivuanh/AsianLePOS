@@ -1,5 +1,6 @@
 import CashPaymentModal from "@/features/dinein/CashPaymentModal";
 import RewardsModal from "@/features/order/components/RewardsModal";
+import { rewardsClosedReason } from "@/domain/rewards/rewardsRules";
 import { openRewardsMember } from "@/features/rewards/rewardsNavigation";
 import { OnlineOrderCard } from "@/features/takeout/components/OnlineOrderCard";
 import { TakeOutOrderCard } from "@/features/takeout/components/TakeOutOrderCard";
@@ -12,6 +13,7 @@ import { useTakeOutOrderActions } from "@/features/takeout/hooks/useTakeOutOrder
 import SafeAreaViewWrapper from "@/layout/SafeAreaViewWrapper";
 import { useTakeOutOrdersStore } from "@/stores/useTakeOutOrdersStore";
 import FullScreenLoadingOverlay from "@/ui/FullScreenLoadingOverlay";
+import MessageModal from "@/ui/MessageModal";
 import { FlashList } from "@shopify/flash-list";
 import { OrderType } from "@/types/enums";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -68,16 +70,25 @@ export default function TakeOutOrdersTab() {
     handleOpenCashPayment,
     handleCloseCashPayment,
     handleChangeToDineIn,
+    keepExpandedOnNextBlur,
   } = useTakeOutOrderActions(fullTakeOutOrders);
 
   const [rewardsOrderId, setRewardsOrderId] = useState<string | null>(null);
   const handleCloseRewards = useCallback(() => setRewardsOrderId(null), []);
+  // Why Rewards can't open for the pressed order (completed / cancelled).
+  const [rewardsClosedMessage, setRewardsClosedMessage] = useState<string | null>(null);
   const router = useRouter();
   const handleOpenRewards = useCallback(
     (order: TakeOutOrder) => {
       if (!order.id) return;
+      const closed = rewardsClosedReason(order.status);
+      if (closed) {
+        setRewardsClosedMessage(closed);
+        return;
+      }
       // Member already linked (redeemed earlier): skip scanning.
       if (order.loyalty?.memberId) {
+        keepExpandedOnNextBlur();
         openRewardsMember(router, order.id, OrderType.TakeOut, {
           memberId: order.loyalty.memberId,
         });
@@ -85,7 +96,7 @@ export default function TakeOutOrdersTab() {
         setRewardsOrderId(order.id);
       }
     },
-    [router],
+    [router, keepExpandedOnNextBlur],
   );
 
   useEffect(() => {
@@ -179,6 +190,7 @@ export default function TakeOutOrdersTab() {
           orderId={rewardsOrderId}
           orderType={OrderType.TakeOut}
           onClose={handleCloseRewards}
+          onOpenMember={keepExpandedOnNextBlur}
         />
       )}
 
@@ -188,6 +200,14 @@ export default function TakeOutOrdersTab() {
           orderTotal={cashPaymentModalTotal}
         />
       )}
+
+      <MessageModal
+        visible={rewardsClosedMessage !== null}
+        tone="error"
+        title="Rewards unavailable"
+        message={rewardsClosedMessage ?? undefined}
+        onClose={() => setRewardsClosedMessage(null)}
+      />
 
       <FullScreenLoadingOverlay
         visible={Boolean(actionOverlay)}

@@ -25,6 +25,16 @@ export const orderEarnableAmount = (order: Pick<Order, "taxBreakDown">): number 
 // cancel is undone).
 const REVERSED_MESSAGE = "Rewards were reversed when this order was cancelled.";
 
+/**
+ * Why rewards can't be used on this order at all, or null if they can.
+ * Cancelled orders can't collect or redeem. (Completed orders can still
+ * collect; redeem needs an open order — see redeemBlockedReason.)
+ */
+export const rewardsClosedReason = (status: OrderStatus | undefined): string | null =>
+  status === OrderStatus.Cancelled
+    ? "This order was cancelled, so points can't be collected or redeemed."
+    : null;
+
 /** True when the order's redemption is still in effect (not reversed). */
 export const hasActiveRedemption = (loyalty: OrderLoyalty | undefined | null): boolean =>
   Boolean(loyalty?.redeemedAmount && !loyalty.reversedAt);
@@ -37,6 +47,8 @@ export const redeemBlockedReason = (
   order: Pick<Order, "status" | "taxBreakDown" | "loyalty">,
   memberPoints: number,
 ): string | null => {
+  const closed = rewardsClosedReason(order.status);
+  if (closed) return closed;
   if (order.status !== OrderStatus.InProgress) return "Only open orders can redeem.";
   if (order.loyalty?.reversedAt) return REVERSED_MESSAGE;
   if (order.loyalty?.pointsRedeemed) return "Points were already redeemed on this order.";
@@ -52,7 +64,8 @@ export const redeemBlockedReason = (
 export const collectBlockedReason = (
   order: Pick<Order, "status" | "taxBreakDown" | "loyalty">,
 ): string | null => {
-  if (order.status === OrderStatus.Cancelled) return "This order was cancelled.";
+  const closed = rewardsClosedReason(order.status);
+  if (closed) return closed;
   if (order.loyalty?.reversedAt) return REVERSED_MESSAGE;
   if (order.loyalty?.pointsEarned != null) {
     return `${order.loyalty.pointsEarned} points were already collected for this order.`;

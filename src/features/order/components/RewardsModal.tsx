@@ -22,6 +22,10 @@ import {
   rewardsPhoneDigits,
 } from "@/features/rewards/rewardsPhone";
 import { openRewardsMember } from "@/features/rewards/rewardsNavigation";
+import {
+  canUseCustomerScreen,
+  useCustomerScreenScan,
+} from "@/features/rewards/rewardsCustomerDisplay";
 import { useRewardsAuthStore } from "@/stores/useRewardsAuthStore";
 import { OrderType } from "@/types/enums";
 import { useRouter } from "expo-router";
@@ -32,10 +36,12 @@ type Props = {
   orderId: string;
   orderType: OrderType;
   onClose: () => void;
+  /** Called right before going to the member page. */
+  onOpenMember?: () => void;
 };
 
 
-export default function RewardsModal({ orderId, orderType, onClose }: Props) {
+export default function RewardsModal({ orderId, orderType, onClose, onOpenMember }: Props) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [step, setStep] = useState<Step>("choose");
@@ -59,23 +65,21 @@ export default function RewardsModal({ orderId, orderType, onClose }: Props) {
     if (!phoneValid) return;
     Keyboard.dismiss();
     onClose();
+    onOpenMember?.();
     openRewardsMember(router, orderId, orderType, { phone });
-  }, [phone, phoneValid, onClose, router, orderId, orderType]);
+  }, [phone, phoneValid, onClose, onOpenMember, router, orderId, orderType]);
 
   const handleScanned = useCallback(
     (memberId: string) => {
       onClose();
+      onOpenMember?.();
       openRewardsMember(router, orderId, orderType, { memberId });
     },
-    [onClose, router, orderId, orderType],
+    [onClose, onOpenMember, router, orderId, orderType],
   );
 
   if (step === "scan") {
-    return (
-      <Modal visible animationType="slide" onRequestClose={() => setStep("choose")}>
-        <RewardsScanner onScanned={handleScanned} onBack={() => setStep("choose")} />
-      </Modal>
-    );
+    return <ScanStep onScanned={handleScanned} onBack={() => setStep("choose")} />;
   }
 
   return (
@@ -184,6 +188,91 @@ export default function RewardsModal({ orderId, orderType, onClose }: Props) {
           </View>
         </View>
       </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+/**
+ * QR scan. With a customer screen open (web), the customer scans there — the
+ * webcam faces them. Otherwise, or if staff choose to, this device's camera.
+ */
+function ScanStep({
+  onScanned,
+  onBack,
+}: {
+  onScanned: (memberId: string) => void;
+  onBack: () => void;
+}) {
+  const [useThisCamera, setUseThisCamera] = useState(() => !canUseCustomerScreen());
+  if (useThisCamera) return <LocalScan onScanned={onScanned} onBack={onBack} />;
+  return (
+    <CustomerScreenScan
+      onScanned={onScanned}
+      onBack={onBack}
+      onUseThisCamera={() => setUseThisCamera(true)}
+    />
+  );
+}
+
+function LocalScan({
+  onScanned,
+  onBack,
+}: {
+  onScanned: (memberId: string) => void;
+  onBack: () => void;
+}) {
+  return (
+    <Modal visible animationType="slide" onRequestClose={onBack}>
+      <RewardsScanner onScanned={onScanned} onBack={onBack} />
+    </Modal>
+  );
+}
+
+function CustomerScreenScan({
+  onScanned,
+  onBack,
+  onUseThisCamera,
+}: {
+  onScanned: (memberId: string) => void;
+  onBack: () => void;
+  onUseThisCamera: () => void;
+}) {
+  const insets = useSafeAreaInsets();
+  const status = useCustomerScreenScan(onScanned);
+  // No customer screen answered: scan here.
+  if (status === "local") return <LocalScan onScanned={onScanned} onBack={onBack} />;
+
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onBack}>
+      <View className="flex-1 justify-start px-5" style={{ paddingTop: insets.top + 16 }}>
+        <Pressable className="absolute inset-0 bg-black/50" onPress={onBack} accessibilityLabel="Back" />
+        <View className="relative z-10 w-full max-w-md self-center items-center rounded-2xl bg-white p-5 shadow-xl">
+          <Ionicons name="qr-code-outline" size={36} color="#DA251D" />
+          <Text className="mt-3 text-center text-lg font-bold text-gray-900">
+            {status === "customer" ? "Customer is scanning" : "Opening customer screen…"}
+          </Text>
+          <Text className="mt-1 text-center text-sm text-gray-600">
+            Ask the customer to hold their rewards QR up to the camera on the customer screen.
+          </Text>
+          <ActivityIndicator className="mt-4" color="#DA251D" />
+          <View className="mt-5 w-full flex-row">
+            <TouchableOpacity
+              className="mr-2 flex-1 rounded-xl border border-gray-300 py-3.5"
+              onPress={onBack}
+              activeOpacity={0.85}
+            >
+              <Text className="text-center text-base font-semibold text-gray-800">Back</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              className="flex-1 rounded-xl bg-gray-800 py-3.5"
+              onPress={onUseThisCamera}
+              activeOpacity={0.85}
+            >
+              <Text className="text-center text-base font-semibold text-white">Use this camera</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
     </Modal>
   );
 }
