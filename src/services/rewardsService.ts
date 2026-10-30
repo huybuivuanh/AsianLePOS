@@ -13,7 +13,12 @@ export type RewardsMember = {
 
 export type LookupMemberInput = { memberId: string } | { phone: string };
 
-export type EarnPointsResult = { pointsEarned: number; newBalance: number };
+export type EarnPointsResult = {
+  pointsEarned: number;
+  /** Welcome bonus on the member's first order ($15+ pre-tax), otherwise 0. */
+  bonusPoints: number;
+  newBalance: number;
+};
 
 export type RedeemPointsResult = {
   pointsRedeemed: number;
@@ -89,9 +94,9 @@ export async function earnPoints(
 ): Promise<EarnPointsResult> {
   const r = await call<
     { uid: string; orderId: string; subtotal: number },
-    { pointsEarned: number; balance: number }
+    { pointsEarned: number; bonusPoints?: number; balance: number }
   >("earnPoints", { uid: memberId, orderId, subtotal });
-  return { pointsEarned: r.pointsEarned, newBalance: r.balance };
+  return { pointsEarned: r.pointsEarned, bonusPoints: r.bonusPoints ?? 0, newBalance: r.balance };
 }
 
 /** `steps` × 100 points → `steps` × $5 off. Calling again returns the first result. */

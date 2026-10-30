@@ -168,11 +168,15 @@ Balance: ${result.newBalance} pts.`,
     try {
       const result = await earnPoints(member.memberId, order.id, earnable);
       await markPointsCollected(orderType, order.id, member, result);
-      setOutcome({ points: result.newBalance, message: `+${result.pointsEarned} points earned` });
+      const bonus = result.bonusPoints > 0 ? ` + ${result.bonusPoints} welcome bonus` : "";
+      setOutcome({
+        points: result.newBalance,
+        message: `+${result.pointsEarned} points earned${bonus}`,
+      });
       setNotice({
         tone: "success",
         title: "Points collected",
-        message: `+${result.pointsEarned} pts for ${member.name}.
+        message: `+${result.pointsEarned} pts${bonus} for ${member.name}.
 Balance: ${result.newBalance} pts.`,
       });
     } catch (err) {

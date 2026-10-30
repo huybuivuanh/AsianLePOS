@@ -33,6 +33,9 @@ own Firebase project. Customers see their points and a personal QR code. The POS
 - [x] POS functions written + tested in emulators: `lookupMember`, `earnPoints`, `redeemPoints`,
       `reverseOrder` (27 checks), plus `functions/scripts/set-pos-role.mjs`
 - [x] All 5 functions deployed
+- [ ] Welcome bonus (200 pts on the first order, $15+ pre-tax): written in `earnPoints` /
+      `reverseOrder`, app sign-up text, POS confirmation. **Not tested or deployed yet** —
+      emulators need Java 21+ (`functions/scripts/test-welcome-bonus.mjs`, 19 checks)
 - [x] POS login `pos@asianle.ca` created and given `role: pos` (2026-10-29)
 
 ### POS
@@ -87,6 +90,7 @@ own Firebase project. Customers see their points and a personal QR code. The POS
 | Redeem | Fixed steps: 100 pts = $5 off (max 20 steps), applied as the POS's existing Amount discount |
 | Redeem + staff discount | **Blocked** — an order with a staff discount can't redeem |
 | Points expiry | **Never** |
+| Welcome bonus | **200 pts ($10)** on the member's **first** collected order, only if its pre-tax subtotal is **$15+**. First order under $15 → no bonus, ever. Shows as a normal "Points earned +200" record. Can't be used on that order (Collect comes after Redeem). If the first order is cancelled, the bonus is removed and the next order counts as the first. No email verification — $10 isn't worth farming accounts for |
 | Cancelled order | Points automatically reversed (earned removed, redeemed refunded) |
 | Edited order | **Not** reversed. A reverse is final (later earn/redeem return `already…`), so the redemption discount simply stays on the order. Points collected before an edit stay as they were (rare: collect happens at payment); an adjust function can come later if needed |
 | Customer sign-in | Google **or** email + password, same on iOS, Android and web. No Apple sign-in (it needs extra setup on web/Android); add it on iOS later only if App Store review asks |
@@ -185,13 +189,15 @@ usually accepted. If a reviewer asks for Sign in with Apple, add it **on iOS onl
 members/{uid}                      id (= uid), name, email, phone, createdAt,
                                    points (0 at sign-up)                       ← app (sign-up)
                                    points after that                           ← functions only
+                                   firstOrderId (first collected order)        ← functions only
 members/{uid}/transactions/{id}    type (earn | redeem | reverse), points, orderId, createdAt
 phoneNumbers/{phone}               uid   (one phone per member + POS phone lookup) ← app (sign-up)
 ```
 
 - Phones are stored as **10 digits, no formatting** (same digits-only style as POS);
   `src/utils/phone.ts` normalizes ("1-604-555-1234" → `6045551234`). North American numbers only.
-- Transaction ids `earn_<orderId>` / `redeem_<orderId>` make every call safe to retry
+- Transaction ids `earn_<orderId>` / `welcome_<orderId>` (bonus, type `earn`) /
+  `redeem_<orderId>` make every call safe to retry
   and enforce "once per order".
 - Balance and transaction are written in one Firestore transaction.
 
@@ -216,9 +222,9 @@ All written and tested in the emulators (`functions/src/`). POS functions requir
 |---|---|---|
 | `deleteAccount` | customer | `{}` → `{ deleted }`. Deletes `members/{uid}` + `transactions`, frees `phoneNumbers/{phone}`, deletes the login. Safe to retry |
 | `lookupMember` | POS | `{ uid }` (QR) or `{ phone }` (any format) → `{ member: { uid, name, phone, points } }`; `not-found` if none |
-| `earnPoints` | POS | `{ uid, orderId, subtotal }` → `{ pointsEarned, balance, alreadyEarned }`. floor(subtotal) points, once per order; under $1 earns 0 and writes nothing |
+| `earnPoints` | POS | `{ uid, orderId, subtotal }` → `{ pointsEarned, bonusPoints, balance, alreadyEarned }`. floor(subtotal) points, once per order; under $1 earns 0, writes nothing and doesn't count as the first order. First order $15+ also adds the 200-pt welcome bonus |
 | `redeemPoints` | POS | `{ uid, orderId, steps }` (1–20) → `{ pointsRedeemed, discount, balance, alreadyRedeemed }`. 100 pts = $5 per step, once per order; `failed-precondition` if not enough points |
-| `reverseOrder` | POS | `{ uid, orderId }` → `{ pointsChanged, balance, alreadyReversed }`. Removes earned, refunds redeemed, once. A cancelled order can't earn again |
+| `reverseOrder` | POS | `{ uid, orderId }` → `{ pointsChanged, balance, alreadyReversed }`. Removes earned (and its welcome bonus), refunds redeemed, once. A cancelled order can't earn again; cancelling the first order clears `firstOrderId` |
 
 - Calling any of them twice for the same order changes nothing (`already…: true`), so the
   POS can safely retry after a network error. Two taps at the same time also count once.
